@@ -1,0 +1,13 @@
+# Maven stuff
+**/target/*
+
+# Eclipse stuff
+**/.project
+**/.settings/*
+**/.prefs
+**/.classpath
+/target/
+
+# IntelliJ IDEA specific
+.idea/
+*.iml
