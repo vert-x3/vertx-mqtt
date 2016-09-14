@@ -16,13 +16,15 @@
 
 package enmasse.mqtt;
 
-import enmasse.mqtt.impl.MqttServerImpl;
+import io.vertx.core.Vertx;
 
 public class MqttFrontEnd {
 
     public static void main(String[] args) {
 
-        MqttServer mqttServer = new MqttServerImpl();
+        Vertx vertx = Vertx.vertx();
+
+        MqttServer mqttServer = MqttServer.create(vertx);
         mqttServer.listen(1883, "localhost");
     }
 }

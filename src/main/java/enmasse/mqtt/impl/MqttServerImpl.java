@@ -19,55 +19,70 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttServer;
 import enmasse.mqtt.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 
 /**
  * An MQTT server implementation
  */
 public class MqttServerImpl implements MqttServer {
 
+    private final VertxInternal vertx;
+    private ServerBootstrap bootstrap;
+
+    /**
+     * Constructor for receiving a Vert.x instance
+     * @param vertx     Vert.x instance
+     */
+    public MqttServerImpl(Vertx vertx) {
+
+        this.vertx = (VertxInternal) vertx;
+    }
+
     public MqttServer listen(int port, String host) {
 
-        EventLoopGroup group = new NioEventLoopGroup();
-
-        try {
-
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(group);
-            bootstrap.channel(NioServerSocketChannel.class);
-            bootstrap.childHandler(new ChannelInitializer<Channel>() {
-
-                protected void initChannel(Channel channel) throws Exception {
-
-                    channel.pipeline().addLast(MqttEncoder.INSTANCE);
-                    channel.pipeline().addLast(new MqttDecoder());
-                    channel.pipeline().addLast(new MqttServerHandler());
-                }
-            });
-
-
-            ChannelFuture f = bootstrap.bind(host, port).sync();
-            f.channel().closeFuture().sync();
-
-        } catch (Throwable e) {
-
-            e.printStackTrace();
-
-        } finally {
-
-            try {
-                group.shutdownGracefully().sync();
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+        if (this.bootstrap != null) {
+            throw new IllegalStateException("The MQTT server is already started");
         }
+
+        // get the current context as a Vert.x internal context
+        ContextInternal context = vertx.getOrCreateContext();
+
+        // the Vert.x internal context gives access to Netty's event loop used as child group
+        EventLoop eventLoop = context.nettyEventLoop();
+
+        // the acceptor group is used as parent group
+        EventLoopGroup acceptorGroup = vertx.getAcceptorEventLoopGroup();
+
+        // create and configure the Netty server bootstrap
+        this.bootstrap = new ServerBootstrap();
+        this.bootstrap.channel(NioServerSocketChannel.class);
+        this.bootstrap.group(acceptorGroup, eventLoop);
+        this.bootstrap.childHandler(new ChannelInitializer<Channel>() {
+
+            @Override
+            protected void initChannel(Channel channel) throws Exception {
+
+                ChannelPipeline pipeline = channel.pipeline();
+                pipeline.addLast(MqttEncoder.INSTANCE);
+                pipeline.addLast(new MqttDecoder());
+                pipeline.addLast(new MqttServerHandler());
+            }
+        });
+
+        // bind the server socket
+        ChannelFuture bindFuture = this.bootstrap.bind(host, port);
+        bindFuture.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture channelFuture) throws Exception {
+
+            }
+        });
 
         return this;
     }

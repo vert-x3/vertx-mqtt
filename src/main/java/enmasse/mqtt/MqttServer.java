@@ -16,10 +16,22 @@
 
 package enmasse.mqtt;
 
+import enmasse.mqtt.impl.MqttServerImpl;
+import io.vertx.core.Vertx;
+
 /**
  * An MQTT server
  */
 public interface MqttServer {
+
+    /**
+     * Return an MQTT server instance
+     * @param vertx     Vert.x instance
+     * @return          MQTT server instance
+     */
+    static MqttServer create(Vertx vertx) {
+        return new MqttServerImpl(vertx);
+    }
 
     /**
      * Start the server listening for incoming connections on the port and host specified
