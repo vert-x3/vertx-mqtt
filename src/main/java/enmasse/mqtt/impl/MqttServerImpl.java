@@ -43,6 +43,7 @@ public class MqttServerImpl implements MqttServer {
 
     private final VertxInternal vertx;
     private ServerBootstrap bootstrap;
+    private Channel serverChannel;
 
     private volatile int actualPort;
 
@@ -107,7 +108,7 @@ public class MqttServerImpl implements MqttServer {
                         // callback the listen handler either with a success or a failure
                         if (channelFuture.isSuccess()) {
 
-                            Channel serverChannel = channelFuture.channel();
+                            serverChannel = channelFuture.channel();
                             actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
 
                             listenHandler.handle(Future.succeededFuture(MqttServerImpl.this));
@@ -126,7 +127,17 @@ public class MqttServerImpl implements MqttServer {
     }
 
     @Override
+    public void close() {
+
+        if (this.serverChannel != null) {
+            this.serverChannel.close();
+            this.serverChannel = null;
+        }
+    }
+
+    @Override
     public int actualPort() {
+
         return this.actualPort;
     }
 }

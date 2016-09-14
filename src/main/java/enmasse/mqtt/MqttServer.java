@@ -62,4 +62,9 @@ public interface MqttServer {
      * @return  the actual port the server is listening on.
      */
     int actualPort();
+
+    /**
+     * Close the server (asynchronously)
+     */
+    void close();
 }
