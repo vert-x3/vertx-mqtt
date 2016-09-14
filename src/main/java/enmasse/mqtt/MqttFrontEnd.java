@@ -17,8 +17,15 @@
 package enmasse.mqtt;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
+/**
+ * MQTT to AMQP front end application
+ */
 public class MqttFrontEnd {
+
+    private static final Logger log = LoggerFactory.getLogger(MqttFrontEnd.class);
 
     public static void main(String[] args) {
 
@@ -28,7 +35,8 @@ public class MqttFrontEnd {
         mqttServer.listen(1883, "localhost", ar -> {
 
             if (ar.succeeded()) {
-                System.out.println("MQTT server is listening on port " + ar.result().actualPort());
+
+                log.info("MQTT server is listening on port " + ar.result().actualPort());
             }
         });
     }

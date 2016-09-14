@@ -29,6 +29,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
@@ -36,6 +38,8 @@ import java.net.InetSocketAddress;
  * An MQTT server implementation
  */
 public class MqttServerImpl implements MqttServer {
+
+    private static final Logger log = LoggerFactory.getLogger(MqttServerImpl.class);
 
     private final VertxInternal vertx;
     private ServerBootstrap bootstrap;
