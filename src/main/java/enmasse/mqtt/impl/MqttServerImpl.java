@@ -23,9 +23,14 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+
+import java.net.InetSocketAddress;
 
 /**
  * An MQTT server implementation
@@ -35,8 +40,11 @@ public class MqttServerImpl implements MqttServer {
     private final VertxInternal vertx;
     private ServerBootstrap bootstrap;
 
+    private volatile int actualPort;
+
     /**
      * Constructor for receiving a Vert.x instance
+     *
      * @param vertx     Vert.x instance
      */
     public MqttServerImpl(Vertx vertx) {
@@ -44,7 +52,13 @@ public class MqttServerImpl implements MqttServer {
         this.vertx = (VertxInternal) vertx;
     }
 
+    @Override
     public MqttServer listen(int port, String host) {
+        return this.listen(port, host, null);
+    }
+
+    @Override
+    public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
 
         if (this.bootstrap != null) {
             throw new IllegalStateException("The MQTT server is already started");
@@ -81,9 +95,34 @@ public class MqttServerImpl implements MqttServer {
             @Override
             public void operationComplete(ChannelFuture channelFuture) throws Exception {
 
+                if (listenHandler != null) {
+
+                    // when we dispatch code to the Vert.x API we need to use executeFromIO
+                    context.executeFromIO(() -> {
+
+                        // callback the listen handler either with a success or a failure
+                        if (channelFuture.isSuccess()) {
+
+                            Channel serverChannel = channelFuture.channel();
+                            actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+
+                            listenHandler.handle(Future.succeededFuture(MqttServerImpl.this));
+
+                        } else {
+
+                            listenHandler.handle(Future.failedFuture(channelFuture.cause()));
+                        }
+
+                    });
+                }
             }
         });
 
         return this;
+    }
+
+    @Override
+    public int actualPort() {
+        return this.actualPort;
     }
 }

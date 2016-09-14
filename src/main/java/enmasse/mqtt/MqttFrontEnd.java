@@ -25,6 +25,11 @@ public class MqttFrontEnd {
         Vertx vertx = Vertx.vertx();
 
         MqttServer mqttServer = MqttServer.create(vertx);
-        mqttServer.listen(1883, "localhost");
+        mqttServer.listen(1883, "localhost", ar -> {
+
+            if (ar.succeeded()) {
+                System.out.println("MQTT server is listening on port " + ar.result().actualPort());
+            }
+        });
     }
 }

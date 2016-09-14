@@ -17,6 +17,8 @@
 package enmasse.mqtt;
 
 import enmasse.mqtt.impl.MqttServerImpl;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
 /**
@@ -26,6 +28,7 @@ public interface MqttServer {
 
     /**
      * Return an MQTT server instance
+     *
      * @param vertx     Vert.x instance
      * @return          MQTT server instance
      */
@@ -35,9 +38,28 @@ public interface MqttServer {
 
     /**
      * Start the server listening for incoming connections on the port and host specified
+     *
+     * @param port  the port to listen on
+     * @param host  the host to listen on
+     * @param listenHandler handler called when the asynchronous listen call ends
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler);
+
+    /**
+     * Start the server listening for incoming connections on the port and host specified
+     *
      * @param port  the port to listen on
      * @param host  the host to listen on
      * @return  a reference to this, so the API can be used fluently
      */
     MqttServer listen(int port, String host);
+
+    /**
+     * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
+     * signifying an ephemeral port
+     *
+     * @return  the actual port the server is listening on.
+     */
+    int actualPort();
 }
