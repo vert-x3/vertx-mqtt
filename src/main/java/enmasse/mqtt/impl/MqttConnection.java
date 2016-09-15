@@ -17,43 +17,35 @@
 package enmasse.mqtt.impl;
 
 import enmasse.mqtt.MqttEndpoint;
-import enmasse.mqtt.MqttEndpointStream;
+import io.netty.channel.Channel;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.metrics.NetworkMetrics;
 
 /**
- * A stream used for notifying an MQTT client connection to the MQTT server
+ * Represents an MQTT connection
  */
-public class MqttEndpointStreamImpl implements MqttEndpointStream {
+public class MqttConnection extends ConnectionBase {
 
-    private Handler<MqttEndpoint> handler;
+    private Handler<MqttEndpoint> endpointHandler;
 
-    Handler<MqttEndpoint> handler() {
-        return this.handler;
+    public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
+        super(vertx, channel, context, metrics);
     }
 
     @Override
-    public MqttEndpointStream exceptionHandler(Handler<Throwable> handler) {
+    protected Object metric() {
         return null;
     }
 
     @Override
-    public MqttEndpointStream handler(Handler<MqttEndpoint> handler) {
-        this.handler = handler;
-        return this;
+    protected void handleInterestedOpsChanged() {
+
     }
 
-    @Override
-    public MqttEndpointStream pause() {
-        return null;
-    }
-
-    @Override
-    public MqttEndpointStream resume() {
-        return null;
-    }
-
-    @Override
-    public MqttEndpointStream endHandler(Handler<Void> handler) {
-        return null;
+    synchronized void endpointHandler(Handler<MqttEndpoint> handler) {
+        this.endpointHandler = handler;
     }
 }

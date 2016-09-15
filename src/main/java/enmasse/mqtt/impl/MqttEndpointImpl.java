@@ -19,11 +19,20 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttEndpoint;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.vertx.core.Handler;
+import io.vertx.core.net.impl.ConnectionBase;
 
 /**
  * Represents an MQTT endpoint
  */
 public class MqttEndpointImpl implements MqttEndpoint {
+
+    private final ConnectionBase conn;
+
+    private boolean closed;
+
+    public MqttEndpointImpl(ConnectionBase conn) {
+        this.conn = conn;
+    }
 
     @Override
     public void end() {
@@ -52,7 +61,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     @Override
     public MqttEndpoint write(MqttMessage mqttMessage) {
-        return null;
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.conn.writeToChannel(mqttMessage);
+            return this;
+        }
     }
 
     @Override
@@ -78,5 +92,14 @@ public class MqttEndpointImpl implements MqttEndpoint {
     @Override
     public MqttEndpoint exceptionHandler(Handler<Throwable> handler) {
         return null;
+    }
+
+    /**
+     * Check if the MQTT endpoint is closed
+     */
+    private void checkClosed() {
+        if (this.closed) {
+            throw new IllegalStateException("MQTT endpoint is closed");
+        }
     }
 }

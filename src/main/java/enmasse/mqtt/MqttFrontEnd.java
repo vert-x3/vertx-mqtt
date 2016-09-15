@@ -32,12 +32,18 @@ public class MqttFrontEnd {
         Vertx vertx = Vertx.vertx();
 
         MqttServer mqttServer = MqttServer.create(vertx);
-        mqttServer.listen(1883, "localhost", ar -> {
+        mqttServer
+                .endpointHandler(endpoint -> {
 
-            if (ar.succeeded()) {
+                    // TODO : logic + send CONNACK
 
-                log.info("MQTT server is listening on port " + ar.result().actualPort());
-            }
+        })
+                .listen(1883, "localhost", ar -> {
+
+                    if (ar.succeeded()) {
+
+                        log.info("MQTT server is listening on port " + ar.result().actualPort());
+                    }
         });
     }
 }

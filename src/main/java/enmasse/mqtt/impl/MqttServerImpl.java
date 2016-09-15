@@ -19,8 +19,8 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttEndpoint;
 import enmasse.mqtt.MqttEndpointStream;
 import enmasse.mqtt.MqttServer;
-import enmasse.mqtt.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
@@ -29,10 +29,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.VertxHandler;
 
 import java.net.InetSocketAddress;
 
@@ -85,6 +87,10 @@ public class MqttServerImpl implements MqttServer {
     @Override
     public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
 
+        if (this.endpointStream.handler() == null) {
+            throw new IllegalStateException("Set the MQTT endpoint handler first");
+        }
+
         if (this.bootstrap != null) {
             throw new IllegalStateException("The MQTT server is already started");
         }
@@ -110,7 +116,7 @@ public class MqttServerImpl implements MqttServer {
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast(MqttEncoder.INSTANCE);
                 pipeline.addLast(new MqttDecoder());
-                pipeline.addLast(new MqttServerHandler());
+                pipeline.addLast(new MqttServerHandler(pipeline.channel()));
             }
         });
 
@@ -159,5 +165,49 @@ public class MqttServerImpl implements MqttServer {
     public int actualPort() {
 
         return this.actualPort;
+    }
+
+    /**
+     * MQTT server handler for the underlying Netty channel pipeline
+     */
+    public class MqttServerHandler extends VertxHandler<MqttConnection> {
+
+        private MqttConnection conn;
+        private final Channel ch;
+
+        public MqttServerHandler(Channel ch) {
+            this.ch = ch;
+        }
+
+        @Override
+        protected MqttConnection getConnection() {
+
+            return this.conn;
+        }
+
+        @Override
+        protected MqttConnection removeConnection() {
+
+            return null;
+        }
+
+        @Override
+        protected void channelRead(MqttConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+
+            this.doMessageReceived(connection, chctx, msg);
+        }
+
+        @Override
+        protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
+
+            // TODO build a safe MQTT message object from this one ?
+            return msg;
+        }
+
+        private void doMessageReceived(MqttConnection connection, ChannelHandlerContext chctx, Object msg) throws Exception {
+
+            MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
+
+        }
     }
 }
