@@ -16,6 +16,8 @@
 
 package enmasse.mqtt.impl;
 
+import enmasse.mqtt.MqttEndpoint;
+import enmasse.mqtt.MqttEndpointStream;
 import enmasse.mqtt.MqttServer;
 import enmasse.mqtt.MqttServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -45,6 +47,8 @@ public class MqttServerImpl implements MqttServer {
     private ServerBootstrap bootstrap;
     private Channel serverChannel;
 
+    private final MqttEndpointStreamImpl endpointStream = new MqttEndpointStreamImpl();
+
     private volatile int actualPort;
 
     /**
@@ -60,6 +64,22 @@ public class MqttServerImpl implements MqttServer {
     @Override
     public MqttServer listen(int port, String host) {
         return this.listen(port, host, null);
+    }
+
+    @Override
+    public MqttServer endpointHandler(Handler<MqttEndpoint> handler) {
+        this.endpointStream().handler(handler);
+        return this;
+    }
+
+    @Override
+    public MqttEndpointStream endpointStream() {
+        return this.endpointStream;
+    }
+
+    @Override
+    public Handler<MqttEndpoint> endpointHandler() {
+        return this.endpointStream.handler();
     }
 
     @Override

@@ -56,6 +56,30 @@ public interface MqttServer {
     MqttServer listen(int port, String host);
 
     /**
+     * Set the endpoint handler for the server. If an MQTT client connect to the server a
+     * new MqttEndpoint instance will be created and passed to the handler
+     *
+     * @param handler   the endpoint handler
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttServer endpointHandler(Handler<MqttEndpoint> handler);
+
+    /**
+     * Return the endpoint handler
+     *
+     * @return  the endpoint handler
+     */
+    Handler<MqttEndpoint> endpointHandler();
+
+    /**
+     * Return the MQTT endpoint stream for the server. If an MQTT client connect to the server a
+     * new MqttEndpoint instance will be created and passed to the stream
+     *
+     * @return
+     */
+    MqttEndpointStream endpointStream();
+
+    /**
      * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
      * signifying an ephemeral port
      *
