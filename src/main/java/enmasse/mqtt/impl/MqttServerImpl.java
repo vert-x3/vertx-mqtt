@@ -25,6 +25,8 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -206,7 +208,27 @@ public class MqttServerImpl implements MqttServer {
 
         private void doMessageReceived(MqttConnection connection, ChannelHandlerContext chctx, Object msg) throws Exception {
 
-            MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
+            if (msg instanceof MqttMessage) {
+
+                MqttMessage mqttMessage = (MqttMessage) msg;
+
+                switch (mqttMessage.fixedHeader().messageType()) {
+
+                    case CONNECT:
+
+                        if (this.conn == null) {
+
+                            MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
+                            mqttConn.endpointHandler(endpointStream.handler());
+
+                            MqttEndpointImpl endpoint = new MqttEndpointImpl(mqttConn);
+                            mqttConn.handleEndpointConnect(endpoint);
+                        }
+
+                        break;
+                }
+
+            }
 
         }
     }

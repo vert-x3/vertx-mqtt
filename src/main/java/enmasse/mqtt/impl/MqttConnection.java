@@ -30,6 +30,7 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 public class MqttConnection extends ConnectionBase {
 
     private Handler<MqttEndpoint> endpointHandler;
+    private MqttEndpointImpl endpoint;
 
     public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
         super(vertx, channel, context, metrics);
@@ -47,5 +48,12 @@ public class MqttConnection extends ConnectionBase {
 
     synchronized void endpointHandler(Handler<MqttEndpoint> handler) {
         this.endpointHandler = handler;
+    }
+
+    synchronized void handleEndpointConnect(MqttEndpointImpl endpoint) {
+        if (this.endpointHandler != null) {
+            this.endpointHandler.handle(endpoint);
+            this.endpoint = endpoint;
+        }
     }
 }

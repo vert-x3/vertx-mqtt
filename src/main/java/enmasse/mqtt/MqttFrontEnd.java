@@ -37,6 +37,8 @@ public class MqttFrontEnd {
 
                     // TODO : logic + send CONNACK
 
+                    log.info("MQTT client request to connect");
+
         })
                 .listen(1883, "localhost", ar -> {
 
