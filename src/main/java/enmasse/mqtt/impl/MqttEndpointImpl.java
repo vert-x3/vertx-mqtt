@@ -17,7 +17,7 @@
 package enmasse.mqtt.impl;
 
 import enmasse.mqtt.MqttEndpoint;
-import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.*;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.ConnectionBase;
 
@@ -37,6 +37,21 @@ public class MqttEndpointImpl implements MqttEndpoint {
     @Override
     public void end() {
 
+    }
+
+    @Override
+    public MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
+
+        MqttFixedHeader mqttFixedHeader =
+                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 2);
+        MqttConnAckVariableHeader mqttConnAckVariableHeader =
+                new MqttConnAckVariableHeader(connectReturnCode, sessionPresent);
+
+        MqttMessage connack = MqttMessageFactory.newMessage(mqttFixedHeader, mqttConnAckVariableHeader, null);
+
+        this.write(connack);
+
+        return this;
     }
 
     @Override

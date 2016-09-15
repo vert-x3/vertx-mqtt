@@ -17,6 +17,7 @@
 package enmasse.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -52,4 +53,13 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
 
     @Override
     void end();
+
+    /**
+     * Sends the CONNACK message to the MQTT remote client
+     *
+     * @param connectReturnCode     the connect return code
+     * @param sessionPresent        if a previous session is present
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent);
 }

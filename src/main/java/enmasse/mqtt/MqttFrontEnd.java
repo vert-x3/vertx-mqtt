@@ -16,6 +16,7 @@
 
 package enmasse.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -35,9 +36,8 @@ public class MqttFrontEnd {
         mqttServer
                 .endpointHandler(endpoint -> {
 
-                    // TODO : logic + send CONNACK
-
                     log.info("MQTT client request to connect");
+                    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
 
         })
                 .listen(1883, "localhost", ar -> {
