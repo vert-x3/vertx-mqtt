@@ -30,21 +30,30 @@ public interface MqttServer {
      * Return an MQTT server instance
      *
      * @param vertx     Vert.x instance
-     * @return          MQTT server instance
+     * @param options   MQTT server options
+     * @return  MQTT server instance
      */
-    static MqttServer create(Vertx vertx) {
-        return new MqttServerImpl(vertx);
+    static MqttServer create(Vertx vertx, MqttServerOptions options) {
+        return new MqttServerImpl(vertx, options);
     }
 
     /**
-     * Start the server listening for incoming connections on the port and host specified
+     * Return an MQTT server instance using default options
      *
-     * @param port  the port to listen on
-     * @param host  the host to listen on
-     * @param listenHandler handler called when the asynchronous listen call ends
+     * @param vertx     Vert.x instance
+     * @return  MQTT server instance
+     */
+    static MqttServer create(Vertx vertx) {
+        return new MqttServerImpl(vertx, new MqttServerOptions());
+    }
+
+    /**
+     * Start the server listening for incoming connections using the specified options
+     * through the constructor
+     *
      * @return  a reference to this, so the API can be used fluently
      */
-    MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler);
+    MqttServer listen();
 
     /**
      * Start the server listening for incoming connections on the port and host specified
@@ -54,6 +63,45 @@ public interface MqttServer {
      * @return  a reference to this, so the API can be used fluently
      */
     MqttServer listen(int port, String host);
+
+    /**
+     * Start the server listening for incoming connections on the port and host specified
+     * It ignores any options specified through the constructor
+     *
+     * @param port  the port to listen on
+     * @param host  the host to listen on
+     * @param listenHandler handler called when the asynchronous listen call ends
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler);
+
+    /**
+     * Start the server listening for incoming connections on the port specified but on
+     * "0.0.0.0" as host. It ignores any options specified through the constructor
+     *
+     * @param port  the port to listen on
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttServer listen(int port);
+
+    /**
+     * Start the server listening for incoming connections on the port specified but on
+     * "0.0.0.0" as host. It ignores any options specified through the constructor
+     *
+     * @param port  the port to listen on
+     * @param listenHandler handler called when the asynchronous listen call ends
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler);
+
+    /**
+     * Start the server listening for incoming connections using the specified options
+     * through the constructor
+     *
+     * @param listenHandler handler called when the asynchronous listen call ends
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler);
 
     /**
      * Set the endpoint handler for the server. If an MQTT client connect to the server a

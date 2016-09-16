@@ -42,6 +42,7 @@ public class MqttServerImpl implements MqttServer {
 
     private static final Logger log = LoggerFactory.getLogger(MqttServerImpl.class);
 
+    private final MqttServerOptions options;
     private final VertxInternal vertx;
     private ServerBootstrap bootstrap;
     private Channel serverChannel;
@@ -54,15 +55,12 @@ public class MqttServerImpl implements MqttServer {
      * Constructor for receiving a Vert.x instance
      *
      * @param vertx     Vert.x instance
+     * @param options   MQTT server options
      */
-    public MqttServerImpl(Vertx vertx) {
+    public MqttServerImpl(Vertx vertx, MqttServerOptions options) {
 
         this.vertx = (VertxInternal) vertx;
-    }
-
-    @Override
-    public MqttServer listen(int port, String host) {
-        return this.listen(port, host, null);
+        this.options = options;
     }
 
     @Override
@@ -73,12 +71,25 @@ public class MqttServerImpl implements MqttServer {
 
     @Override
     public MqttEndpointStream endpointStream() {
+
         return this.endpointStream;
     }
 
     @Override
     public Handler<MqttEndpoint> endpointHandler() {
+
         return this.endpointStream.handler();
+    }
+
+    @Override
+    public MqttServer listen() {
+
+        return this.listen(this.options.getPort(), this.options.getHost(), null);
+    }
+
+    @Override
+    public MqttServer listen(int port, String host) {
+        return this.listen(port, host, null);
     }
 
     @Override
@@ -147,6 +158,21 @@ public class MqttServerImpl implements MqttServer {
         });
 
         return this;
+    }
+
+    @Override
+    public MqttServer listen(int port) {
+        return this.listen(port, "0.0.0.0", null);
+    }
+
+    @Override
+    public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
+        return this.listen(port, "0.0.0.0", listenHandler);
+    }
+
+    @Override
+    public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
+        return this.listen(this.options.getPort(), this.options.getHost(), listenHandler);
     }
 
     @Override
