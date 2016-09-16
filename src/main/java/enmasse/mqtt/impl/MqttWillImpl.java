@@ -19,7 +19,7 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttWill;
 
 /**
- * MQTT will information
+ * Will information from the remote MQTT client
  */
 public class MqttWillImpl implements MqttWill {
 
@@ -28,6 +28,14 @@ public class MqttWillImpl implements MqttWill {
     private final int willQos;
     private final boolean isWillRetain;
 
+    /**
+     * Constructor
+     *
+     * @param willTopic topic to publish the will
+     * @param willMessage   payload of the will
+     * @param willQos   qos level for the will
+     * @param isWillRetain  if the will message must be retained
+     */
     MqttWillImpl(String willTopic, String willMessage, int willQos, boolean isWillRetain) {
         this.willTopic = willTopic;
         this.willMessage = willMessage;

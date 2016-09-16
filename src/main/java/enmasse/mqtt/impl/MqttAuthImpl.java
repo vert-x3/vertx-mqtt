@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package enmasse.mqtt.impl;
 
 import enmasse.mqtt.MqttAuth;
@@ -27,6 +26,11 @@ public class MqttAuthImpl implements MqttAuth {
     private final String userName;
     private final String password;
 
+    /**
+     * Constructor
+     * @param userName  MQTT client username
+     * @param password  MQTT client password
+     */
     MqttAuthImpl(String userName, String password) {
         this.userName = userName;
         this.password = password;

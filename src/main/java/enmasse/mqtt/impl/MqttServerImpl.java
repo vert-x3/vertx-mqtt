@@ -52,7 +52,7 @@ public class MqttServerImpl implements MqttServer {
     private volatile int actualPort;
 
     /**
-     * Constructor for receiving a Vert.x instance
+     * Constructor
      *
      * @param vertx     Vert.x instance
      * @param options   MQTT server options
@@ -70,22 +70,13 @@ public class MqttServerImpl implements MqttServer {
     }
 
     @Override
-    public MqttEndpointStream endpointStream() {
-
-        return this.endpointStream;
-    }
+    public MqttEndpointStream endpointStream() { return this.endpointStream; }
 
     @Override
-    public Handler<MqttEndpoint> endpointHandler() {
-
-        return this.endpointStream.handler();
-    }
+    public Handler<MqttEndpoint> endpointHandler() { return this.endpointStream.handler(); }
 
     @Override
-    public MqttServer listen() {
-
-        return this.listen(this.options.getPort(), this.options.getHost(), null);
-    }
+    public MqttServer listen() { return this.listen(this.options.getPort(), this.options.getHost(), null); }
 
     @Override
     public MqttServer listen(int port, String host) {
@@ -166,14 +157,10 @@ public class MqttServerImpl implements MqttServer {
     }
 
     @Override
-    public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
-        return this.listen(port, "0.0.0.0", listenHandler);
-    }
+    public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) { return this.listen(port, "0.0.0.0", listenHandler); }
 
     @Override
-    public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
-        return this.listen(this.options.getPort(), this.options.getHost(), listenHandler);
-    }
+    public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) { return this.listen(this.options.getPort(), this.options.getHost(), listenHandler); }
 
     @Override
     public void close() {
@@ -185,34 +172,31 @@ public class MqttServerImpl implements MqttServer {
     }
 
     @Override
-    public int actualPort() {
-
-        return this.actualPort;
-    }
+    public int actualPort() { return this.actualPort; }
 
     /**
      * MQTT server handler for the underlying Netty channel pipeline
      */
     public class MqttServerHandler extends VertxHandler<MqttConnection> {
 
+        // connection and channel belong to the remote MQTT client
         private MqttConnection conn;
         private final Channel ch;
 
+        /**
+         * Constructor
+         *
+         * @param ch    channel (netty) for the current connection
+         */
         public MqttServerHandler(Channel ch) {
             this.ch = ch;
         }
 
         @Override
-        protected MqttConnection getConnection() {
-
-            return this.conn;
-        }
+        protected MqttConnection getConnection() { return this.conn; }
 
         @Override
-        protected MqttConnection removeConnection() {
-
-            return null;
-        }
+        protected MqttConnection removeConnection() { return null; }
 
         @Override
         protected void channelRead(MqttConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
@@ -227,6 +211,14 @@ public class MqttServerImpl implements MqttServer {
             return msg;
         }
 
+        /**
+         * Execute some process on the received message from the remote MQTT client
+         *
+         * @param connection    connection related to the remote
+         * @param chctx         channel handler context
+         * @param msg           received message
+         * @throws Exception    if some error occurs
+         */
         private void doMessageReceived(MqttConnection connection, ChannelHandlerContext chctx, Object msg) throws Exception {
 
             if (msg instanceof MqttMessage) {
@@ -259,6 +251,11 @@ public class MqttServerImpl implements MqttServer {
 
         }
 
+        /**
+         * Create the connection and the endpoint
+         *
+         * @param msg   received message
+         */
         private void createConnAndHandle(MqttMessage msg) {
 
             MqttConnectMessage mqttConnectMessage = (MqttConnectMessage) msg;

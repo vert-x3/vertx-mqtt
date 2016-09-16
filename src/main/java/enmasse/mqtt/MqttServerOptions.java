@@ -25,6 +25,9 @@ public class MqttServerOptions extends NetServerOptions {
 
     public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
 
+    /**
+     * Default constructor
+     */
     public MqttServerOptions() {
         super();
         // override the default port

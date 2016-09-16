@@ -17,7 +17,7 @@
 package enmasse.mqtt;
 
 /**
- * MQTT will information
+ * Will information from the remote MQTT client
  */
 public interface MqttWill {
 

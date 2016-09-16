@@ -23,13 +23,13 @@ public interface MqttAuth {
 
     /**
      * Username provided by the remote MQTT client
-     * @return
+     * @return  username
      */
     String userName();
 
     /**
      * Password provided by the remote MQTT client
-     * @return
+     * @return  password
      */
     String password();
 }

@@ -26,13 +26,23 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 
 /**
- * Represents an MQTT connection
+ * Represents an MQTT connection with a remote client
  */
 public class MqttConnection extends ConnectionBase {
 
+    // handler to call when a remote MQTT client connects and establishes a connection
     private Handler<MqttEndpoint> endpointHandler;
+    // endpoint for handling point-to-point communication with the remote MQTT client
     private MqttEndpointImpl endpoint;
 
+    /**
+     * Constructor
+     *
+     * @param vertx     Vert.x instance
+     * @param channel   Channel (netty) used for communication with MQTT remote client
+     * @param context   Vert.x context
+     * @param metrics   metricss
+     */
     public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
         super(vertx, channel, context, metrics);
     }
@@ -51,14 +61,26 @@ public class MqttConnection extends ConnectionBase {
         this.endpointHandler = handler;
     }
 
+    /**
+     * Used for calling the endpoint handler when a connection is established with a remote MQTT client
+     *
+     * @param endpoint  the local endpoint for MQTT point-to-point communication with remote
+     */
     synchronized void handleEndpointConnect(MqttEndpointImpl endpoint) {
+
         if (this.endpointHandler != null) {
             this.endpointHandler.handle(endpoint);
             this.endpoint = endpoint;
         }
     }
 
+    /**
+     * Used for calling the subscribe handler when the remote MQTT client subscribes to topics
+     *
+     * @param msg   message with subscribe information
+     */
     synchronized void handleSubscribe(MqttSubscribeMessage msg) {
+
         if (this.endpoint != null) {
             this.endpoint.handleSubscribe(msg);
         }

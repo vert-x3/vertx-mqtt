@@ -24,24 +24,37 @@ import io.vertx.core.Handler;
 import io.vertx.core.net.impl.ConnectionBase;
 
 /**
- * Represents an MQTT endpoint
+ * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
  */
 public class MqttEndpointImpl implements MqttEndpoint {
 
     private static final int MAX_MESSAGE_ID = 65535;
 
+    // connection to the remote MQTT client
     private final ConnectionBase conn;
 
+    // information about connected remote MQTT client (from CONNECT message)
     private final String clientIdentifier;
     private final MqttAuthImpl auth;
     private final MqttWill will;
     private final boolean isCleanSession;
 
+    // handler to call when a subscribe request comes in
     private Handler<MqttSubscribeMessage> subscribeHandler;
 
     private boolean closed;
+    // counter for the message identifier
     private int messageIdCounter;
 
+    /**
+     * Constructor
+     *
+     * @param conn  connection instance with the remote MQTT client
+     * @param clientIdentifier  client identifier of the remote
+     * @param auth  instance with the authentication information
+     * @param will  instance with the will information
+     * @param isCleanSession    if the sessione should be cleaned or not
+     */
     public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession) {
         this.conn = conn;
         this.clientIdentifier = clientIdentifier;
@@ -112,6 +125,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
         return this;
     }
 
+    /**
+     * Used for calling the subscribe handler when the remote MQTT client subscribes to topics
+     *
+     * @param msg   message with subscribe information
+     */
     public void handleSubscribe(MqttSubscribeMessage msg) {
 
         synchronized (this.conn) {
@@ -185,13 +203,14 @@ public class MqttEndpointImpl implements MqttEndpoint {
      * Check if the MQTT endpoint is closed
      */
     private void checkClosed() {
+
         if (this.closed) {
             throw new IllegalStateException("MQTT endpoint is closed");
         }
     }
 
     /**
-     * Get the next message identifier
+     * Update and return the next message identifier
      *
      * @return  message identifier
      */

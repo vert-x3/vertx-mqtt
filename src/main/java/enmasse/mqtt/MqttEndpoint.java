@@ -24,7 +24,7 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
- * Represents an MQTT endpoint
+ * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
  */
 public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttMessage> {
 
@@ -56,31 +56,31 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     void end();
 
     /**
-     * Client identifier as provided by the MQTT remote client
+     * Client identifier as provided by the remote MQTT client
      * @return
      */
     String clientIdentifier();
 
     /**
-     * Authentication information as provided by the MQTT remote client
+     * Authentication information as provided by the remote MQTT client
      * @return
      */
     MqttAuth auth();
 
     /**
-     * Will information as provided by the MQTT remote client
+     * Will information as provided by the remote MQTT client
      * @return
      */
     MqttWill will();
 
     /**
-     * If clean session is requested by the MQTT remote client
+     * If clean session is requested by the remote MQTT client
      * @return
      */
     boolean isCleanSession();
 
     /**
-     * Sends the CONNACK message to the MQTT remote client
+     * Sends the CONNACK message to the remote MQTT client
      *
      * @param connectReturnCode     the connect return code
      * @param sessionPresent        if a previous session is present
@@ -90,7 +90,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
 
     /**
      * Set a subscribe handler on the MQTT endpoint. This handler is called when a SUBSCRIBE
-     * message is received by the MQTT remote client
+     * message is received by the remote MQTT client
      *
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
@@ -98,7 +98,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler);
 
     /**
-     * Sends the SUBACK message to the MQTT remote client
+     * Sends the SUBACK message to the remote MQTT client
      *
      * @param grantedQoSLevels  granted QoS levels for the requested topics
      * @return  a reference to this, so the API can be used fluently
