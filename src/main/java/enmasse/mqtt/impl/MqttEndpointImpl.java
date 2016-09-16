@@ -28,6 +28,8 @@ import io.vertx.core.net.impl.ConnectionBase;
  */
 public class MqttEndpointImpl implements MqttEndpoint {
 
+    private static final int MAX_MESSAGE_ID = 65535;
+
     private final ConnectionBase conn;
 
     private final String clientIdentifier;
@@ -38,6 +40,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private Handler<MqttSubscribeMessage> subscribeHandler;
 
     private boolean closed;
+    private int messageIdCounter;
 
     public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession) {
         this.conn = conn;
@@ -70,12 +73,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     @Override
     public MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
 
-        MqttFixedHeader mqttFixedHeader =
-                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 2);
-        MqttConnAckVariableHeader mqttConnAckVariableHeader =
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttConnAckVariableHeader variableHeader =
                 new MqttConnAckVariableHeader(connectReturnCode, sessionPresent);
 
-        MqttMessage connack = MqttMessageFactory.newMessage(mqttFixedHeader, mqttConnAckVariableHeader, null);
+        MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
         this.write(connack);
 
@@ -90,6 +93,23 @@ public class MqttEndpointImpl implements MqttEndpoint {
             this.subscribeHandler = handler;
             return this;
         }
+    }
+
+    @Override
+    public MqttEndpoint writeSuback(Iterable<Integer> grantedQoSLevels) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttMessageIdVariableHeader variableHeader =
+                MqttMessageIdVariableHeader.from(this.nextMessageId());
+
+        MqttSubAckPayload payload = new MqttSubAckPayload(grantedQoSLevels);
+
+        MqttMessage suback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+
+        this.write(suback);
+
+        return this;
     }
 
     public void handleSubscribe(MqttSubscribeMessage msg) {
@@ -168,5 +188,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
         if (this.closed) {
             throw new IllegalStateException("MQTT endpoint is closed");
         }
+    }
+
+    /**
+     * Get the next message identifier
+     *
+     * @return  message identifier
+     */
+    private int nextMessageId() {
+
+        // if 0 or MAX_MESSAGE_ID, it becomes 1 (first valid messageId)
+        this.messageIdCounter = ((this.messageIdCounter % MAX_MESSAGE_ID) != 0) ? this.messageIdCounter + 1 : 1;
+        return this.messageIdCounter;
     }
 }

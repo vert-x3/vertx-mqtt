@@ -96,4 +96,12 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @return  a reference to this, so the API can be used fluently
      */
     MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler);
+
+    /**
+     * Sends the SUBACK message to the MQTT remote client
+     *
+     * @param grantedQoSLevels  granted QoS levels for the requested topics
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writeSuback(Iterable<Integer> grantedQoSLevels);
 }

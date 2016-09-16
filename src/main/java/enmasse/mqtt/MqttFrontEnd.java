@@ -22,6 +22,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * MQTT to AMQP front end application
  */
@@ -50,10 +53,12 @@ public class MqttFrontEnd {
 
                     endpoint.subscribeHandler(sub -> {
 
+                        List<Integer> grantedQosLevels = new ArrayList<>();
                         for (MqttTopicSubscription s: sub.payload().topicSubscriptions()) {
                             log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
+                            grantedQosLevels.add(s.qualityOfService().value());
                         }
-
+                        endpoint.writeSuback(grantedQosLevels);
                     });
 
         })
