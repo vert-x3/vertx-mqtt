@@ -213,32 +213,7 @@ public class MqttServerImpl implements MqttServer {
 
                         if (this.conn == null) {
 
-                            MqttConnectMessage mqttConnectMessage = (MqttConnectMessage) mqttMessage;
-
-                            MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
-                            mqttConn.endpointHandler(endpointStream.handler());
-
-                            MqttWillImpl will = mqttConnectMessage.variableHeader().isWillFlag() ?
-                                    new MqttWillImpl(
-                                            mqttConnectMessage.payload().willTopic(),
-                                            mqttConnectMessage.payload().willMessage(),
-                                            mqttConnectMessage.variableHeader().willQos(),
-                                            mqttConnectMessage.variableHeader().isWillRetain()) : null;
-
-                            MqttAuthImpl auth =
-                                    new MqttAuthImpl(
-                                            mqttConnectMessage.payload().userName(),
-                                            mqttConnectMessage.payload().password());
-
-                            MqttEndpointImpl endpoint =
-                                    new MqttEndpointImpl(
-                                            mqttConn,
-                                            mqttConnectMessage.payload().clientIdentifier(),
-                                            auth,
-                                            will,
-                                            mqttConnectMessage.variableHeader().isCleanSession());
-
-                            mqttConn.handleEndpointConnect(endpoint);
+                            this.createConnAndHandle(mqttMessage);
                         }
 
                         break;
@@ -246,6 +221,41 @@ public class MqttServerImpl implements MqttServer {
 
             }
 
+        }
+
+        private void createConnAndHandle(MqttMessage msg) {
+
+            MqttConnectMessage mqttConnectMessage = (MqttConnectMessage) msg;
+
+            // create the connection providing the handler
+            MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
+            mqttConn.endpointHandler(endpointStream.handler());
+
+            // retrieve will information from CONNECT message
+            MqttWillImpl will = mqttConnectMessage.variableHeader().isWillFlag() ?
+                    new MqttWillImpl(
+                            mqttConnectMessage.payload().willTopic(),
+                            mqttConnectMessage.payload().willMessage(),
+                            mqttConnectMessage.variableHeader().willQos(),
+                            mqttConnectMessage.variableHeader().isWillRetain()) : null;
+
+            // retrieve authorization information from CONNECT message
+            MqttAuthImpl auth = (mqttConnectMessage.variableHeader().hasUserName() &&
+                    mqttConnectMessage.variableHeader().hasPassword()) ?
+                    new MqttAuthImpl(
+                            mqttConnectMessage.payload().userName(),
+                            mqttConnectMessage.payload().password()) : null;
+
+            // create the MQTT endpoint provided to the application handler
+            MqttEndpointImpl endpoint =
+                    new MqttEndpointImpl(
+                            mqttConn,
+                            mqttConnectMessage.payload().clientIdentifier(),
+                            auth,
+                            will,
+                            mqttConnectMessage.variableHeader().isCleanSession());
+
+            mqttConn.handleEndpointConnect(endpoint);
         }
     }
 }
