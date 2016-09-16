@@ -243,6 +243,16 @@ public class MqttServerImpl implements MqttServer {
                         }
 
                         break;
+
+                    case SUBSCRIBE:
+
+                        if (this.conn != null) {
+
+                            MqttSubscribeMessage mqttSubscribeMessage = (MqttSubscribeMessage) mqttMessage;
+                            this.conn.handleSubscribe(mqttSubscribeMessage);
+                        }
+
+                        break;
                 }
 
             }
@@ -282,6 +292,8 @@ public class MqttServerImpl implements MqttServer {
                             mqttConnectMessage.variableHeader().isCleanSession());
 
             mqttConn.handleEndpointConnect(endpoint);
+
+            this.conn = mqttConn;
         }
     }
 }

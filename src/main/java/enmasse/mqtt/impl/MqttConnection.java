@@ -18,6 +18,7 @@ package enmasse.mqtt.impl;
 
 import enmasse.mqtt.MqttEndpoint;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -54,6 +55,12 @@ public class MqttConnection extends ConnectionBase {
         if (this.endpointHandler != null) {
             this.endpointHandler.handle(endpoint);
             this.endpoint = endpoint;
+        }
+    }
+
+    synchronized void handleSubscribe(MqttSubscribeMessage msg) {
+        if (this.endpoint != null) {
+            this.endpoint.handleSubscribe(msg);
         }
     }
 }

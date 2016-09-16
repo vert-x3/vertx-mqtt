@@ -35,6 +35,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private final MqttWill will;
     private final boolean isCleanSession;
 
+    private Handler<MqttSubscribeMessage> subscribeHandler;
+
     private boolean closed;
 
     public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession) {
@@ -78,6 +80,25 @@ public class MqttEndpointImpl implements MqttEndpoint {
         this.write(connack);
 
         return this;
+    }
+
+    @Override
+    public MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.subscribeHandler = handler;
+            return this;
+        }
+    }
+
+    public void handleSubscribe(MqttSubscribeMessage msg) {
+
+        synchronized (this.conn) {
+            if (this.subscribeHandler != null) {
+                this.subscribeHandler.handle(msg);
+            }
+        }
     }
 
     @Override

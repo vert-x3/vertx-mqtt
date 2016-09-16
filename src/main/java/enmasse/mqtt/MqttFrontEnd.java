@@ -17,6 +17,7 @@
 package enmasse.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -46,6 +47,14 @@ public class MqttFrontEnd {
                                 " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
                     }
                     endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+
+                    endpoint.subscribeHandler(sub -> {
+
+                        for (MqttTopicSubscription s: sub.payload().topicSubscriptions()) {
+                            log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
+                        }
+
+                    });
 
         })
                 .listen(ar -> {
