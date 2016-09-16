@@ -26,6 +26,8 @@
     <properties>
         <netty.version>4.1.5.Final</netty.version>
         <vertx.version>3.3.2</vertx.version>
+        <junit.version>4.12</junit.version>
+        <paho.version>1.1.0</paho.version>
     </properties>
 
     <dependencies>
@@ -53,6 +55,25 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
+        </dependency>
+        <!-- Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-unit</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${paho.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
