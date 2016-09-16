@@ -16,17 +16,12 @@
 
 package enmasse.mqtt.impl;
 
-import enmasse.mqtt.MqttEndpoint;
-import enmasse.mqtt.MqttEndpointStream;
-import enmasse.mqtt.MqttServer;
+import enmasse.mqtt.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -116,9 +111,9 @@ public class MqttServerImpl implements MqttServer {
             protected void initChannel(Channel channel) throws Exception {
 
                 ChannelPipeline pipeline = channel.pipeline();
-                pipeline.addLast(MqttEncoder.INSTANCE);
-                pipeline.addLast(new MqttDecoder());
-                pipeline.addLast(new MqttServerHandler(pipeline.channel()));
+                pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
+                pipeline.addLast("mqttDecoder", new MqttDecoder());
+                pipeline.addLast("mqttHandler", new MqttServerHandler(pipeline.channel()));
             }
         });
 
@@ -218,10 +213,31 @@ public class MqttServerImpl implements MqttServer {
 
                         if (this.conn == null) {
 
+                            MqttConnectMessage mqttConnectMessage = (MqttConnectMessage) mqttMessage;
+
                             MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
                             mqttConn.endpointHandler(endpointStream.handler());
 
-                            MqttEndpointImpl endpoint = new MqttEndpointImpl(mqttConn);
+                            MqttWillImpl will = mqttConnectMessage.variableHeader().isWillFlag() ?
+                                    new MqttWillImpl(
+                                            mqttConnectMessage.payload().willTopic(),
+                                            mqttConnectMessage.payload().willMessage(),
+                                            mqttConnectMessage.variableHeader().willQos(),
+                                            mqttConnectMessage.variableHeader().isWillRetain()) : null;
+
+                            MqttAuthImpl auth =
+                                    new MqttAuthImpl(
+                                            mqttConnectMessage.payload().userName(),
+                                            mqttConnectMessage.payload().password());
+
+                            MqttEndpointImpl endpoint =
+                                    new MqttEndpointImpl(
+                                            mqttConn,
+                                            mqttConnectMessage.payload().clientIdentifier(),
+                                            auth,
+                                            will,
+                                            mqttConnectMessage.variableHeader().isCleanSession());
+
                             mqttConn.handleEndpointConnect(endpoint);
                         }
 

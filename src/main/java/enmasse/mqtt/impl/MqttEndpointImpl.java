@@ -16,7 +16,9 @@
 
 package enmasse.mqtt.impl;
 
+import enmasse.mqtt.MqttAuth;
 import enmasse.mqtt.MqttEndpoint;
+import enmasse.mqtt.MqttWill;
 import io.netty.handler.codec.mqtt.*;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -28,15 +30,39 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     private final ConnectionBase conn;
 
+    private final String clientIdentifier;
+    private final MqttAuthImpl auth;
+    private final MqttWill will;
+    private final boolean isCleanSession;
+
     private boolean closed;
 
-    public MqttEndpointImpl(ConnectionBase conn) {
+    public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession) {
         this.conn = conn;
+        this.clientIdentifier = clientIdentifier;
+        this.auth = auth;
+        this.will = will;
+        this.isCleanSession = isCleanSession;
     }
 
     @Override
-    public void end() {
+    public String clientIdentifier() {
+        return this.clientIdentifier;
+    }
 
+    @Override
+    public MqttAuth auth() {
+        return this.auth;
+    }
+
+    @Override
+    public MqttWill will() {
+        return this.will;
+    }
+
+    @Override
+    public boolean isCleanSession() {
+        return this.isCleanSession;
     }
 
     @Override
@@ -52,6 +78,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
         this.write(connack);
 
         return this;
+    }
+
+    @Override
+    public void end() {
+
     }
 
     @Override

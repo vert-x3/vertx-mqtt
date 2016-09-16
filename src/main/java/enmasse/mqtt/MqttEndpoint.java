@@ -55,6 +55,30 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     void end();
 
     /**
+     * Client identifier as provided by the MQTT remote client
+     * @return
+     */
+    String clientIdentifier();
+
+    /**
+     * Authentication information as provided by the MQTT remote client
+     * @return
+     */
+    MqttAuth auth();
+
+    /**
+     * Will information as provided by the MQTT remote client
+     * @return
+     */
+    MqttWill will();
+
+    /**
+     * If clean session is requested by the MQTT remote client
+     * @return
+     */
+    boolean isCleanSession();
+
+    /**
      * Sends the CONNACK message to the MQTT remote client
      *
      * @param connectReturnCode     the connect return code

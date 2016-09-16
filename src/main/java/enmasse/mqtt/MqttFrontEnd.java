@@ -36,7 +36,12 @@ public class MqttFrontEnd {
         mqttServer
                 .endpointHandler(endpoint -> {
 
-                    log.info("MQTT client request to connect");
+                    log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+                    log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+                    if (endpoint.will() != null) {
+                        log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+                                " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+                    }
                     endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
 
         })
