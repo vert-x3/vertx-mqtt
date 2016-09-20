@@ -23,13 +23,12 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 /**
@@ -40,12 +39,13 @@ public class MqttConnectionTest {
 
     private Vertx vertx;
     private MqttServer mqttServer;
+    private MqttConnectReturnCode expectedReturnCode;
 
     private static final String MQTT_SERVER_HOST = "localhost";
     private static final int MQTT_SERVER_PORT = 1883;
 
-    @Rule
-    public TestName name = new TestName();
+    private static final String MQTT_USERNAME = "username";
+    private static final String MQTT_PASSWORD = "password";
 
     @Before
     public void before(TestContext context) {
@@ -70,7 +70,9 @@ public class MqttConnectionTest {
     }
 
     @Test
-    public void connectionAccepted(TestContext context) {
+    public void accepted(TestContext context) {
+
+        this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
 
         try {
             MemoryPersistence persistence = new MemoryPersistence();
@@ -83,19 +85,91 @@ public class MqttConnectionTest {
         }
     }
 
-    private void endpointHandler(MqttEndpoint endpoint) {
+    @Test
+    public void refusedIdentifierRejected(TestContext context) {
 
-        TestMethods method = TestMethods.valueOf(name.getMethodName());
+        this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
 
-        switch (method) {
-
-            case connectionAccepted:
-                endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
-                break;
+        try {
+            MemoryPersistence persistence = new MemoryPersistence();
+            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+            client.connect();
+            context.assertTrue(false);
+        } catch (MqttException e) {
+            context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID);
+            e.printStackTrace();
         }
     }
 
-    private enum TestMethods {
-        connectionAccepted
+    @Test
+    public void refusedServerUnavailable(TestContext context) {
+
+        this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+
+        try {
+            MemoryPersistence persistence = new MemoryPersistence();
+            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+            client.connect();
+            context.assertTrue(false);
+        } catch (MqttException e) {
+            context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_BROKER_UNAVAILABLE);
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void refusedBadUsernamePassword(TestContext context) {
+
+        this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+
+        try {
+            MemoryPersistence persistence = new MemoryPersistence();
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setUserName("wrong_username");options.setMqttVersion();
+            options.setPassword("wrong_password".toCharArray());
+            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+            client.connect(options);
+            context.assertTrue(false);
+        } catch (MqttException e) {
+            context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_FAILED_AUTHENTICATION);
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void refusedNotAuthorized(TestContext context) {
+
+        this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
+
+        try {
+            MemoryPersistence persistence = new MemoryPersistence();
+            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+            client.connect();
+            context.assertTrue(false);
+        } catch (MqttException e) {
+            context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_NOT_AUTHORIZED);
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private void endpointHandler(MqttEndpoint endpoint) {
+
+        MqttConnectReturnCode returnCode = this.expectedReturnCode;
+
+        switch (this.expectedReturnCode) {
+
+            case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
+
+                returnCode =
+                        (endpoint.auth().userName().equals(MQTT_USERNAME) &&
+                         endpoint.auth().password().equals(MQTT_PASSWORD)) ?
+                                MqttConnectReturnCode.CONNECTION_ACCEPTED :
+                                MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+                break;
+        }
+
+        endpoint.writeConnack(returnCode, false);
     }
 }
