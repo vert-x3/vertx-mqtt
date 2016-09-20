@@ -263,6 +263,15 @@ public class MqttServerImpl implements MqttServer {
                         }
 
                         break;
+
+                    case DISCONNECT:
+
+                        if (this.conn != null) {
+
+                            this.conn.handleDisconnect();
+                        }
+
+                        break;
                 }
 
             }
@@ -308,7 +317,7 @@ public class MqttServerImpl implements MqttServer {
                             mqttConnectMessage.variableHeader().isCleanSession(),
                             mqttConnectMessage.variableHeader().version());
 
-            mqttConn.handleEndpointConnect(endpoint);
+            mqttConn.handleConnect(endpoint);
 
             this.conn = mqttConn;
             this.connectionMap.put(ch, mqttConn);

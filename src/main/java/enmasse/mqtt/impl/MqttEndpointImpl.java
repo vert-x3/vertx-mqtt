@@ -42,6 +42,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     // handler to call when a subscribe request comes in
     private Handler<MqttSubscribeMessage> subscribeHandler;
+    // handler to call when a disconnect request comes in
+    private Handler<Void> disconnectHandler;
 
     private boolean closed;
     // counter for the message identifier
@@ -110,6 +112,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     @Override
+    public MqttEndpoint disconnectHandler(Handler<Void> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.disconnectHandler = handler;
+            return this;
+        }
+    }
+
+    @Override
     public MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler) {
 
         synchronized (this.conn) {
@@ -146,6 +158,21 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             if (this.subscribeHandler != null) {
                 this.subscribeHandler.handle(msg);
+            }
+        }
+    }
+
+    /**
+     * Used for calling the disconnect handler when the remote MQTT client disconnects
+     */
+    public void handlerDisconnect() {
+
+        synchronized (this.conn) {
+            if (this.disconnectHandler != null) {
+                this.disconnectHandler.handle(null);
+
+                // if client didn't close the connection, the sever SHOULD close it (MQTT spec)
+                this.close();
             }
         }
     }

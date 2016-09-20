@@ -66,7 +66,7 @@ public class MqttConnection extends ConnectionBase {
      *
      * @param endpoint  the local endpoint for MQTT point-to-point communication with remote
      */
-    synchronized void handleEndpointConnect(MqttEndpointImpl endpoint) {
+    synchronized void handleConnect(MqttEndpointImpl endpoint) {
 
         if (this.endpointHandler != null) {
             this.endpointHandler.handle(endpoint);
@@ -83,6 +83,16 @@ public class MqttConnection extends ConnectionBase {
 
         if (this.endpoint != null) {
             this.endpoint.handleSubscribe(msg);
+        }
+    }
+
+    /**
+     * Used for calling the disconnect handler when the remote MQTT client disconnects
+     */
+    synchronized void handleDisconnect() {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlerDisconnect();
         }
     }
 }

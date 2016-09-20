@@ -100,6 +100,15 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent);
 
     /**
+     * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT
+     * message is received by the remote MQTT client
+     *
+     * @param handler   the handler
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint disconnectHandler(Handler<Void> handler);
+
+    /**
      * Set a subscribe handler on the MQTT endpoint. This handler is called when a SUBSCRIBE
      * message is received by the remote MQTT client
      *
