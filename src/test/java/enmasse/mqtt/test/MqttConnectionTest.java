@@ -17,10 +17,7 @@
 package enmasse.mqtt.test;
 
 import enmasse.mqtt.MqttEndpoint;
-import enmasse.mqtt.MqttServer;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -36,14 +33,9 @@ import org.junit.runner.RunWith;
  * MQTT server testing about clients connection
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttConnectionTest {
+public class MqttConnectionTest extends MqttBaseTest {
 
-    private Vertx vertx;
-    private MqttServer mqttServer;
     private MqttConnectReturnCode expectedReturnCode;
-
-    private static final String MQTT_SERVER_HOST = "localhost";
-    private static final int MQTT_SERVER_PORT = 1883;
 
     private static final String MQTT_USERNAME = "username";
     private static final String MQTT_PASSWORD = "password";
@@ -51,29 +43,13 @@ public class MqttConnectionTest {
     @Before
     public void before(TestContext context) {
 
-        this.vertx = Vertx.vertx();
-        this.mqttServer = MqttServer.create(this.vertx);
-
-        // be sure that all other tests will start only if the MQTT server starts correctly
-        Async async = context.async();
-
-        this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
-
-            if (ar.succeeded()) {
-                System.out.println("MQTT server listening on port " + ar.result().actualPort());
-                async.complete();
-            } else {
-                System.out.println("Error starting MQTT server");
-                System.exit(1);
-            }
-        });
+        this.setUp(context);
     }
 
     @After
     public void after(TestContext context) {
 
-        this.mqttServer.close();
-        this.vertx.close();
+        this.tearDown(context);
     }
 
     @Test
@@ -178,9 +154,8 @@ public class MqttConnectionTest {
         }
     }
 
-    private void endpointHandler(MqttEndpoint endpoint) {
-
-        System.out.println("endpointHandler");
+    @Override
+    protected void endpointHandler(MqttEndpoint endpoint) {
 
         MqttConnectReturnCode returnCode = this.expectedReturnCode;
 
