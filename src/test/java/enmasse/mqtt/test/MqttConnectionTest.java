@@ -125,7 +125,7 @@ public class MqttConnectionTest {
         try {
             MemoryPersistence persistence = new MemoryPersistence();
             MqttConnectOptions options = new MqttConnectOptions();
-            options.setUserName("wrong_username");options.setMqttVersion();
+            options.setUserName("wrong_username");
             options.setPassword("wrong_password".toCharArray());
             MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
             client.connect(options);

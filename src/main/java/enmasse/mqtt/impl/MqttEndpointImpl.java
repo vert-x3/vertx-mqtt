@@ -38,6 +38,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private final MqttAuthImpl auth;
     private final MqttWill will;
     private final boolean isCleanSession;
+    private final int protocolVersion;
 
     // handler to call when a subscribe request comes in
     private Handler<MqttSubscribeMessage> subscribeHandler;
@@ -54,13 +55,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
      * @param auth  instance with the authentication information
      * @param will  instance with the will information
      * @param isCleanSession    if the sessione should be cleaned or not
+     * @param protocolVersion   protocol version required by the client
      */
-    public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession) {
+    public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion) {
         this.conn = conn;
         this.clientIdentifier = clientIdentifier;
         this.auth = auth;
         this.will = will;
         this.isCleanSession = isCleanSession;
+        this.protocolVersion = protocolVersion;
     }
 
     @Override
@@ -82,6 +85,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
     public boolean isCleanSession() {
         return this.isCleanSession;
     }
+
+    @Override
+    public int protocolVersion() { return this.protocolVersion; }
 
     @Override
     public MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {

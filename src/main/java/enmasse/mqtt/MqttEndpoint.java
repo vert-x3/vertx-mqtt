@@ -74,6 +74,12 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     MqttWill will();
 
     /**
+     * Protocol version required by the remote MQTT client
+     * @return
+     */
+    int protocolVersion();
+
+    /**
      * If clean session is requested by the remote MQTT client
      * @return
      */
