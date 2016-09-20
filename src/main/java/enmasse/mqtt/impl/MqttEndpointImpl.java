@@ -101,6 +101,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
         this.write(connack);
 
+        // if a server sends a CONNACK packet containing a non zero return code it MUST then close the Network Connection (MQTT 3.1.1 spec)
+        if (connectReturnCode != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+            this.close();
+        }
+
         return this;
     }
 
@@ -146,8 +151,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     @Override
-    public void end() {
+    public void end() { this.close(); }
 
+    @Override
+    public void close() {
+
+        synchronized (this.conn) {
+            checkClosed();
+            this.conn.close();
+
+            this.closed = true;
+        }
     }
 
     @Override

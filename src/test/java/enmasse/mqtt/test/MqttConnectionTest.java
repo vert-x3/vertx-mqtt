@@ -20,6 +20,7 @@ import enmasse.mqtt.MqttEndpoint;
 import enmasse.mqtt.MqttServer;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -53,11 +54,17 @@ public class MqttConnectionTest {
         this.vertx = Vertx.vertx();
         this.mqttServer = MqttServer.create(this.vertx);
 
+        // be sure that all other tests will start only if the MQTT server starts correctly
+        Async async = context.async();
+
         this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
+
             if (ar.succeeded()) {
                 System.out.println("MQTT server listening on port " + ar.result().actualPort());
+                async.complete();
             } else {
                 System.out.println("Error starting MQTT server");
+                System.exit(1);
             }
         });
     }
@@ -161,7 +168,7 @@ public class MqttConnectionTest {
             MemoryPersistence persistence = new MemoryPersistence();
             MqttConnectOptions options = new MqttConnectOptions();
             // trying the old 3.1
-            options.setMqttVersion(3);
+            options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1);
             MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
             client.connect(options);
             context.assertTrue(false);
@@ -171,9 +178,9 @@ public class MqttConnectionTest {
         }
     }
 
-
-
     private void endpointHandler(MqttEndpoint endpoint) {
+
+        System.out.println("endpointHandler");
 
         MqttConnectReturnCode returnCode = this.expectedReturnCode;
 
@@ -190,7 +197,7 @@ public class MqttConnectionTest {
 
             case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
 
-                returnCode = endpoint.protocolVersion() == 4 ?
+                returnCode = endpoint.protocolVersion() == MqttConnectOptions.MQTT_VERSION_3_1_1 ?
                         MqttConnectReturnCode.CONNECTION_ACCEPTED :
                         MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
                 break;

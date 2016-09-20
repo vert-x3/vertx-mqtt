@@ -56,6 +56,11 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     void end();
 
     /**
+     * Close the endpoint, so the connection with remote MQTT client
+     */
+    void close();
+
+    /**
      * Client identifier as provided by the remote MQTT client
      * @return
      */
