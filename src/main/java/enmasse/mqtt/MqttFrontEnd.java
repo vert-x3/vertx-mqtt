@@ -22,6 +22,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,5 +70,15 @@ public class MqttFrontEnd {
                         log.info("MQTT server is listening on port " + ar.result().actualPort());
                     }
         });
+
+        try {
+            System.in.read();
+            mqttServer.close();
+            vertx.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 }

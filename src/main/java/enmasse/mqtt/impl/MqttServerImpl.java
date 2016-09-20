@@ -34,6 +34,8 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.VertxHandler;
 
 import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An MQTT server implementation
@@ -46,6 +48,7 @@ public class MqttServerImpl implements MqttServer {
     private final VertxInternal vertx;
     private ServerBootstrap bootstrap;
     private Channel serverChannel;
+    private final Map<Channel, MqttConnection> connectionMap = new ConcurrentHashMap<>();
 
     private final MqttEndpointStreamImpl endpointStream = new MqttEndpointStreamImpl();
 
@@ -165,9 +168,15 @@ public class MqttServerImpl implements MqttServer {
     @Override
     public void close() {
 
+        // close the server channel used for listening
         if (this.serverChannel != null) {
             this.serverChannel.close();
             this.serverChannel = null;
+        }
+
+        // close all remote MQTT client connections
+        for (MqttConnection conn: this.connectionMap.values()) {
+            conn.close();
         }
     }
 
@@ -182,6 +191,7 @@ public class MqttServerImpl implements MqttServer {
         // connection and channel belong to the remote MQTT client
         private MqttConnection conn;
         private final Channel ch;
+        private Map<Channel, MqttConnection> connectionMap;
 
         /**
          * Constructor
@@ -189,6 +199,8 @@ public class MqttServerImpl implements MqttServer {
          * @param ch    channel (netty) for the current connection
          */
         public MqttServerHandler(Channel ch) {
+
+            this.connectionMap = MqttServerImpl.this.connectionMap;
             this.ch = ch;
         }
 
@@ -196,7 +208,13 @@ public class MqttServerImpl implements MqttServer {
         protected MqttConnection getConnection() { return this.conn; }
 
         @Override
-        protected MqttConnection removeConnection() { return null; }
+        protected MqttConnection removeConnection() {
+
+            this.connectionMap.remove(ch);
+            MqttConnection conn = this.conn;
+            this.conn = null;
+            return conn;
+        }
 
         @Override
         protected void channelRead(MqttConnection connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
@@ -231,7 +249,7 @@ public class MqttServerImpl implements MqttServer {
 
                         if (this.conn == null) {
 
-                            this.createConnAndHandle(mqttMessage);
+                            this.createConnAndHandle(this.ch, mqttMessage);
                         }
 
                         break;
@@ -254,9 +272,10 @@ public class MqttServerImpl implements MqttServer {
         /**
          * Create the connection and the endpoint
          *
+         * @param ch    channel belong to the remote MQTT client
          * @param msg   received message
          */
-        private void createConnAndHandle(MqttMessage msg) {
+        private void createConnAndHandle(Channel ch, MqttMessage msg) {
 
             MqttConnectMessage mqttConnectMessage = (MqttConnectMessage) msg;
 
@@ -291,6 +310,7 @@ public class MqttServerImpl implements MqttServer {
             mqttConn.handleEndpointConnect(endpoint);
 
             this.conn = mqttConn;
+            this.connectionMap.put(ch, mqttConn);
         }
     }
 }
