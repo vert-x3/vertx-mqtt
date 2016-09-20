@@ -152,6 +152,25 @@ public class MqttConnectionTest {
         }
     }
 
+    @Test
+    public void refusedUnacceptableProtocolVersion(TestContext context) {
+
+        this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
+
+        try {
+            MemoryPersistence persistence = new MemoryPersistence();
+            MqttConnectOptions options = new MqttConnectOptions();
+            // trying the old 3.1
+            options.setMqttVersion(3);
+            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+            client.connect(options);
+            context.assertTrue(false);
+        } catch (MqttException e) {
+            context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_PROTOCOL_VERSION);
+            e.printStackTrace();
+        }
+    }
+
 
 
     private void endpointHandler(MqttEndpoint endpoint) {
@@ -167,6 +186,13 @@ public class MqttConnectionTest {
                          endpoint.auth().password().equals(MQTT_PASSWORD)) ?
                                 MqttConnectReturnCode.CONNECTION_ACCEPTED :
                                 MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+                break;
+
+            case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
+
+                returnCode = endpoint.protocolVersion() == 4 ?
+                        MqttConnectReturnCode.CONNECTION_ACCEPTED :
+                        MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
                 break;
         }
 
