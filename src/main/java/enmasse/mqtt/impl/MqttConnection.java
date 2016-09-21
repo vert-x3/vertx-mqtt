@@ -18,6 +18,7 @@ package enmasse.mqtt.impl;
 
 import enmasse.mqtt.MqttEndpoint;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.vertx.core.Handler;
@@ -96,6 +97,18 @@ public class MqttConnection extends ConnectionBase {
 
         if (this.endpoint != null) {
             this.endpoint.handleUnsubscribe(msg);
+        }
+    }
+
+    /**
+     * Used for calling the publish handler when the remote MQTT client publishes a message
+     *
+     * @param msg   published message
+     */
+    synchronized  void handlePublish(MqttPublishMessage msg) {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlePublish(msg);
         }
     }
 

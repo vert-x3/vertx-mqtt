@@ -274,6 +274,16 @@ public class MqttServerImpl implements MqttServer {
 
                         break;
 
+                    case PUBLISH:
+
+                        if (this.conn != null) {
+
+                            MqttPublishMessage mqttPublishMessage = (MqttPublishMessage) mqttMessage;
+                            this.conn.handlePublish(mqttPublishMessage);
+                        }
+
+                        break;
+
                     case DISCONNECT:
 
                         if (this.conn != null) {
