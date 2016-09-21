@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package enmasse.mqtt;
+package enmasse.mqtt.examples;
 
+import enmasse.mqtt.MqttServer;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.vertx.core.Vertx;
@@ -27,11 +28,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MQTT to AMQP front end application
+ * An example of using the MQTT server
  */
-public class MqttFrontEnd {
+public class MqttApp {
 
-    private static final Logger log = LoggerFactory.getLogger(MqttFrontEnd.class);
+    private static final Logger log = LoggerFactory.getLogger(MqttApp.class);
 
     public static void main(String[] args) {
 

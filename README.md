@@ -1,2 +1,3 @@
-# mqtt-front-end
-MQTT front end for EnMasse
+# MQTT server
+
+A Vert.x based MQTT server
