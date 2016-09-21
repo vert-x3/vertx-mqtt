@@ -52,14 +52,14 @@ public class MqttFrontEnd {
                     }
                     endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
 
-                    endpoint.subscribeHandler(sub -> {
+                    endpoint.subscribeHandler(subscribe -> {
 
                         List<Integer> grantedQosLevels = new ArrayList<>();
-                        for (MqttTopicSubscription s: sub.payload().topicSubscriptions()) {
+                        for (MqttTopicSubscription s: subscribe.payload().topicSubscriptions()) {
                             log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
                             grantedQosLevels.add(s.qualityOfService().value());
                         }
-                        endpoint.writeSuback(grantedQosLevels);
+                        endpoint.writeSuback(subscribe.variableHeader().messageId(), grantedQosLevels);
                     });
 
         })

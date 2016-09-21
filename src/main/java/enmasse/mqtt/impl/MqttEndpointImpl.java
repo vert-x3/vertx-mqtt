@@ -145,12 +145,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     @Override
-    public MqttEndpoint writeSuback(Iterable<Integer> grantedQoSLevels) {
+    public MqttEndpoint writeSuback(int subscribeMessageId, Iterable<Integer> grantedQoSLevels) {
 
         MqttFixedHeader fixedHeader =
                 new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader variableHeader =
-                MqttMessageIdVariableHeader.from(this.nextMessageId());
+                MqttMessageIdVariableHeader.from(subscribeMessageId);
 
         MqttSubAckPayload payload = new MqttSubAckPayload(grantedQoSLevels);
 
@@ -162,12 +162,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     @Override
-    public MqttEndpoint writeUnsuback() {
+    public MqttEndpoint writeUnsuback(int unsubscribeMessageId) {
 
         MqttFixedHeader fixedHeader =
                 new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false , 0);
         MqttMessageIdVariableHeader variableHeader =
-                MqttMessageIdVariableHeader.from(this.nextMessageId());
+                MqttMessageIdVariableHeader.from(unsubscribeMessageId);
 
         MqttMessage unsuback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 

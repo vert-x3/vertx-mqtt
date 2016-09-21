@@ -117,7 +117,7 @@ public class MqttSubscribeTest extends MqttBaseTest {
                             subscribe.payload().topicSubscriptions().get(0).qualityOfService().value();
 
             qos.add(grantedQos);
-            endpoint.writeSuback(qos);
+            endpoint.writeSuback(subscribe.variableHeader().messageId(), qos);
 
             this.async.complete();
         });
