@@ -187,6 +187,21 @@ public class MqttEndpointImpl implements MqttEndpoint {
         return this;
     }
 
+    @Override
+    public MqttEndpoint writePuback(int publishMessageId) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false , 0);
+        MqttMessageIdVariableHeader variableHeader =
+                MqttMessageIdVariableHeader.from(publishMessageId);
+
+        MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+
+        this.write(puback);
+
+        return this;
+    }
+
     /**
      * Used for calling the subscribe handler when the remote MQTT client subscribes to topics
      *

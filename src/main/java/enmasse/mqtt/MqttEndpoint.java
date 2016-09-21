@@ -149,4 +149,12 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @return  a reference to this, so the API can be used fluently
      */
     MqttEndpoint writeUnsuback(int unsubscribeMessageId);
+
+    /**
+     * Sends the PUBACK message to the remote MQTT client
+     *
+     * @param publishMessageId  identifier of the PUBLISH message to acknowledge
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writePuback(int publishMessageId);
 }
