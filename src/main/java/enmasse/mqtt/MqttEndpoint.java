@@ -134,4 +134,11 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @return  a reference to this, so the API can be used fluently
      */
     MqttEndpoint writeSuback(Iterable<Integer> grantedQoSLevels);
+
+    /**
+     * Sends the UNSUBACK message to the remote MQTT client
+     *
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writeUnsuback();
 }
