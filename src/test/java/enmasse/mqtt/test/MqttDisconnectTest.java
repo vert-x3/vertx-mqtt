@@ -19,16 +19,19 @@ package enmasse.mqtt.test;
 import enmasse.mqtt.MqttEndpoint;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * MQTT server testing about clients disconnections
  */
+@RunWith(VertxUnitRunner.class)
 public class MqttDisconnectTest extends MqttBaseTest {
 
     @Before
