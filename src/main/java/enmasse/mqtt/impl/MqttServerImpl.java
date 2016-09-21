@@ -264,6 +264,16 @@ public class MqttServerImpl implements MqttServer {
 
                         break;
 
+                    case UNSUBSCRIBE:
+
+                        if (this.conn != null) {
+
+                            MqttUnsubscribeMessage mqttUnsubscribeMessage = (MqttUnsubscribeMessage) mqttMessage;
+                            this.conn.handleUnsubscribe(mqttUnsubscribeMessage);
+                        }
+
+                        break;
+
                     case DISCONNECT:
 
                         if (this.conn != null) {

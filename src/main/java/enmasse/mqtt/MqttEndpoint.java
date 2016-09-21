@@ -19,6 +19,7 @@ package enmasse.mqtt;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -116,6 +117,15 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @return  a reference to this, so the API can be used fluently
      */
     MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler);
+
+    /**
+     * Set a unsubscribe handler on the MQTT endpoint. This handler is called when a UNSUBSCRIBE
+     * message is received by the remote MQTT client
+     *
+     * @param handler   the handler
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint unsubscribeHandler(Handler<MqttUnsubscribeMessage> handler);
 
     /**
      * Sends the SUBACK message to the remote MQTT client

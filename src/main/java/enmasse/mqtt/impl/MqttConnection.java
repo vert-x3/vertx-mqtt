@@ -19,6 +19,7 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttEndpoint;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -83,6 +84,18 @@ public class MqttConnection extends ConnectionBase {
 
         if (this.endpoint != null) {
             this.endpoint.handleSubscribe(msg);
+        }
+    }
+
+    /**
+     * Used for calling the unsubscribe handler when the remote MQTT client unsubscribe to topics
+     *
+     * @param msg   message with unsubscribe information
+     */
+    synchronized void handleUnsubscribe(MqttUnsubscribeMessage msg) {
+
+        if (this.endpoint != null) {
+            this.endpoint.handleUnsubscribe(msg);
         }
     }
 

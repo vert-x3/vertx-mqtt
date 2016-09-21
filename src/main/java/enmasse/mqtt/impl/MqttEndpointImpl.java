@@ -42,6 +42,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     // handler to call when a subscribe request comes in
     private Handler<MqttSubscribeMessage> subscribeHandler;
+    // handler to call when a unsubscribe request comes in
+    private Handler<MqttUnsubscribeMessage> unsubscribeHandler;
+
     // handler to call when a disconnect request comes in
     private Handler<Void> disconnectHandler;
 
@@ -132,6 +135,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     @Override
+    public MqttEndpoint unsubscribeHandler(Handler<MqttUnsubscribeMessage> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.unsubscribeHandler = handler;
+            return this;
+        }
+    }
+
+    @Override
     public MqttEndpoint writeSuback(Iterable<Integer> grantedQoSLevels) {
 
         MqttFixedHeader fixedHeader =
@@ -158,6 +171,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             if (this.subscribeHandler != null) {
                 this.subscribeHandler.handle(msg);
+            }
+        }
+    }
+
+    /**
+     * Used for calling the unsubscribe handler when the remote MQTT client unsubscribes to topics
+     *
+     * @param msg   message with unsubscribe information
+     */
+    public void handleUnsubscribe(MqttUnsubscribeMessage msg) {
+
+        synchronized (this.conn) {
+            if (this.unsubscribeHandler != null) {
+                this.unsubscribeHandler.handle(msg);
             }
         }
     }

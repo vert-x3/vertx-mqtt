@@ -115,7 +115,7 @@ public class MqttSubscribeTest extends MqttBaseTest {
                     subscribe.payload().topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
                             MqttQoS.FAILURE.value() :
                             subscribe.payload().topicSubscriptions().get(0).qualityOfService().value();
-            
+
             qos.add(grantedQos);
             endpoint.writeSuback(qos);
 
