@@ -17,10 +17,10 @@
 package enmasse.mqtt.impl;
 
 import enmasse.mqtt.MqttEndpoint;
+import enmasse.mqtt.messages.MqttPublishMessage;
+import enmasse.mqtt.messages.MqttSubscribeMessage;
+import enmasse.mqtt.messages.MqttUnsubscribeMessage;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
-import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;

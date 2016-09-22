@@ -16,11 +16,14 @@
 
 package enmasse.mqtt;
 
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServerOptions;
 
 /**
  * Represents options used by the MQTT server
  */
+@DataObject
 public class MqttServerOptions extends NetServerOptions {
 
     public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
@@ -30,6 +33,18 @@ public class MqttServerOptions extends NetServerOptions {
      */
     public MqttServerOptions() {
         super();
+        // override the default port
+        this.setPort(DEFAULT_PORT);
+    }
+
+    public MqttServerOptions(JsonObject json) {
+        super(json);
+        // override the default port
+        this.setPort(DEFAULT_PORT);
+    }
+
+    public MqttServerOptions(NetServerOptions other) {
+        super(other);
         // override the default port
         this.setPort(DEFAULT_PORT);
     }

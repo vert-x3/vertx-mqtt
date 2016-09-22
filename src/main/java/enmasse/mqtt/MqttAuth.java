@@ -16,9 +16,12 @@
 
 package enmasse.mqtt;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * MQTT authentication information
  */
+@VertxGen
 public interface MqttAuth {
 
     /**

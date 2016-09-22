@@ -16,9 +16,12 @@
 
 package enmasse.mqtt;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Will information from the remote MQTT client
  */
+@VertxGen
 public interface MqttWill {
 
     /**

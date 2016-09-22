@@ -19,9 +19,22 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttAuth;
 import enmasse.mqtt.MqttEndpoint;
 import enmasse.mqtt.MqttWill;
-import io.netty.handler.codec.mqtt.*;
+import enmasse.mqtt.messages.MqttMessage;
+import enmasse.mqtt.messages.MqttPublishMessage;
+import enmasse.mqtt.messages.MqttSubscribeMessage;
+import enmasse.mqtt.messages.MqttUnsubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageFactory;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.ConnectionBase;
+
+import java.util.List;
 
 /**
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
@@ -72,38 +85,32 @@ public class MqttEndpointImpl implements MqttEndpoint {
         this.protocolVersion = protocolVersion;
     }
 
-    @Override
     public String clientIdentifier() {
         return this.clientIdentifier;
     }
 
-    @Override
     public MqttAuth auth() {
         return this.auth;
     }
 
-    @Override
     public MqttWill will() {
         return this.will;
     }
 
-    @Override
     public boolean isCleanSession() {
         return this.isCleanSession;
     }
 
-    @Override
     public int protocolVersion() { return this.protocolVersion; }
 
-    @Override
-    public MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
+    public MqttEndpointImpl writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
 
         MqttFixedHeader fixedHeader =
                 new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttConnAckVariableHeader variableHeader =
                 new MqttConnAckVariableHeader(connectReturnCode, sessionPresent);
 
-        MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+        io.netty.handler.codec.mqtt.MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
         this.write(connack);
 
@@ -115,8 +122,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
         return this;
     }
 
-    @Override
-    public MqttEndpoint disconnectHandler(Handler<Void> handler) {
+    public MqttEndpointImpl disconnectHandler(Handler<Void> handler) {
 
         synchronized (this.conn) {
             this.checkClosed();
@@ -125,8 +131,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
-    public MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler) {
+    public MqttEndpointImpl subscribeHandler(Handler<MqttSubscribeMessage> handler) {
 
         synchronized (this.conn) {
             this.checkClosed();
@@ -135,8 +140,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
-    public MqttEndpoint unsubscribeHandler(Handler<MqttUnsubscribeMessage> handler) {
+    public MqttEndpointImpl unsubscribeHandler(Handler<MqttUnsubscribeMessage> handler) {
 
         synchronized (this.conn) {
             this.checkClosed();
@@ -145,8 +149,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
-    public MqttEndpoint publishHandler(Handler<MqttPublishMessage> handler) {
+    public MqttEndpointImpl publishHandler(Handler<MqttPublishMessage> handler) {
 
         synchronized (this.conn) {
             this.checkClosed();
@@ -155,8 +158,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
-    public MqttEndpoint writeSuback(int subscribeMessageId, Iterable<Integer> grantedQoSLevels) {
+    public MqttEndpointImpl writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels) {
 
         MqttFixedHeader fixedHeader =
                 new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
@@ -165,37 +167,35 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
         MqttSubAckPayload payload = new MqttSubAckPayload(grantedQoSLevels);
 
-        MqttMessage suback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+        io.netty.handler.codec.mqtt.MqttMessage suback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
         this.write(suback);
 
         return this;
     }
 
-    @Override
-    public MqttEndpoint writeUnsuback(int unsubscribeMessageId) {
+    public MqttEndpointImpl writeUnsuback(int unsubscribeMessageId) {
 
         MqttFixedHeader fixedHeader =
                 new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false , 0);
         MqttMessageIdVariableHeader variableHeader =
                 MqttMessageIdVariableHeader.from(unsubscribeMessageId);
 
-        MqttMessage unsuback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+        io.netty.handler.codec.mqtt.MqttMessage unsuback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
         this.write(unsuback);
 
         return this;
     }
 
-    @Override
-    public MqttEndpoint writePuback(int publishMessageId) {
+    public MqttEndpointImpl writePuback(int publishMessageId) {
 
         MqttFixedHeader fixedHeader =
                 new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false , 0);
         MqttMessageIdVariableHeader variableHeader =
                 MqttMessageIdVariableHeader.from(publishMessageId);
 
-        MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+        io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
         this.write(puback);
 
@@ -259,10 +259,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
     public void end() { this.close(); }
 
-    @Override
     public void close() {
 
         synchronized (this.conn) {
@@ -273,28 +271,23 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
     public void end(MqttMessage mqttMessage) {
 
     }
 
-    @Override
-    public MqttEndpoint drainHandler(Handler<Void> handler) {
+    public MqttEndpointImpl drainHandler(Handler<Void> handler) {
         return null;
     }
 
-    @Override
-    public MqttEndpoint setWriteQueueMaxSize(int i) {
+    public MqttEndpointImpl setWriteQueueMaxSize(int i) {
         return null;
     }
 
-    @Override
     public boolean writeQueueFull() {
         return false;
     }
 
-    @Override
-    public MqttEndpoint write(MqttMessage mqttMessage) {
+    public MqttEndpointImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
 
         synchronized (this.conn) {
             this.checkClosed();
@@ -303,28 +296,27 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
-    public MqttEndpoint endHandler(Handler<Void> handler) {
+    public MqttEndpointImpl write(MqttMessage mqttMessage) {
+        throw new UnsupportedOperationException("todo");
+    }
+
+    public MqttEndpointImpl endHandler(Handler<Void> handler) {
         return null;
     }
 
-    @Override
-    public MqttEndpoint resume() {
+    public MqttEndpointImpl resume() {
         return null;
     }
 
-    @Override
-    public MqttEndpoint pause() {
+    public MqttEndpointImpl pause() {
         return null;
     }
 
-    @Override
-    public MqttEndpoint handler(Handler<MqttMessage> handler) {
+    public MqttEndpointImpl handler(Handler<MqttMessage> handler) {
         return null;
     }
 
-    @Override
-    public MqttEndpoint exceptionHandler(Handler<Throwable> handler) {
+    public MqttEndpointImpl exceptionHandler(Handler<Throwable> handler) {
         return null;
     }
 

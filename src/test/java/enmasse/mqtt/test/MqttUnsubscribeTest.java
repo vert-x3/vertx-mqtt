@@ -88,14 +88,14 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
         endpoint.subscribeHandler(subscribe -> {
 
             List<Integer> qos = new ArrayList<>();
-            qos.add(subscribe.payload().topicSubscriptions().get(0).qualityOfService().value());
-            endpoint.writeSuback(subscribe.variableHeader().messageId(), qos);
+            qos.add(subscribe.topicSubscriptions().get(0).qualityOfService().value());
+            endpoint.writeSuback(subscribe.messageId(), qos);
 
             this.async.complete();
 
         }).unsubscribeHandler(unsubscribe -> {
 
-            endpoint.writeUnsuback(unsubscribe.variableHeader().messageId());
+            endpoint.writeUnsuback(unsubscribe.messageId());
 
             this.async.complete();
         });
