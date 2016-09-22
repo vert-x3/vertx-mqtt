@@ -23,14 +23,7 @@ import enmasse.mqtt.messages.MqttMessage;
 import enmasse.mqtt.messages.MqttPublishMessage;
 import enmasse.mqtt.messages.MqttSubscribeMessage;
 import enmasse.mqtt.messages.MqttUnsubscribeMessage;
-import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessageFactory;
-import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.*;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.ConnectionBase;
 

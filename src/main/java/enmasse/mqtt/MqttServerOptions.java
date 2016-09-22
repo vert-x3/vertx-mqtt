@@ -37,13 +37,23 @@ public class MqttServerOptions extends NetServerOptions {
         this.setPort(DEFAULT_PORT);
     }
 
+    /**
+     * Create an options from JSON
+     *
+     * @param json  the JSON
+     */
     public MqttServerOptions(JsonObject json) {
         super(json);
         // override the default port
-        this.setPort(DEFAULT_PORT);
+        this.setPort(json.getInteger("port", DEFAULT_PORT));
     }
 
-    public MqttServerOptions(NetServerOptions other) {
+    /**
+     * Copy constructor
+     *
+     * @param other the options to copy
+     */
+    public MqttServerOptions(MqttServerOptions other) {
         super(other);
         // override the default port
         this.setPort(DEFAULT_PORT);

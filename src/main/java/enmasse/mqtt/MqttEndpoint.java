@@ -16,7 +16,10 @@
 
 package enmasse.mqtt;
 
-import enmasse.mqtt.messages.*;
+import enmasse.mqtt.messages.MqttMessage;
+import enmasse.mqtt.messages.MqttPublishMessage;
+import enmasse.mqtt.messages.MqttSubscribeMessage;
+import enmasse.mqtt.messages.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
