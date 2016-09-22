@@ -112,12 +112,12 @@ public class MqttSubscribeTest extends MqttBaseTest {
             List<Integer> qos = new ArrayList<>();
 
             Integer grantedQos =
-                    subscribe.payload().topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
+                    subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
                             MqttQoS.FAILURE.value() :
-                            subscribe.payload().topicSubscriptions().get(0).qualityOfService().value();
+                            subscribe.topicSubscriptions().get(0).qualityOfService().value();
 
             qos.add(grantedQos);
-            endpoint.writeSuback(subscribe.variableHeader().messageId(), qos);
+            endpoint.writeSuback(subscribe.messageId(), qos);
 
             this.async.complete();
         });

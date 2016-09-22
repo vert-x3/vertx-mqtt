@@ -17,8 +17,8 @@
 package enmasse.mqtt.examples;
 
 import enmasse.mqtt.MqttServer;
+import enmasse.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -56,11 +56,11 @@ public class MqttApp {
                     endpoint.subscribeHandler(subscribe -> {
 
                         List<Integer> grantedQosLevels = new ArrayList<>();
-                        for (MqttTopicSubscription s: subscribe.payload().topicSubscriptions()) {
+                        for (MqttTopicSubscription s: subscribe.topicSubscriptions()) {
                             log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
                             grantedQosLevels.add(s.qualityOfService().value());
                         }
-                        endpoint.writeSuback(subscribe.variableHeader().messageId(), grantedQosLevels);
+                        endpoint.writeSuback(subscribe.messageId(), grantedQosLevels);
                     });
 
         })

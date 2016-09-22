@@ -17,6 +17,8 @@
 package enmasse.mqtt;
 
 import enmasse.mqtt.impl.MqttServerImpl;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -24,6 +26,7 @@ import io.vertx.core.Vertx;
 /**
  * An MQTT server
  */
+@VertxGen
 public interface MqttServer {
 
     /**
@@ -53,6 +56,7 @@ public interface MqttServer {
      *
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer listen();
 
     /**
@@ -62,6 +66,7 @@ public interface MqttServer {
      * @param host  the host to listen on
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer listen(int port, String host);
 
     /**
@@ -73,6 +78,7 @@ public interface MqttServer {
      * @param listenHandler handler called when the asynchronous listen call ends
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler);
 
     /**
@@ -82,6 +88,7 @@ public interface MqttServer {
      * @param port  the port to listen on
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer listen(int port);
 
     /**
@@ -92,6 +99,7 @@ public interface MqttServer {
      * @param listenHandler handler called when the asynchronous listen call ends
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler);
 
     /**
@@ -101,6 +109,7 @@ public interface MqttServer {
      * @param listenHandler handler called when the asynchronous listen call ends
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler);
 
     /**
@@ -110,22 +119,8 @@ public interface MqttServer {
      * @param handler   the endpoint handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttServer endpointHandler(Handler<MqttEndpoint> handler);
-
-    /**
-     * Return the endpoint handler
-     *
-     * @return  the endpoint handler
-     */
-    Handler<MqttEndpoint> endpointHandler();
-
-    /**
-     * Return the MQTT endpoint stream for the server. If an MQTT client connect to the server a
-     * new MqttEndpoint instance will be created and passed to the stream
-     *
-     * @return
-     */
-    MqttEndpointStream endpointStream();
 
     /**
      * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number

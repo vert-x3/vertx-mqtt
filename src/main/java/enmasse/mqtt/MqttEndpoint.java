@@ -16,14 +16,19 @@
 
 package enmasse.mqtt;
 
-import io.netty.handler.codec.mqtt.*;
+import enmasse.mqtt.messages.*;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.List;
+
 /**
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
  */
+@VertxGen
 public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttMessage> {
 
     @Override
@@ -140,7 +145,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param grantedQoSLevels  granted QoS levels for the requested topics
      * @return  a reference to this, so the API can be used fluently
      */
-    MqttEndpoint writeSuback(int subscribeMessageId, Iterable<Integer> grantedQoSLevels);
+    MqttEndpoint writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels);
 
     /**
      * Sends the UNSUBACK message to the remote MQTT client

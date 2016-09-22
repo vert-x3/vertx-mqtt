@@ -93,10 +93,10 @@ public class MqttPublishTest extends MqttBaseTest {
 
         endpoint.publishHandler(message -> {
 
-            System.out.println("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.fixedHeader().qosLevel() + "]");
+            System.out.println("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
-            if (message.fixedHeader().qosLevel() == MqttQoS.AT_LEAST_ONCE) {
-                endpoint.writePuback(message.variableHeader().messageId());
+            if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
+                endpoint.writePuback(message.messageId());
             }
 
             this.async.complete();

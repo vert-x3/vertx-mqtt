@@ -22,6 +22,11 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -49,8 +54,7 @@ public class MqttServerImpl implements MqttServer {
     private ServerBootstrap bootstrap;
     private Channel serverChannel;
     private final Map<Channel, MqttConnection> connectionMap = new ConcurrentHashMap<>();
-
-    private final MqttEndpointStreamImpl endpointStream = new MqttEndpointStreamImpl();
+    private Handler<MqttEndpoint> handler;
 
     private volatile int actualPort;
 
@@ -66,30 +70,20 @@ public class MqttServerImpl implements MqttServer {
         this.options = options;
     }
 
-    @Override
-    public MqttServer endpointHandler(Handler<MqttEndpoint> handler) {
-        this.endpointStream().handler(handler);
+    public MqttServerImpl endpointHandler(Handler<MqttEndpoint> handler) {
+        this.handler = handler;
         return this;
     }
 
-    @Override
-    public MqttEndpointStream endpointStream() { return this.endpointStream; }
+    public MqttServerImpl listen() { return this.listen(this.options.getPort(), this.options.getHost(), null); }
 
-    @Override
-    public Handler<MqttEndpoint> endpointHandler() { return this.endpointStream.handler(); }
-
-    @Override
-    public MqttServer listen() { return this.listen(this.options.getPort(), this.options.getHost(), null); }
-
-    @Override
-    public MqttServer listen(int port, String host) {
+    public MqttServerImpl listen(int port, String host) {
         return this.listen(port, host, null);
     }
 
-    @Override
-    public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
+    public MqttServerImpl listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
 
-        if (this.endpointStream.handler() == null) {
+        if (this.handler == null) {
             throw new IllegalStateException("Set the MQTT endpoint handler first");
         }
 
@@ -154,18 +148,14 @@ public class MqttServerImpl implements MqttServer {
         return this;
     }
 
-    @Override
-    public MqttServer listen(int port) {
+    public MqttServerImpl listen(int port) {
         return this.listen(port, "0.0.0.0", null);
     }
 
-    @Override
-    public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) { return this.listen(port, "0.0.0.0", listenHandler); }
+    public MqttServerImpl listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) { return this.listen(port, "0.0.0.0", listenHandler); }
 
-    @Override
-    public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) { return this.listen(this.options.getPort(), this.options.getHost(), listenHandler); }
+    public MqttServerImpl listen(Handler<AsyncResult<MqttServer>> listenHandler) { return this.listen(this.options.getPort(), this.options.getHost(), listenHandler); }
 
-    @Override
     public void close() {
 
         // close the server channel used for listening
@@ -180,7 +170,6 @@ public class MqttServerImpl implements MqttServer {
         }
     }
 
-    @Override
     public int actualPort() { return this.actualPort; }
 
     /**
@@ -259,7 +248,7 @@ public class MqttServerImpl implements MqttServer {
                         if (this.conn != null) {
 
                             MqttSubscribeMessage mqttSubscribeMessage = (MqttSubscribeMessage) mqttMessage;
-                            this.conn.handleSubscribe(mqttSubscribeMessage);
+                            this.conn.handleSubscribe(enmasse.mqtt.messages.MqttSubscribeMessage.create(mqttSubscribeMessage));
                         }
 
                         break;
@@ -269,7 +258,7 @@ public class MqttServerImpl implements MqttServer {
                         if (this.conn != null) {
 
                             MqttUnsubscribeMessage mqttUnsubscribeMessage = (MqttUnsubscribeMessage) mqttMessage;
-                            this.conn.handleUnsubscribe(mqttUnsubscribeMessage);
+                            this.conn.handleUnsubscribe(enmasse.mqtt.messages.MqttUnsubscribeMessage.create(mqttUnsubscribeMessage));
                         }
 
                         break;
@@ -279,7 +268,7 @@ public class MqttServerImpl implements MqttServer {
                         if (this.conn != null) {
 
                             MqttPublishMessage mqttPublishMessage = (MqttPublishMessage) mqttMessage;
-                            this.conn.handlePublish(mqttPublishMessage);
+                            this.conn.handlePublish(enmasse.mqtt.messages.MqttPublishMessage.create(mqttPublishMessage));
                         }
 
                         break;
@@ -310,7 +299,7 @@ public class MqttServerImpl implements MqttServer {
 
             // create the connection providing the handler
             MqttConnection mqttConn = new MqttConnection(vertx, ch, vertx.getOrCreateContext(), null);
-            mqttConn.endpointHandler(endpointStream.handler());
+            mqttConn.endpointHandler(handler);
 
             // retrieve will information from CONNECT message
             MqttWillImpl will = mqttConnectMessage.variableHeader().isWillFlag() ?
