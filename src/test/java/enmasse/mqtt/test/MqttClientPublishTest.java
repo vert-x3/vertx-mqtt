@@ -36,7 +36,7 @@ import java.nio.charset.Charset;
  * MQTT server testing about clients publish
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttPublishTest extends MqttBaseTest {
+public class MqttClientPublishTest extends MqttBaseTest {
 
     private Async async;
 

@@ -21,8 +21,10 @@ import enmasse.mqtt.messages.MqttPublishMessage;
 import enmasse.mqtt.messages.MqttSubscribeMessage;
 import enmasse.mqtt.messages.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -165,4 +167,16 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @return  a reference to this, so the API can be used fluently
      */
     MqttEndpoint writePuback(int publishMessageId);
+
+    /**
+     * Sends the PUBLISH message to the remote MQTT client
+     *
+     * @param topic topic on which the message is published
+     * @param payload   message payload
+     * @param qosLevel  quality of service level
+     * @param isDup if the message is a duplicate
+     * @param isRetain  if the message needs to be retained
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 }

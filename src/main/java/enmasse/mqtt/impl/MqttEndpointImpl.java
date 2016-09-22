@@ -23,8 +23,11 @@ import enmasse.mqtt.messages.MqttMessage;
 import enmasse.mqtt.messages.MqttPublishMessage;
 import enmasse.mqtt.messages.MqttSubscribeMessage;
 import enmasse.mqtt.messages.MqttUnsubscribeMessage;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.List;
@@ -191,6 +194,22 @@ public class MqttEndpointImpl implements MqttEndpoint {
         io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
         this.write(puback);
+
+        return this;
+    }
+
+    public MqttEndpointImpl writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
+        MqttPublishVariableHeader variableHeader =
+                new MqttPublishVariableHeader(topic, this.nextMessageId());
+
+        ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
+
+        io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
+
+        this.write(publish);
 
         return this;
     }
