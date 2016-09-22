@@ -278,6 +278,8 @@ public class MqttServerImpl implements MqttServer {
                             this.conn.handlePuback(mqttPubackMessage.variableHeader().messageId());
                         }
 
+                        break;
+
                     case PUBREC:
 
                         if (this.conn != null) {
@@ -285,6 +287,8 @@ public class MqttServerImpl implements MqttServer {
                             int pubrecMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
                             this.conn.handlePubrec(pubrecMessageId);
                         }
+
+                        break;
 
                     case PUBREL:
 
@@ -294,6 +298,8 @@ public class MqttServerImpl implements MqttServer {
                             this.conn.handlePubrel(pubrelMessageId);
                         }
 
+                        break;
+
                     case PUBCOMP:
 
                         if (this.conn != null) {
@@ -301,6 +307,8 @@ public class MqttServerImpl implements MqttServer {
                             int pubcompMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
                             this.conn.handlePubcomp(pubcompMessageId);
                         }
+
+                        break;
 
                     case DISCONNECT:
 
