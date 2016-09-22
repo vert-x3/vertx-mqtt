@@ -46,6 +46,12 @@ public interface MqttPublishMessage extends MqttMessage {
             public Buffer payload() {
         return Buffer.buffer(msg.payload());
       }
+
+            @Override
+            public boolean isDup() { return msg.fixedHeader().isDup(); }
+
+            @Override
+            public boolean isRetain() { return msg.fixedHeader().isRetain(); }
         };
     }
 
@@ -54,4 +60,8 @@ public interface MqttPublishMessage extends MqttMessage {
     MqttQoS qosLevel();
 
     Buffer payload();
+
+    boolean isDup();
+
+    boolean isRetain();
 }

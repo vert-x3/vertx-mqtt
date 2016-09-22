@@ -65,5 +65,4 @@ public interface MqttSubscribeMessage extends MqttMessage {
     int messageId();
 
     List<MqttTopicSubscription> topicSubscriptions();
-
 }
