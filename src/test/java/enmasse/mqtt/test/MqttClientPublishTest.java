@@ -67,6 +67,12 @@ public class MqttClientPublishTest extends MqttBaseTest {
         this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
     }
 
+    @Test
+    public void publishQos2(TestContext context) {
+
+        this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
+    }
+
     private void publish(TestContext context, String topic, String message, int qos) {
 
         this.async = context.async();
@@ -95,10 +101,28 @@ public class MqttClientPublishTest extends MqttBaseTest {
 
             System.out.println("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
-            if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
-                endpoint.writePuback(message.messageId());
+            switch (message.qosLevel()) {
+
+                case AT_LEAST_ONCE:
+
+                    endpoint.writePuback(message.messageId());
+                    this.async.complete();
+                    break;
+
+                case EXACTLY_ONCE:
+
+                    endpoint.writePubrec(message.messageId());
+                    break;
+
+                case AT_MOST_ONCE:
+
+                    this.async.complete();
+                    break;
             }
 
+        }).pubrelHandler(messageId -> {
+
+            endpoint.writePubcomp(messageId);
             this.async.complete();
         });
 

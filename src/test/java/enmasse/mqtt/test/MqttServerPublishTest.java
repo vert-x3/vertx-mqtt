@@ -67,6 +67,12 @@ public class MqttServerPublishTest extends MqttBaseTest {
         this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
     }
 
+    @Test
+    public void publishQos2(TestContext context) {
+
+        this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
+    }
+
     private void publish(TestContext context, String topic, String message, int qos) {
 
         this.async = context.async();
@@ -109,6 +115,13 @@ public class MqttServerPublishTest extends MqttBaseTest {
 
             endpoint.writePublish(MQTT_TOPIC, Buffer.buffer(MQTT_MESSAGE), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
         }).pubackHandler(messageId -> {
+
+            System.out.print("Message [" + messageId + "] acknowledged");
+            this.async.complete();
+        }).pubrecHandler(messageId -> {
+
+            endpoint.writePubrel(messageId);
+        }).pubcompHandler(messageId -> {
 
             System.out.print("Message [" + messageId + "] acknowledged");
             this.async.complete();
