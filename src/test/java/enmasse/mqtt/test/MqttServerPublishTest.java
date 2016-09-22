@@ -61,6 +61,12 @@ public class MqttServerPublishTest extends MqttBaseTest {
         this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0);
     }
 
+    @Test
+    public void publishQos1(TestContext context) {
+
+        this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
+    }
+
     private void publish(TestContext context, String topic, String message, int qos) {
 
         this.async = context.async();
@@ -76,7 +82,9 @@ public class MqttServerPublishTest extends MqttBaseTest {
                 public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
 
                     System.out.println("Just received message [" + mqttMessage.toString() + "] on topic [" + topic + "] with QoS [" + mqttMessage.getQos() + "]");
-                    async.complete();
+
+                    if (mqttMessage.getQos() == 0)
+                        async.complete();
                 }
             });
 
@@ -99,7 +107,11 @@ public class MqttServerPublishTest extends MqttBaseTest {
                     subscribe.topicSubscriptions().stream().map(sub -> { return sub.qualityOfService().value(); })
                             .collect(Collectors.toList()));
 
-            endpoint.writePublish(MQTT_TOPIC, Buffer.buffer(MQTT_MESSAGE), MqttQoS.AT_MOST_ONCE, false, false);
+            endpoint.writePublish(MQTT_TOPIC, Buffer.buffer(MQTT_MESSAGE), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+        }).pubackHandler(messageId -> {
+
+            System.out.print("Message [" + messageId + "] acknowledged");
+            this.async.complete();
         });
 
         endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);

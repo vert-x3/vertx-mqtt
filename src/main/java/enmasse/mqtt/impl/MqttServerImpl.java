@@ -270,6 +270,14 @@ public class MqttServerImpl implements MqttServer {
 
                         break;
 
+                    case PUBACK:
+
+                        if (this.conn != null) {
+
+                            MqttPubAckMessage mqttPubackMessage = (MqttPubAckMessage) mqttMessage;
+                            this.conn.handlePuback(mqttPubackMessage.variableHeader().messageId());
+                        }
+
                     case DISCONNECT:
 
                         if (this.conn != null) {

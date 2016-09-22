@@ -144,6 +144,15 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     MqttEndpoint publishHandler(Handler<MqttPublishMessage> handler);
 
     /**
+     * Set the puback handler on the MQTT endpoint. This handler is called when a PUBACK
+     * message is received by the remote MQTT client
+     *
+     * @param handler   the handler
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint pubackHandler(Handler<Integer> handler);
+
+    /**
      * Sends the SUBACK message to the remote MQTT client
      *
      * @param subscribeMessageId    identifier of the SUBSCRIBE message to acknowledge

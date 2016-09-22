@@ -55,6 +55,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private Handler<MqttUnsubscribeMessage> unsubscribeHandler;
     // handler to call when a publish message comes in
     private Handler<MqttPublishMessage> publishHandler;
+    // handler to call when a puback message comes in
+    private Handler<Integer> pubackHandler;
     // handler to call when a disconnect request comes in
     private Handler<Void> disconnectHandler;
 
@@ -150,6 +152,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             this.checkClosed();
             this.publishHandler = handler;
+            return this;
+        }
+    }
+
+    @Override
+    public MqttEndpoint pubackHandler(Handler<Integer> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.pubackHandler = handler;
             return this;
         }
     }
@@ -252,6 +264,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             if (this.publishHandler != null) {
                 this.publishHandler.handle(msg);
+            }
+        }
+    }
+
+    /**
+     * Used for calling the puback handler when the remote MQTT client acknowledge a QoS 1 message with puback
+     *
+     * @param pubackMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    public void handlePuback(int pubackMessageId) {
+
+        synchronized (this.conn) {
+            if (this.pubackHandler != null) {
+                this.pubackHandler.handle(pubackMessageId);
             }
         }
     }

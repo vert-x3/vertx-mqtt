@@ -105,10 +105,22 @@ public class MqttConnection extends ConnectionBase {
      *
      * @param msg   published message
      */
-    synchronized  void handlePublish(MqttPublishMessage msg) {
+    synchronized void handlePublish(MqttPublishMessage msg) {
 
         if (this.endpoint != null) {
             this.endpoint.handlePublish(msg);
+        }
+    }
+
+    /**
+     * Used for calling the puback handler when the remote MQTT client acknowledge a QoS 1 message with puback
+     *
+     * @param pubackMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    synchronized void handlePuback(int pubackMessageId) {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlePuback(pubackMessageId);
         }
     }
 
