@@ -278,6 +278,30 @@ public class MqttServerImpl implements MqttServer {
                             this.conn.handlePuback(mqttPubackMessage.variableHeader().messageId());
                         }
 
+                    case PUBREC:
+
+                        if (this.conn != null) {
+
+                            int pubrecMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
+                            this.conn.handlePubrec(pubrecMessageId);
+                        }
+
+                    case PUBREL:
+
+                        if (this.conn != null) {
+
+                            int pubrelMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
+                            this.conn.handlePubrel(pubrelMessageId);
+                        }
+
+                    case PUBCOMP:
+
+                        if (this.conn != null) {
+
+                            int pubcompMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
+                            this.conn.handlePubcomp(pubcompMessageId);
+                        }
+
                     case DISCONNECT:
 
                         if (this.conn != null) {

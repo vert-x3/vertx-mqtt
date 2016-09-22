@@ -57,6 +57,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private Handler<MqttPublishMessage> publishHandler;
     // handler to call when a puback message comes in
     private Handler<Integer> pubackHandler;
+    // handler to call when a pubrec message comes in
+    private Handler<Integer> pubrecHandler;
+    // handler to call when a pubrel message comes in
+    private Handler<Integer> pubrelHandler;
+    // handler to call when a pubcomp message comes in
+    private Handler<Integer> pubcompHandler;
     // handler to call when a disconnect request comes in
     private Handler<Void> disconnectHandler;
 
@@ -156,12 +162,38 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
-    @Override
-    public MqttEndpoint pubackHandler(Handler<Integer> handler) {
+    public MqttEndpointImpl pubackHandler(Handler<Integer> handler) {
 
         synchronized (this.conn) {
             this.checkClosed();
             this.pubackHandler = handler;
+            return this;
+        }
+    }
+
+    public MqttEndpointImpl pubrecHandler(Handler<Integer> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.pubrecHandler = handler;
+            return this;
+        }
+    }
+
+    public MqttEndpointImpl pubrelHandler(Handler<Integer> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.pubrelHandler = handler;
+            return this;
+        }
+    }
+
+    public MqttEndpointImpl pubcompHandler(Handler<Integer> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.pubcompHandler = handler;
             return this;
         }
     }
@@ -320,6 +352,48 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             if (this.pubackHandler != null) {
                 this.pubackHandler.handle(pubackMessageId);
+            }
+        }
+    }
+
+    /**
+     * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
+     *
+     * @param pubrecMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    public void handlePubrec(int pubrecMessageId) {
+
+        synchronized (this.conn) {
+            if (this.pubrecHandler != null) {
+                this.pubrecHandler.handle(pubrecMessageId);
+            }
+        }
+    }
+
+    /**
+     * Used for calling the pubrel handler when the remote MQTT client acknowledge a QoS 2 message with pubrel
+     *
+     * @param pubrelMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    public void handlePubrel(int pubrelMessageId) {
+
+        synchronized (this.conn) {
+            if (this.pubrelHandler != null) {
+                this.pubrelHandler.handle(pubrelMessageId);
+            }
+        }
+    }
+
+    /**
+     * Used for calling the pubcomp handler when the remote MQTT client acknowledge a QoS 2 message with pubcomp
+     *
+     * @param pubcompMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    public void handlePubcomp(int pubcompMessageId) {
+
+        synchronized (this.conn) {
+            if (this.pubcompHandler != null) {
+                this.pubcompHandler.handle(pubcompMessageId);
             }
         }
     }

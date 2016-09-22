@@ -125,6 +125,42 @@ public class MqttConnection extends ConnectionBase {
     }
 
     /**
+     * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
+     *
+     * @param pubrecMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    synchronized void handlePubrec(int pubrecMessageId) {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlePubrec(pubrecMessageId);
+        }
+    }
+
+    /**
+     * Used for calling the pubrel handler when the remote MQTT client acknowledge a QoS 2 message with pubrel
+     *
+     * @param pubrelMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    synchronized void handlePubrel(int pubrelMessageId) {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlePubrel(pubrelMessageId);
+        }
+    }
+
+    /**
+     * Used for calling the pubcomp handler when the remote MQTT client acknowledge a QoS 2 message with pubcomp
+     *
+     * @param pubcompMessageId   identifier of the message acknowledged by the remote MQTT client
+     */
+    synchronized void handlePubcomp(int pubcompMessageId) {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlePubcomp(pubcompMessageId);
+        }
+    }
+
+    /**
      * Used for calling the disconnect handler when the remote MQTT client disconnects
      */
     synchronized void handleDisconnect() {
