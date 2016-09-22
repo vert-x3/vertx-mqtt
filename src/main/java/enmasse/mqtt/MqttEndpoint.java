@@ -178,6 +178,30 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     MqttEndpoint writePuback(int publishMessageId);
 
     /**
+     * Sends the PUBREC message to the remote MQTT client
+     *
+     * @param publishMessageId  identifier of the PUBLISH message to acknowledge
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writePubrec(int publishMessageId);
+
+    /**
+     * Sends the PUBREL message to the remote MQTT client
+     *
+     * @param publishMessageId  identifier of the PUBLISH message to acknowledge
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writePubrel(int publishMessageId);
+
+    /**
+     * Sends the PUBCOMP message to the remote MQTT client
+     *
+     * @param publishMessageId  identifier of the PUBLISH message to acknowledge
+     * @return  a reference to this, so the API can be used fluently
+     */
+    MqttEndpoint writePubcomp(int publishMessageId);
+
+    /**
      * Sends the PUBLISH message to the remote MQTT client
      *
      * @param topic topic on which the message is published

@@ -210,6 +210,48 @@ public class MqttEndpointImpl implements MqttEndpoint {
         return this;
     }
 
+    public MqttEndpointImpl writePubrec(int publishMessageId) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttMessageIdVariableHeader variableHeader =
+                MqttMessageIdVariableHeader.from(publishMessageId);
+
+        io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+
+        this.write(pubrec);
+
+        return this;
+    }
+
+    public MqttEndpointImpl writePubrel(int publishMessageId) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttMessageIdVariableHeader variableHeader =
+                MqttMessageIdVariableHeader.from(publishMessageId);
+
+        io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+
+        this.write(pubrel);
+
+        return this;
+    }
+
+    public MqttEndpointImpl writePubcomp(int publishMessageId) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttMessageIdVariableHeader variableHeader =
+                MqttMessageIdVariableHeader.from(publishMessageId);
+
+        io.netty.handler.codec.mqtt.MqttMessage pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+
+        this.write(pubcomp);
+
+        return this;
+    }
+
     public MqttEndpointImpl writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
 
         MqttFixedHeader fixedHeader =
