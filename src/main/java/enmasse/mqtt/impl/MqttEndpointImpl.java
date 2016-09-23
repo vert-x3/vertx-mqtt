@@ -312,7 +312,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param msg   message with subscribe information
      */
-    public void handleSubscribe(MqttSubscribeMessage msg) {
+    void handleSubscribe(MqttSubscribeMessage msg) {
 
         synchronized (this.conn) {
             if (this.subscribeHandler != null) {
@@ -333,7 +333,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param msg   message with unsubscribe information
      */
-    public void handleUnsubscribe(MqttUnsubscribeMessage msg) {
+    void handleUnsubscribe(MqttUnsubscribeMessage msg) {
 
         synchronized (this.conn) {
             if (this.unsubscribeHandler != null) {
@@ -351,7 +351,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param msg   published message
      */
-    public void handlePublish(MqttPublishMessage msg) {
+    void handlePublish(MqttPublishMessage msg) {
 
         synchronized (this.conn) {
             if (this.publishHandler != null) {
@@ -379,7 +379,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param pubackMessageId   identifier of the message acknowledged by the remote MQTT client
      */
-    public void handlePuback(int pubackMessageId) {
+    void handlePuback(int pubackMessageId) {
 
         synchronized (this.conn) {
             if (this.pubackHandler != null) {
@@ -393,7 +393,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param pubrecMessageId   identifier of the message acknowledged by the remote MQTT client
      */
-    public void handlePubrec(int pubrecMessageId) {
+    void handlePubrec(int pubrecMessageId) {
 
         synchronized (this.conn) {
             if (this.pubrecHandler != null) {
@@ -411,7 +411,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param pubrelMessageId   identifier of the message acknowledged by the remote MQTT client
      */
-    public void handlePubrel(int pubrelMessageId) {
+    void handlePubrel(int pubrelMessageId) {
 
         synchronized (this.conn) {
             if (this.pubrelHandler != null) {
@@ -429,7 +429,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
      *
      * @param pubcompMessageId   identifier of the message acknowledged by the remote MQTT client
      */
-    public void handlePubcomp(int pubcompMessageId) {
+    void handlePubcomp(int pubcompMessageId) {
 
         synchronized (this.conn) {
             if (this.pubcompHandler != null) {
@@ -441,7 +441,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     /**
      * Used for calling the disconnect handler when the remote MQTT client disconnects
      */
-    public void handlerDisconnect() {
+    void handleDisconnect() {
 
         synchronized (this.conn) {
             if (this.disconnectHandler != null) {
@@ -491,7 +491,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     public MqttEndpointImpl write(MqttMessage mqttMessage) {
-        throw new UnsupportedOperationException("todo");
+        throw new UnsupportedOperationException("TODO");
     }
 
     public MqttEndpointImpl endHandler(Handler<Void> handler) {

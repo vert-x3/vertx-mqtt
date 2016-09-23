@@ -166,7 +166,7 @@ public class MqttConnection extends ConnectionBase {
     synchronized void handleDisconnect() {
 
         if (this.endpoint != null) {
-            this.endpoint.handlerDisconnect();
+            this.endpoint.handleDisconnect();
         }
     }
 }
