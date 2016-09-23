@@ -439,6 +439,22 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     /**
+     * Used internally for handling the pinreq from the remote MQTT client
+     */
+    void handlePingreq() {
+
+        synchronized (this.conn) {
+
+            MqttFixedHeader fixedHeader =
+                    new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);
+
+            io.netty.handler.codec.mqtt.MqttMessage pingresp = MqttMessageFactory.newMessage(fixedHeader, null, null);
+
+            this.write(pingresp);
+        }
+    }
+
+    /**
      * Used for calling the disconnect handler when the remote MQTT client disconnects
      */
     void handleDisconnect() {

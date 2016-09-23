@@ -161,6 +161,16 @@ public class MqttConnection extends ConnectionBase {
     }
 
     /**
+     * Used internally for handling the pinreq from the remote MQTT client
+     */
+    synchronized void handlePingreq() {
+
+        if (this.endpoint != null) {
+            this.endpoint.handlePingreq();
+        }
+    }
+
+    /**
      * Used for calling the disconnect handler when the remote MQTT client disconnects
      */
     synchronized void handleDisconnect() {
