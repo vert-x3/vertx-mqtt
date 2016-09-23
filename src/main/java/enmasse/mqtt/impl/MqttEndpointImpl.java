@@ -31,6 +31,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
@@ -70,6 +71,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     // counter for the message identifier
     private int messageIdCounter;
 
+    private boolean isAutoAck;
+
     /**
      * Constructor
      *
@@ -106,6 +109,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     public int protocolVersion() { return this.protocolVersion; }
+
+    public void autoAck(boolean isAutoAck) { this.isAutoAck = isAutoAck; }
+
+    public boolean isAutoAck() { return this.isAutoAck; }
 
     public MqttEndpointImpl writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
 
@@ -311,6 +318,13 @@ public class MqttEndpointImpl implements MqttEndpoint {
             if (this.subscribeHandler != null) {
                 this.subscribeHandler.handle(msg);
             }
+
+            // with auto ack enabled, the requested QoS levels are granted
+            if (this.isAutoAck) {
+                this.writeSuback(msg.messageId(), msg.topicSubscriptions().stream().map(t -> {
+                    return t.qualityOfService().value();
+                }).collect(Collectors.toList()));
+            }
         }
     }
 
@@ -325,6 +339,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
             if (this.unsubscribeHandler != null) {
                 this.unsubscribeHandler.handle(msg);
             }
+
+            if (this.isAutoAck) {
+                this.writeUnsuback(msg.messageId());
+            }
         }
     }
 
@@ -338,6 +356,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             if (this.publishHandler != null) {
                 this.publishHandler.handle(msg);
+            }
+
+            if (this.isAutoAck) {
+
+                switch (msg.qosLevel()) {
+
+                    case AT_LEAST_ONCE:
+                        this.writePuback(msg.messageId());
+                        break;
+
+                    case EXACTLY_ONCE:
+                        this.writePubrec(msg.messageId());
+                        break;
+                }
             }
         }
     }
@@ -367,6 +399,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
             if (this.pubrecHandler != null) {
                 this.pubrecHandler.handle(pubrecMessageId);
             }
+
+            if (this.isAutoAck) {
+                this.writePubrel(pubrecMessageId);
+            }
         }
     }
 
@@ -380,6 +416,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             if (this.pubrelHandler != null) {
                 this.pubrelHandler.handle(pubrelMessageId);
+            }
+
+            if (this.isAutoAck) {
+                this.writePubcomp(pubrelMessageId);
             }
         }
     }

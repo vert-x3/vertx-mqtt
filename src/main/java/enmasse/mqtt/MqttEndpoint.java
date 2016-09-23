@@ -99,6 +99,20 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     boolean isCleanSession();
 
     /**
+     * Enable/disable auto acknowledge
+     *
+     * @param isAutoAck auto acknowledge status
+     */
+    void autoAck(boolean isAutoAck);
+
+    /**
+     * Return auto acknowledge status
+     *
+     * @return
+     */
+    boolean isAutoAck();
+
+    /**
      * Sends the CONNACK message to the remote MQTT client
      *
      * @param connectReturnCode     the connect return code
