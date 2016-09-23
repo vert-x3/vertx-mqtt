@@ -310,6 +310,20 @@ public class MqttServerImpl implements MqttServer {
 
                         break;
 
+                    case PINGREQ:
+
+                        if (this.conn != null) {
+
+                            MqttFixedHeader fixedHeader =
+                                    new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);
+
+                            MqttMessage pingresp = MqttMessageFactory.newMessage(fixedHeader, null, null);
+
+                            this.ch.writeAndFlush(pingresp);
+                        }
+
+                        break;
+
                     case DISCONNECT:
 
                         if (this.conn != null) {
