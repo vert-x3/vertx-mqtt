@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -381,6 +382,18 @@ public class MqttServerImpl implements MqttServer {
 
             this.conn = mqttConn;
             this.connectionMap.put(ch, mqttConn);
+
+
+            // keep alive == 0 means NO keep alive, no timeout to handle
+            if (mqttConnectMessage.variableHeader().keepAliveTimeSeconds() != 0) {
+
+                // the server waits for one and a half times the keep alive time period (MQTT spec)
+                int timeout = mqttConnectMessage.variableHeader().keepAliveTimeSeconds() +
+                        mqttConnectMessage.variableHeader().keepAliveTimeSeconds() / 2;
+
+                // modifying the channel pipeline for adding the idle state handler with previous timeout
+                this.ch.pipeline().addBefore("mqttHandler", "idle", new IdleStateHandler(0, 0, timeout));
+            }
         }
     }
 }
