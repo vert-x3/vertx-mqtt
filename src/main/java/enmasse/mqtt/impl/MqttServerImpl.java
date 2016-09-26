@@ -235,98 +235,15 @@ public class MqttServerImpl implements MqttServer {
                     case CONNECT:
 
                         if (this.conn == null) {
-
                             this.createConnAndHandle(this.ch, mqttMessage);
                         }
-
                         break;
 
-                    case SUBSCRIBE:
+                    default:
 
                         if (this.conn != null) {
-
-                            MqttSubscribeMessage mqttSubscribeMessage = (MqttSubscribeMessage) mqttMessage;
-                            this.conn.handleSubscribe(enmasse.mqtt.messages.MqttSubscribeMessage.create(mqttSubscribeMessage));
+                            this.conn.handleMessage(mqttMessage);
                         }
-
-                        break;
-
-                    case UNSUBSCRIBE:
-
-                        if (this.conn != null) {
-
-                            MqttUnsubscribeMessage mqttUnsubscribeMessage = (MqttUnsubscribeMessage) mqttMessage;
-                            this.conn.handleUnsubscribe(enmasse.mqtt.messages.MqttUnsubscribeMessage.create(mqttUnsubscribeMessage));
-                        }
-
-                        break;
-
-                    case PUBLISH:
-
-                        if (this.conn != null) {
-
-                            MqttPublishMessage mqttPublishMessage = (MqttPublishMessage) mqttMessage;
-                            this.conn.handlePublish(enmasse.mqtt.messages.MqttPublishMessage.create(mqttPublishMessage));
-                        }
-
-                        break;
-
-                    case PUBACK:
-
-                        if (this.conn != null) {
-
-                            MqttPubAckMessage mqttPubackMessage = (MqttPubAckMessage) mqttMessage;
-                            this.conn.handlePuback(mqttPubackMessage.variableHeader().messageId());
-                        }
-
-                        break;
-
-                    case PUBREC:
-
-                        if (this.conn != null) {
-
-                            int pubrecMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-                            this.conn.handlePubrec(pubrecMessageId);
-                        }
-
-                        break;
-
-                    case PUBREL:
-
-                        if (this.conn != null) {
-
-                            int pubrelMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-                            this.conn.handlePubrel(pubrelMessageId);
-                        }
-
-                        break;
-
-                    case PUBCOMP:
-
-                        if (this.conn != null) {
-
-                            int pubcompMessageId = ((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-                            this.conn.handlePubcomp(pubcompMessageId);
-                        }
-
-                        break;
-
-                    case PINGREQ:
-
-                        if (this.conn != null) {
-
-                            this.conn.handlePingreq();
-                        }
-
-                        break;
-
-                    case DISCONNECT:
-
-                        if (this.conn != null) {
-
-                            this.conn.handleDisconnect();
-                        }
-
                         break;
                 }
 

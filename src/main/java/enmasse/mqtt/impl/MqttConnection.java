@@ -21,6 +21,9 @@ import enmasse.mqtt.messages.MqttPublishMessage;
 import enmasse.mqtt.messages.MqttSubscribeMessage;
 import enmasse.mqtt.messages.MqttUnsubscribeMessage;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -61,6 +64,74 @@ public class MqttConnection extends ConnectionBase {
 
     synchronized void endpointHandler(Handler<MqttEndpoint> handler) {
         this.endpointHandler = handler;
+    }
+
+    /**
+     * Handle the MQTT message received by the remote MQTT client
+     *
+     * @param msg
+     */
+    synchronized void handleMessage(MqttMessage msg) {
+
+        switch (msg.fixedHeader().messageType()) {
+
+            case SUBSCRIBE:
+
+                io.netty.handler.codec.mqtt.MqttSubscribeMessage mqttSubscribeMessage = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) msg;
+                this.handleSubscribe(MqttSubscribeMessage.create(mqttSubscribeMessage));
+                break;
+
+            case UNSUBSCRIBE:
+
+                io.netty.handler.codec.mqtt.MqttUnsubscribeMessage mqttUnsubscribeMessage = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) msg;
+                this.handleUnsubscribe(MqttUnsubscribeMessage.create(mqttUnsubscribeMessage));
+                break;
+
+            case PUBLISH:
+
+                io.netty.handler.codec.mqtt.MqttPublishMessage mqttPublishMessage = (io.netty.handler.codec.mqtt.MqttPublishMessage) msg;
+                this.handlePublish(MqttPublishMessage.create(mqttPublishMessage));
+                break;
+
+            case PUBACK:
+
+                MqttPubAckMessage mqttPubackMessage = (MqttPubAckMessage) msg;
+                this.handlePuback(mqttPubackMessage.variableHeader().messageId());
+                break;
+
+            case PUBREC:
+
+                int pubrecMessageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
+                this.handlePubrec(pubrecMessageId);
+                break;
+
+            case PUBREL:
+
+                int pubrelMessageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
+                this.handlePubrel(pubrelMessageId);
+                break;
+
+            case PUBCOMP:
+
+                int pubcompMessageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
+                this.handlePubcomp(pubcompMessageId);
+                break;
+
+            case PINGREQ:
+
+                this.handlePingreq();
+                break;
+
+            case DISCONNECT:
+
+                this.handleDisconnect();
+                break;
+
+            default:
+
+                this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
+                break;
+        }
     }
 
     /**
