@@ -43,23 +43,17 @@ public class MqttWillImpl implements MqttWill {
         this.isWillRetain = isWillRetain;
     }
 
-    @Override
     public String willTopic() {
         return this.willTopic;
     }
 
-    @Override
     public String willMessage() {
         return this.willMessage;
     }
 
-    @Override
     public int willQos() {
         return this.willQos;
     }
 
-    @Override
-    public boolean isWillRetain() {
-        return this.isWillRetain;
-    }
+    public boolean isWillRetain() { return this.isWillRetain; }
 }

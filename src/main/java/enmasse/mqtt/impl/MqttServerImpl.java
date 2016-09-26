@@ -19,7 +19,11 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttEndpoint;
 import enmasse.mqtt.MqttServer;
 import enmasse.mqtt.MqttServerOptions;
+import enmasse.mqtt.messages.MqttPublishMessageImpl;
+import enmasse.mqtt.messages.MqttSubscribeMessageImpl;
+import enmasse.mqtt.messages.MqttUnsubscribeMessageImpl;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -216,6 +220,37 @@ public class MqttServerImpl implements MqttServer {
         protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
 
             // TODO build a safe MQTT message object from this one ?
+
+            if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
+
+                io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
+
+                switch (mqttMessage.fixedHeader().messageType()) {
+
+                    case SUBSCRIBE:
+
+                        io.netty.handler.codec.mqtt.MqttSubscribeMessage mqttSubscribeMessage = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
+                        return new MqttSubscribeMessageImpl(mqttSubscribeMessage.variableHeader().messageId(), mqttSubscribeMessage.payload().topicSubscriptions());
+
+                    case UNSUBSCRIBE:
+
+                        io.netty.handler.codec.mqtt.MqttUnsubscribeMessage mqttUnsubscribeMessage = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
+                        return new MqttUnsubscribeMessageImpl(mqttUnsubscribeMessage.variableHeader().messageId(), mqttUnsubscribeMessage.payload().topics());
+
+
+                    case PUBLISH:
+
+                        io.netty.handler.codec.mqtt.MqttPublishMessage mqttPublishMessage = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
+                        ByteBuf newBuf = safeBuffer(mqttPublishMessage.payload(), allocator);
+                        return new MqttPublishMessageImpl(mqttPublishMessage.variableHeader().messageId(),
+                                mqttPublishMessage.fixedHeader().qosLevel(),
+                                mqttPublishMessage.fixedHeader().isDup(),
+                                mqttPublishMessage.fixedHeader().isRetain(),
+                                newBuf);
+                }
+            }
+
+
             return msg;
         }
 
@@ -229,9 +264,9 @@ public class MqttServerImpl implements MqttServer {
          */
         private void doMessageReceived(MqttConnection connection, ChannelHandlerContext chctx, Object msg) throws Exception {
 
-            if (msg instanceof MqttMessage) {
+            if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
-                MqttMessage mqttMessage = (MqttMessage) msg;
+                io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
 
                 switch (mqttMessage.fixedHeader().messageType()) {
 
@@ -250,6 +285,11 @@ public class MqttServerImpl implements MqttServer {
                         break;
                 }
 
+            } else {
+
+                if (this.conn != null) {
+                    this.conn.handleMessage(msg);
+                }
             }
 
         }

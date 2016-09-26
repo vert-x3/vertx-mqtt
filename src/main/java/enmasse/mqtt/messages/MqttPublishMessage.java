@@ -17,7 +17,6 @@
 package enmasse.mqtt.messages;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 
@@ -27,41 +26,29 @@ import io.vertx.core.buffer.Buffer;
 @VertxGen
 public interface MqttPublishMessage extends MqttMessage {
 
-    @GenIgnore
-    static MqttPublishMessage create(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
-
-        return new MqttPublishMessage() {
-
-            @Override
-            public int messageId() {
-        return msg.variableHeader().messageId();
-      }
-
-            @Override
-            public MqttQoS qosLevel() {
-        return msg.fixedHeader().qosLevel();
-      }
-
-            @Override
-            public Buffer payload() {
-        return Buffer.buffer(msg.payload());
-      }
-
-            @Override
-            public boolean isDup() { return msg.fixedHeader().isDup(); }
-
-            @Override
-            public boolean isRetain() { return msg.fixedHeader().isRetain(); }
-        };
-    }
-
     int messageId();
 
+    /**
+     * Quality of service level
+     * @return
+     */
     MqttQoS qosLevel();
 
-    Buffer payload();
-
+    /**
+     * If the message is a duplicate
+     * @return
+     */
     boolean isDup();
 
+    /**
+     * If the message needs to be retained
+     * @return
+     */
     boolean isRetain();
+
+    /**
+     * Payload message
+     * @return
+     */
+    Buffer payload();
 }

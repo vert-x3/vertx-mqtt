@@ -36,13 +36,9 @@ public class MqttAuthImpl implements MqttAuth {
         this.password = password;
     }
 
-    @Override
     public String userName() {
         return this.userName;
     }
 
-    @Override
-    public String password() {
-        return this.password;
-    }
+    public String password() { return this.password; }
 }

@@ -18,7 +18,6 @@ package enmasse.mqtt.test;
 
 import enmasse.mqtt.MqttEndpoint;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;

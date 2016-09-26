@@ -46,7 +46,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     // information about connected remote MQTT client (from CONNECT message)
     private final String clientIdentifier;
     private final MqttAuthImpl auth;
-    private final MqttWill will;
+    private final MqttWillImpl will;
     private final boolean isCleanSession;
     private final int protocolVersion;
 
