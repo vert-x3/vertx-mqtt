@@ -16,6 +16,7 @@
 
 package enmasse.mqtt.messages;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 
 import java.util.List;
@@ -26,7 +27,17 @@ import java.util.List;
 @VertxGen
 public interface MqttUnsubscribeMessage extends MqttMessage {
 
-    int messageId();
+    /**
+     * Create a concrete instance of a Vert.x unsubscribe message
+     *
+     * @param messageId message identifier
+     * @param topics    list of topics to unsubscribe
+     */
+    @GenIgnore
+    static MqttUnsubscribeMessageImpl create(int messageId, List<String> topics) {
+
+        return new MqttUnsubscribeMessageImpl(messageId, topics);
+    }
 
     /**
      * List of topics to unsubscribe

@@ -17,6 +17,7 @@
 package enmasse.mqtt.messages;
 
 import enmasse.mqtt.MqttTopicSubscription;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 
 import java.util.List;
@@ -27,7 +28,18 @@ import java.util.List;
 @VertxGen
 public interface MqttSubscribeMessage extends MqttMessage {
 
-    int messageId();
+    /**
+     * Create a concrete instance of a Vert.x subscribe message
+     *
+     * @param messageId message identifier
+     * @param topicSubscriptions    list with topics and related quality of service levels (from Netty)
+     * @return  Vert.x subscribe message
+     */
+    @GenIgnore
+    static MqttSubscribeMessageImpl create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
+
+        return new MqttSubscribeMessageImpl(messageId, topicSubscriptions);
+    }
 
     /**
      * List with topics and related quolity of service levels

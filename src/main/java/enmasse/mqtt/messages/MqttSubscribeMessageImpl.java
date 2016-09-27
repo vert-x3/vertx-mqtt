@@ -18,7 +18,6 @@ package enmasse.mqtt.messages;
 
 import enmasse.mqtt.MqttTopicSubscription;
 import enmasse.mqtt.impl.MqttTopicSubscriptionImpl;
-import io.vertx.codegen.annotations.GenIgnore;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,7 +36,7 @@ public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
      * @param messageId message identifier
      * @param topicSubscriptions    list with topics and related quality of service levels (from Netty)
      */
-    public MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
+    MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
 
         this.messageId = messageId;
         this.topicSubscriptions = topicSubscriptions.stream().map(ts -> {
@@ -45,18 +44,6 @@ public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
             return new MqttTopicSubscriptionImpl(ts.topicName(), ts.qualityOfService());
 
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * Create a Vert.x subscribe message starting from a Netty one
-     *
-     * @param msg   Netty subscribe message instance
-     * @return  instance of Vert.x subscribe message
-     */
-    @GenIgnore
-    static MqttSubscribeMessageImpl create(io.netty.handler.codec.mqtt.MqttSubscribeMessage msg) {
-
-        return new MqttSubscribeMessageImpl(msg.variableHeader().messageId(), msg.payload().topicSubscriptions());
     }
 
     public int messageId() { return this.messageId; }

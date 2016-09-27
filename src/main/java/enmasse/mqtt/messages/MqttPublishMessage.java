@@ -16,7 +16,9 @@
 
 package enmasse.mqtt.messages;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 
@@ -26,7 +28,21 @@ import io.vertx.core.buffer.Buffer;
 @VertxGen
 public interface MqttPublishMessage extends MqttMessage {
 
-    int messageId();
+    /**
+     * Create a concrete instance of a Vert.x publish message
+     *
+     * @param messageId message identifier
+     * @param qosLevel  quality of service level
+     * @param isDup if the message is a duplicate
+     * @param isRetain if the message needs to be retained
+     * @param payload   payload message
+     * @return  Vert.x publish message
+     */
+    @GenIgnore
+    static MqttPublishMessageImpl create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
+
+        return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, payload);
+    }
 
     /**
      * Quality of service level

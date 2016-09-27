@@ -18,7 +18,6 @@ package enmasse.mqtt.messages;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 
 /**
@@ -41,23 +40,12 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
      * @param isRetain if the message needs to be retained
      * @param payload   payload message
      */
-    public MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
+    MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
         this.messageId = messageId;
         this.qosLevel = qosLevel;
         this.isDup = isDup;
         this.isRetain = isRetain;
         this.payload = Buffer.buffer(payload);
-    }
-
-    @GenIgnore
-    static MqttPublishMessageImpl create(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
-
-        return new MqttPublishMessageImpl(msg.variableHeader().messageId(),
-                msg.fixedHeader().qosLevel(),
-                msg.fixedHeader().isDup(),
-                msg.fixedHeader().isRetain(),
-                msg.payload());
-
     }
 
     public int messageId() { return this.messageId; }

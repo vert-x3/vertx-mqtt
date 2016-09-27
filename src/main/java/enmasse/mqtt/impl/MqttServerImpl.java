@@ -19,9 +19,7 @@ package enmasse.mqtt.impl;
 import enmasse.mqtt.MqttEndpoint;
 import enmasse.mqtt.MqttServer;
 import enmasse.mqtt.MqttServerOptions;
-import enmasse.mqtt.messages.MqttPublishMessageImpl;
-import enmasse.mqtt.messages.MqttSubscribeMessageImpl;
-import enmasse.mqtt.messages.MqttUnsubscribeMessageImpl;
+import enmasse.mqtt.messages.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -219,8 +217,6 @@ public class MqttServerImpl implements MqttServer {
         @Override
         protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
 
-            // TODO build a safe MQTT message object from this one ?
-
             if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
                 io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
@@ -230,26 +226,28 @@ public class MqttServerImpl implements MqttServer {
                     case SUBSCRIBE:
 
                         io.netty.handler.codec.mqtt.MqttSubscribeMessage mqttSubscribeMessage = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
-                        return new MqttSubscribeMessageImpl(mqttSubscribeMessage.variableHeader().messageId(), mqttSubscribeMessage.payload().topicSubscriptions());
+
+                        return MqttSubscribeMessage.create(mqttSubscribeMessage.variableHeader().messageId(), mqttSubscribeMessage.payload().topicSubscriptions());
 
                     case UNSUBSCRIBE:
 
                         io.netty.handler.codec.mqtt.MqttUnsubscribeMessage mqttUnsubscribeMessage = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
-                        return new MqttUnsubscribeMessageImpl(mqttUnsubscribeMessage.variableHeader().messageId(), mqttUnsubscribeMessage.payload().topics());
+
+                        return MqttUnsubscribeMessage.create(mqttUnsubscribeMessage.variableHeader().messageId(), mqttUnsubscribeMessage.payload().topics());
 
 
                     case PUBLISH:
 
                         io.netty.handler.codec.mqtt.MqttPublishMessage mqttPublishMessage = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
                         ByteBuf newBuf = safeBuffer(mqttPublishMessage.payload(), allocator);
-                        return new MqttPublishMessageImpl(mqttPublishMessage.variableHeader().messageId(),
+
+                        return MqttPublishMessage.create(mqttPublishMessage.variableHeader().messageId(),
                                 mqttPublishMessage.fixedHeader().qosLevel(),
                                 mqttPublishMessage.fixedHeader().isDup(),
                                 mqttPublishMessage.fixedHeader().isRetain(),
                                 newBuf);
                 }
             }
-
 
             return msg;
         }

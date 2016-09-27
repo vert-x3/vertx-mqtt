@@ -16,8 +16,6 @@
 
 package enmasse.mqtt.messages;
 
-import io.vertx.codegen.annotations.GenIgnore;
-
 import java.util.List;
 
 /**
@@ -34,22 +32,10 @@ public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
      * @param messageId message identifier
      * @param topics    list of topics to unsubscribe
      */
-    public MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
+    MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
 
         this.messageId = messageId;
         this.topics = topics;
-    }
-
-    /**
-     * Create a Vert.x unsubscribe message starting from a Netty one
-     *
-     * @param msg   Netty unsubscribe message instance
-     * @return  instance of Vert.x unsubscribe message
-     */
-    @GenIgnore
-    static MqttUnsubscribeMessageImpl create(io.netty.handler.codec.mqtt.MqttUnsubscribeMessage msg) {
-
-        return new MqttUnsubscribeMessageImpl(msg.variableHeader().messageId(), msg.payload().topics());
     }
 
     public int messageId() { return this.messageId; }
