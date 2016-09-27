@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>enmasse</groupId>
-    <artifactId>mqtt-server</artifactId>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-mqtt-server</artifactId>
     <version>1.0-SNAPSHOT</version>
     <build>
         <pluginManagement>
@@ -50,8 +50,8 @@
         </pluginManagement>
     </build>
 
-    <name>MQTT server</name>
-    <description>MQTT server</description>
+    <name>Vert.x MQTT server</name>
+    <description>Vert.x MQTT server</description>
 
     <properties>
         <netty.version>4.1.5.Final</netty.version>
