@@ -22,6 +22,8 @@ import enmasse.mqtt.messages.MqttSubscribeMessage;
 import enmasse.mqtt.messages.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -72,30 +74,35 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * Client identifier as provided by the remote MQTT client
      * @return
      */
+    @CacheReturn
     String clientIdentifier();
 
     /**
      * Authentication information as provided by the remote MQTT client
      * @return
      */
+    @CacheReturn
     MqttAuth auth();
 
     /**
      * Will information as provided by the remote MQTT client
      * @return
      */
+    @CacheReturn
     MqttWill will();
 
     /**
      * Protocol version required by the remote MQTT client
      * @return
      */
+    @CacheReturn
     int protocolVersion();
 
     /**
      * If clean session is requested by the remote MQTT client
      * @return
      */
+    @CacheReturn
     boolean isCleanSession();
 
     /**
@@ -113,21 +120,13 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     boolean isAutoAck();
 
     /**
-     * Sends the CONNACK message to the remote MQTT client
-     *
-     * @param connectReturnCode     the connect return code
-     * @param sessionPresent        if a previous session is present
-     * @return  a reference to this, so the API can be used fluently
-     */
-    MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent);
-
-    /**
      * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT
      * message is received by the remote MQTT client
      *
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint disconnectHandler(Handler<Void> handler);
 
     /**
@@ -137,6 +136,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint subscribeHandler(Handler<MqttSubscribeMessage> handler);
 
     /**
@@ -146,6 +146,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint unsubscribeHandler(Handler<MqttUnsubscribeMessage> handler);
 
     /**
@@ -155,6 +156,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint publishHandler(Handler<MqttPublishMessage> handler);
 
     /**
@@ -164,6 +166,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint pubackHandler(Handler<Integer> handler);
 
     /**
@@ -173,6 +176,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint pubrecHandler(Handler<Integer> handler);
 
     /**
@@ -182,6 +186,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint pubrelHandler(Handler<Integer> handler);
 
     /**
@@ -191,7 +196,18 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param handler   the handler
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint pubcompHandler(Handler<Integer> handler);
+
+    /**
+     * Sends the CONNACK message to the remote MQTT client
+     *
+     * @param connectReturnCode     the connect return code
+     * @param sessionPresent        if a previous session is present
+     * @return  a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent);
 
     /**
      * Sends the SUBACK message to the remote MQTT client
@@ -200,6 +216,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param grantedQoSLevels  granted QoS levels for the requested topics
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels);
 
     /**
@@ -208,6 +225,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param unsubscribeMessageId    identifier of the UNSUBSCRIBE message to acknowledge
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writeUnsuback(int unsubscribeMessageId);
 
     /**
@@ -216,6 +234,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param publishMessageId  identifier of the PUBLISH message to acknowledge
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writePuback(int publishMessageId);
 
     /**
@@ -224,6 +243,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param publishMessageId  identifier of the PUBLISH message to acknowledge
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writePubrec(int publishMessageId);
 
     /**
@@ -232,6 +252,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param publishMessageId  identifier of the PUBLISH message to acknowledge
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writePubrel(int publishMessageId);
 
     /**
@@ -240,6 +261,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param publishMessageId  identifier of the PUBLISH message to acknowledge
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writePubcomp(int publishMessageId);
 
     /**
@@ -252,5 +274,6 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @param isRetain  if the message needs to be retained
      * @return  a reference to this, so the API can be used fluently
      */
+    @Fluent
     MqttEndpoint writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 }
