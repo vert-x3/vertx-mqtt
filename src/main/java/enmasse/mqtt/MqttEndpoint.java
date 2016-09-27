@@ -106,18 +106,32 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     boolean isCleanSession();
 
     /**
-     * Enable/disable auto acknowledge
+     * Enable/disable subscription/unsubscription requests auto acknowledge
      *
-     * @param isAutoAck auto acknowledge status
+     * @param isSubscriptionAutoAck auto acknowledge status
      */
-    void autoAck(boolean isAutoAck);
+    void subscriptionAutoAck(boolean isSubscriptionAutoAck);
 
     /**
-     * Return auto acknowledge status
+     * Return auto acknowledge status for subscription/unsubscription requests
      *
      * @return
      */
-    boolean isAutoAck();
+    boolean isSubscriptionAutoAck();
+
+    /**
+     * Enable/disable publishing (in/out) auto acknowledge
+     *
+     * @param isPublishAutoAck auto acknowledge status
+     */
+    void publishAutoAck(boolean isPublishAutoAck);
+
+    /**
+     * Return auto acknowledge status for publishing (in/out)
+     *
+     * @return
+     */
+    boolean isPublishAutoAck();
 
     /**
      * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT

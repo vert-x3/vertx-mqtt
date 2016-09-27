@@ -29,6 +29,7 @@ import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -60,6 +61,7 @@ public class MqttServerImpl implements MqttServer {
     private Handler<MqttEndpoint> handler;
 
     private volatile int actualPort;
+    private boolean logEnabled;
 
     /**
      * Constructor
@@ -71,6 +73,7 @@ public class MqttServerImpl implements MqttServer {
 
         this.vertx = (VertxInternal) vertx;
         this.options = options;
+        this.logEnabled = options.getLogActivity();
     }
 
     public MqttServerImpl endpointHandler(Handler<MqttEndpoint> handler) {
@@ -113,6 +116,9 @@ public class MqttServerImpl implements MqttServer {
             protected void initChannel(Channel channel) throws Exception {
 
                 ChannelPipeline pipeline = channel.pipeline();
+                if (logEnabled) {
+                    pipeline.addLast("logging", new LoggingHandler());
+                }
                 pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
                 pipeline.addLast("mqttDecoder", new MqttDecoder());
                 pipeline.addLast("mqttHandler", new MqttServerHandler(pipeline.channel()));
@@ -227,31 +233,31 @@ public class MqttServerImpl implements MqttServer {
 
                     case SUBSCRIBE:
 
-                        io.netty.handler.codec.mqtt.MqttSubscribeMessage mqttSubscribeMessage = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
+                        io.netty.handler.codec.mqtt.MqttSubscribeMessage subscribe = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
 
                         return MqttSubscribeMessage.create(
-                                mqttSubscribeMessage.variableHeader().messageId(),
-                                mqttSubscribeMessage.payload().topicSubscriptions());
+                                subscribe.variableHeader().messageId(),
+                                subscribe.payload().topicSubscriptions());
 
                     case UNSUBSCRIBE:
 
-                        io.netty.handler.codec.mqtt.MqttUnsubscribeMessage mqttUnsubscribeMessage = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
+                        io.netty.handler.codec.mqtt.MqttUnsubscribeMessage unsubscribe = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
 
                         return MqttUnsubscribeMessage.create(
-                                mqttUnsubscribeMessage.variableHeader().messageId(),
-                                mqttUnsubscribeMessage.payload().topics());
+                                unsubscribe.variableHeader().messageId(),
+                                unsubscribe.payload().topics());
 
 
                     case PUBLISH:
 
-                        io.netty.handler.codec.mqtt.MqttPublishMessage mqttPublishMessage = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-                        ByteBuf newBuf = safeBuffer(mqttPublishMessage.payload(), allocator);
+                        io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
+                        ByteBuf newBuf = safeBuffer(publish.payload(), allocator);
 
                         return MqttPublishMessage.create(
-                                mqttPublishMessage.variableHeader().messageId(),
-                                mqttPublishMessage.fixedHeader().qosLevel(),
-                                mqttPublishMessage.fixedHeader().isDup(),
-                                mqttPublishMessage.fixedHeader().isRetain(),
+                                publish.variableHeader().messageId(),
+                                publish.fixedHeader().qosLevel(),
+                                publish.fixedHeader().isDup(),
+                                publish.fixedHeader().isRetain(),
                                 newBuf);
                 }
             }

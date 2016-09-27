@@ -72,8 +72,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private boolean closed;
     // counter for the message identifier
     private int messageIdCounter;
-    // if the endpoint handles the acknowledgement automatically
-    private boolean isAutoAck;
+    // if the endpoing handles subscription/unsubscription requests with auto acknowledge
+    private boolean isSubscriptionAutoAck;
+    // if the endpoing handles publishing (in/out) with auto acknowledge
+    private boolean isPublishAutoAck;
 
     /**
      * Constructor
@@ -112,9 +114,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     public int protocolVersion() { return this.protocolVersion; }
 
-    public void autoAck(boolean isAutoAck) { this.isAutoAck = isAutoAck; }
+    @Override
+    public void subscriptionAutoAck(boolean isSubscriptionAutoAck) { this.isSubscriptionAutoAck = isSubscriptionAutoAck; }
 
-    public boolean isAutoAck() { return this.isAutoAck; }
+    @Override
+    public boolean isSubscriptionAutoAck() { return this.isSubscriptionAutoAck; }
+
+    @Override
+    public void publishAutoAck(boolean isPublishAutoAck) { this.isPublishAutoAck = isPublishAutoAck; }
+
+    @Override
+    public boolean isPublishAutoAck() { return this.isPublishAutoAck; }
 
     public MqttEndpointImpl disconnectHandler(Handler<Void> handler) {
 
@@ -331,7 +341,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
             }
 
             // with auto ack enabled, the requested QoS levels are granted
-            if (this.isAutoAck) {
+            if (this.isSubscriptionAutoAck) {
                 this.writeSuback(msg.messageId(), msg.topicSubscriptions().stream().map(t -> {
                     return t.qualityOfService().value();
                 }).collect(Collectors.toList()));
@@ -351,7 +361,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
                 this.unsubscribeHandler.handle(msg);
             }
 
-            if (this.isAutoAck) {
+            if (this.isSubscriptionAutoAck) {
                 this.writeUnsuback(msg.messageId());
             }
         }
@@ -369,7 +379,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
                 this.publishHandler.handle(msg);
             }
 
-            if (this.isAutoAck) {
+            if (this.isPublishAutoAck) {
 
                 switch (msg.qosLevel()) {
 
@@ -411,7 +421,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
                 this.pubrecHandler.handle(pubrecMessageId);
             }
 
-            if (this.isAutoAck) {
+            if (this.isPublishAutoAck) {
                 this.writePubrel(pubrecMessageId);
             }
         }
@@ -429,7 +439,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
                 this.pubrelHandler.handle(pubrelMessageId);
             }
 
-            if (this.isAutoAck) {
+            if (this.isPublishAutoAck) {
                 this.writePubcomp(pubrelMessageId);
             }
         }
