@@ -19,11 +19,14 @@ package enmasse.mqtt.examples;
 import enmasse.mqtt.MqttServer;
 import enmasse.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +42,11 @@ public class MqttApp {
         Vertx vertx = Vertx.vertx();
 
         MqttServer mqttServer = MqttServer.create(vertx);
+
         mqttServer
                 .endpointHandler(endpoint -> {
 
+                    // shows main connect info
                     log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
 
                     if (endpoint.auth() != null) {
@@ -51,8 +56,10 @@ public class MqttApp {
                         log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
                                 " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
                     }
+                    // accept connection from the remote client
                     endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
 
+                    // handling requests for subscriptions
                     endpoint.subscribeHandler(subscribe -> {
 
                         List<Integer> grantedQosLevels = new ArrayList<>();
@@ -60,22 +67,51 @@ public class MqttApp {
                             log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
                             grantedQosLevels.add(s.qualityOfService().value());
                         }
+                        // ack the subscriptions request
                         endpoint.writeSuback(subscribe.messageId(), grantedQosLevels);
+
+                        // just as example, publish a message on the first topic with requested QoS
+                        endpoint.writePublish(subscribe.topicSubscriptions().get(0).topicName(),
+                                Buffer.buffer("Hello from the Vert.x MQTT server"),
+                                subscribe.topicSubscriptions().get(0).qualityOfService(),
+                                false,
+                                false);
                     });
 
+                    // handling disconnect message
+                    endpoint.disconnectHandler(v -> {
+
+                        log.info("Received disconnect from client");
+                    });
+
+                    // handling closing connection
                     endpoint.closeHandler(v -> {
 
-                        log.info("Connection remotely closed !!");
+                        log.info("Connection closed");
                     });
 
-        })
+                    // handling incoming published messages
+                    endpoint.publishHandler(message -> {
+
+                        log.info("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+
+                        if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
+                            endpoint.writePuback(message.messageId());
+                        }
+                    });
+
+                })
                 .listen(ar -> {
 
                     if (ar.succeeded()) {
 
                         log.info("MQTT server is listening on port " + ar.result().actualPort());
+                    } else {
+
+                        log.info("Error on starting the server");
+                        ar.cause().printStackTrace();
                     }
-        });
+                });
 
         try {
             System.in.read();
