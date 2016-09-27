@@ -45,8 +45,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     // information about connected remote MQTT client (from CONNECT message)
     private final String clientIdentifier;
-    private final MqttAuthImpl auth;
-    private final MqttWillImpl will;
+    private final MqttAuth auth;
+    private final MqttWill will;
     private final boolean isCleanSession;
     private final int protocolVersion;
 
@@ -70,7 +70,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private boolean closed;
     // counter for the message identifier
     private int messageIdCounter;
-
+    // if the endpoint handles the acknowledgement automatically
     private boolean isAutoAck;
 
     /**
@@ -113,25 +113,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
     public void autoAck(boolean isAutoAck) { this.isAutoAck = isAutoAck; }
 
     public boolean isAutoAck() { return this.isAutoAck; }
-
-    public MqttEndpointImpl writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
-
-        MqttFixedHeader fixedHeader =
-                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-        MqttConnAckVariableHeader variableHeader =
-                new MqttConnAckVariableHeader(connectReturnCode, sessionPresent);
-
-        io.netty.handler.codec.mqtt.MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
-
-        this.write(connack);
-
-        // if a server sends a CONNACK packet containing a non zero return code it MUST then close the Network Connection (MQTT 3.1.1 spec)
-        if (connectReturnCode != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-            this.close();
-        }
-
-        return this;
-    }
 
     public MqttEndpointImpl disconnectHandler(Handler<Void> handler) {
 
@@ -203,6 +184,25 @@ public class MqttEndpointImpl implements MqttEndpoint {
             this.pubcompHandler = handler;
             return this;
         }
+    }
+
+    public MqttEndpointImpl writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttConnAckVariableHeader variableHeader =
+                new MqttConnAckVariableHeader(connectReturnCode, sessionPresent);
+
+        io.netty.handler.codec.mqtt.MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+
+        this.write(connack);
+
+        // if a server sends a CONNACK packet containing a non zero return code it MUST then close the Network Connection (MQTT 3.1.1 spec)
+        if (connectReturnCode != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+            this.close();
+        }
+
+        return this;
     }
 
     public MqttEndpointImpl writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels) {

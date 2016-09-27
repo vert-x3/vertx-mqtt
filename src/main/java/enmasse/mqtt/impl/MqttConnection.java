@@ -70,6 +70,8 @@ public class MqttConnection extends ConnectionBase {
      */
     synchronized void handleMessage(Object msg) {
 
+        // handling directly native Netty MQTT messages because we don't need to
+        // expose them at higher level (so no need for polyglotization)
         if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
             io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
@@ -116,6 +118,9 @@ public class MqttConnection extends ConnectionBase {
                     break;
 
             }
+
+        // handling mapped Vert.x MQTT messages (from Netty ones) because they'll be provided
+        // to the higher layer (so need for ployglotization)
         } else {
 
             if (msg instanceof MqttSubscribeMessage) {
@@ -131,6 +136,7 @@ public class MqttConnection extends ConnectionBase {
                 this.handlePublish((MqttPublishMessage) msg);
 
             } else {
+
                 this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
             }
         }

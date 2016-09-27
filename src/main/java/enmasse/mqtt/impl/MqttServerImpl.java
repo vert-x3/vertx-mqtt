@@ -217,6 +217,8 @@ public class MqttServerImpl implements MqttServer {
         @Override
         protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
 
+            // some Netty native MQTT messages need a mapping to Vert.x ones (available for polyglotization)
+            // and different byte buffer resources are allocated
             if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
                 io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
@@ -227,13 +229,17 @@ public class MqttServerImpl implements MqttServer {
 
                         io.netty.handler.codec.mqtt.MqttSubscribeMessage mqttSubscribeMessage = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
 
-                        return MqttSubscribeMessage.create(mqttSubscribeMessage.variableHeader().messageId(), mqttSubscribeMessage.payload().topicSubscriptions());
+                        return MqttSubscribeMessage.create(
+                                mqttSubscribeMessage.variableHeader().messageId(),
+                                mqttSubscribeMessage.payload().topicSubscriptions());
 
                     case UNSUBSCRIBE:
 
                         io.netty.handler.codec.mqtt.MqttUnsubscribeMessage mqttUnsubscribeMessage = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
 
-                        return MqttUnsubscribeMessage.create(mqttUnsubscribeMessage.variableHeader().messageId(), mqttUnsubscribeMessage.payload().topics());
+                        return MqttUnsubscribeMessage.create(
+                                mqttUnsubscribeMessage.variableHeader().messageId(),
+                                mqttUnsubscribeMessage.payload().topics());
 
 
                     case PUBLISH:
@@ -241,7 +247,8 @@ public class MqttServerImpl implements MqttServer {
                         io.netty.handler.codec.mqtt.MqttPublishMessage mqttPublishMessage = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
                         ByteBuf newBuf = safeBuffer(mqttPublishMessage.payload(), allocator);
 
-                        return MqttPublishMessage.create(mqttPublishMessage.variableHeader().messageId(),
+                        return MqttPublishMessage.create(
+                                mqttPublishMessage.variableHeader().messageId(),
                                 mqttPublishMessage.fixedHeader().qosLevel(),
                                 mqttPublishMessage.fixedHeader().isDup(),
                                 mqttPublishMessage.fixedHeader().isRetain(),
@@ -249,6 +256,7 @@ public class MqttServerImpl implements MqttServer {
                 }
             }
 
+            // otherwise the original Netty message is returned
             return msg;
         }
 
@@ -262,6 +270,7 @@ public class MqttServerImpl implements MqttServer {
          */
         private void doMessageReceived(MqttConnection connection, ChannelHandlerContext chctx, Object msg) throws Exception {
 
+            // handling a Netty native MQTT message directly
             if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
                 io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
@@ -283,6 +292,7 @@ public class MqttServerImpl implements MqttServer {
                         break;
                 }
 
+            // or handling a Vert.x MQTT message (mapped from a Netty one)
             } else {
 
                 if (this.conn != null) {
