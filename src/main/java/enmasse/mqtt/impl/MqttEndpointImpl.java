@@ -66,6 +66,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private Handler<Integer> pubcompHandler;
     // handler to call when a disconnect request comes in
     private Handler<Void> disconnectHandler;
+    // handler to call when the endpoint is closed
+    private Handler<Void> closeHandler;
 
     private boolean closed;
     // counter for the message identifier
@@ -182,6 +184,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             this.checkClosed();
             this.pubcompHandler = handler;
+            return this;
+        }
+    }
+
+    public MqttEndpointImpl closeHandler(Handler<Void> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.closeHandler = handler;
             return this;
         }
     }
@@ -469,6 +480,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
         }
     }
 
+    /**
+     * Used for calling the close handler when the remote MQTT client closes the connection
+     */
+    void handleClosed() {
+
+        synchronized (this.conn) {
+            this.cleanup();
+
+            if (this.closeHandler != null) {
+                this.closeHandler.handle(null);
+            }
+        }
+    }
+
     public void end() { this.close(); }
 
     public void close() {
@@ -477,7 +502,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
             checkClosed();
             this.conn.close();
 
-            this.closed = true;
+            this.cleanup();
         }
     }
 
@@ -537,6 +562,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
         if (this.closed) {
             throw new IllegalStateException("MQTT endpoint is closed");
+        }
+    }
+
+    /**
+     * Cleanup
+     */
+    private void cleanup() {
+        if (!this.closed) {
+            this.closed = true;
         }
     }
 

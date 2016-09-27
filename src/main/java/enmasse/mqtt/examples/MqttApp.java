@@ -63,6 +63,11 @@ public class MqttApp {
                         endpoint.writeSuback(subscribe.messageId(), grantedQosLevels);
                     });
 
+                    endpoint.closeHandler(v -> {
+
+                        log.info("Connection remotely closed !!");
+                    });
+
         })
                 .listen(ar -> {
 

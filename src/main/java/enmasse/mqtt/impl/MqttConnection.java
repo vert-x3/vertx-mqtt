@@ -258,4 +258,15 @@ public class MqttConnection extends ConnectionBase {
             this.endpoint.handleDisconnect();
         }
     }
+
+    /**
+     * Used for calling the close handler when the remote MQTT client closes the connection
+     */
+    synchronized protected void handleClosed() {
+
+        super.handleClosed();
+        if (this.endpoint != null) {
+            this.endpoint.handleClosed();
+        }
+    }
 }

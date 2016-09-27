@@ -200,6 +200,15 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     MqttEndpoint pubcompHandler(Handler<Integer> handler);
 
     /**
+     * Set a close handler. This will be called when the MQTT endpoint is closed
+     *
+     * @param handler   the handler
+     * @return  a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    MqttEndpoint closeHandler(Handler<Void> handler);
+
+    /**
      * Sends the CONNACK message to the remote MQTT client
      *
      * @param connectReturnCode     the connect return code
