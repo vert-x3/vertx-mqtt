@@ -42,6 +42,9 @@ public class MqttServerPublishTest extends MqttBaseTest {
     private static final String MQTT_TOPIC = "/my_topic";
     private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Server";
 
+    private String topic;
+    private String message;
+
     @Before
     public void before(TestContext context) {
 
@@ -73,6 +76,9 @@ public class MqttServerPublishTest extends MqttBaseTest {
     }
 
     private void publish(TestContext context, String topic, String message, int qos) {
+
+        this.topic = topic;
+        this.message = message;
 
         this.async = context.async();
 
@@ -112,7 +118,7 @@ public class MqttServerPublishTest extends MqttBaseTest {
                     subscribe.topicSubscriptions().stream().map(sub -> { return sub.qualityOfService().value(); })
                             .collect(Collectors.toList()));
 
-            endpoint.writePublish(MQTT_TOPIC, Buffer.buffer(MQTT_MESSAGE), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+            endpoint.writePublish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
         }).pubackHandler(messageId -> {
 
             System.out.print("Message [" + messageId + "] acknowledged");
