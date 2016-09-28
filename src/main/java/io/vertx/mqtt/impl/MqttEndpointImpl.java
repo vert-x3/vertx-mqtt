@@ -71,10 +71,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private boolean closed;
     // counter for the message identifier
     private int messageIdCounter;
-    // if the endpoing handles subscription/unsubscription requests with auto acknowledge
+    // if the endpoint handles subscription/unsubscription requests with auto acknowledge
     private boolean isSubscriptionAutoAck;
-    // if the endpoing handles publishing (in/out) with auto acknowledge
+    // if the endpoint handles publishing (in/out) with auto acknowledge
     private boolean isPublishAutoAck;
+    // if the endpoint should sends the pingresp automatically
+    private boolean isAutoKeepAlive = true;
 
     /**
      * Constructor
@@ -117,17 +119,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     public int keepAliveTimeSeconds() { return this.keepAliveTimeSeconds; }
 
-    @Override
     public void subscriptionAutoAck(boolean isSubscriptionAutoAck) { this.isSubscriptionAutoAck = isSubscriptionAutoAck; }
 
-    @Override
     public boolean isSubscriptionAutoAck() { return this.isSubscriptionAutoAck; }
 
-    @Override
     public void publishAutoAck(boolean isPublishAutoAck) { this.isPublishAutoAck = isPublishAutoAck; }
 
-    @Override
     public boolean isPublishAutoAck() { return this.isPublishAutoAck; }
+
+    public void autoKeepAlive(boolean isAutoKeepAlive) { this.isAutoKeepAlive = isAutoKeepAlive; }
+
+    public boolean isAutoKeepAlive() { return this.isAutoKeepAlive; }
 
     public MqttEndpointImpl disconnectHandler(Handler<Void> handler) {
 
@@ -340,6 +342,18 @@ public class MqttEndpointImpl implements MqttEndpoint {
         return this;
     }
 
+    public MqttEndpointImpl writePingresp() {
+
+        MqttFixedHeader fixedHeader =
+                new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);
+
+        io.netty.handler.codec.mqtt.MqttMessage pingresp = MqttMessageFactory.newMessage(fixedHeader, null, null);
+
+        this.write(pingresp);
+
+        return this;
+    }
+
     /**
      * Used for calling the subscribe handler when the remote MQTT client subscribes to topics
      *
@@ -482,12 +496,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
                 this.pingreqHandler.handle(null);
             }
 
-            MqttFixedHeader fixedHeader =
-                    new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);
-
-            io.netty.handler.codec.mqtt.MqttMessage pingresp = MqttMessageFactory.newMessage(fixedHeader, null, null);
-
-            this.write(pingresp);
+            if (this.isAutoKeepAlive) {
+                this.writePingresp();
+            }
         }
     }
 

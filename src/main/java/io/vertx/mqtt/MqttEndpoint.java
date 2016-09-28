@@ -16,10 +16,6 @@
 
 package io.vertx.mqtt;
 
-import io.vertx.mqtt.messages.MqttMessage;
-import io.vertx.mqtt.messages.MqttPublishMessage;
-import io.vertx.mqtt.messages.MqttSubscribeMessage;
-import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
@@ -29,6 +25,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.mqtt.messages.MqttMessage;
+import io.vertx.mqtt.messages.MqttPublishMessage;
+import io.vertx.mqtt.messages.MqttSubscribeMessage;
+import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
 import java.util.List;
 
@@ -139,6 +139,20 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      * @return
      */
     boolean isPublishAutoAck();
+
+    /**
+     * Enable/disable auto keep alive (sending ping response)
+     *
+     * @param isAutoKeepAlive auto keep alive
+     */
+    void autoKeepAlive(boolean isAutoKeepAlive);
+
+    /**
+     * Return auto keep alive status (sending ping response)
+     *
+     * @return
+     */
+    boolean isAutoKeepAlive();
 
     /**
      * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT
@@ -317,4 +331,12 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      */
     @Fluent
     MqttEndpoint writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+    /**
+     * Sends the PINGRESP message to the remote MQTT client
+     *
+     * @return  a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    MqttEndpoint writePingresp();
 }
