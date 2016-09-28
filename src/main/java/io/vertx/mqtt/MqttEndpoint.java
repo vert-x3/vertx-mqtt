@@ -106,6 +106,13 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
     boolean isCleanSession();
 
     /**
+     * Keep alive timeout (in seconds) specified by the remote MQTT client
+     * @return
+     */
+    @CacheReturn
+    int keepAliveTimeSeconds();
+
+    /**
      * Enable/disable subscription/unsubscription requests auto acknowledge
      *
      * @param isSubscriptionAutoAck auto acknowledge status
@@ -212,6 +219,17 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
      */
     @Fluent
     MqttEndpoint pubcompHandler(Handler<Integer> handler);
+
+    /**
+     * Set the pingreq handler on the MQTT endpoint. This handler is called when a PINGREQ
+     * message is received by the remote MQTT client. In any case the endpoint sends the
+     * PINGRESP internally after executing this handler.
+     *
+     * @param handler   the handler
+     * @return  a reference to this, so the API can be used fluently
+     */
+    @Fluent
+    MqttEndpoint pingreqHandler(Handler<Void> handler);
 
     /**
      * Set a close handler. This will be called when the MQTT endpoint is closed

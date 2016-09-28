@@ -45,6 +45,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private final MqttWill will;
     private final boolean isCleanSession;
     private final int protocolVersion;
+    private final int keepAliveTimeSeconds;
 
     // handler to call when a subscribe request comes in
     private Handler<io.vertx.mqtt.messages.MqttSubscribeMessage> subscribeHandler;
@@ -62,6 +63,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     private Handler<Integer> pubcompHandler;
     // handler to call when a disconnect request comes in
     private Handler<Void> disconnectHandler;
+    // handler to call when a pingreq message comes in
+    private Handler<Void> pingreqHandler;
     // handler to call when the endpoint is closed
     private Handler<Void> closeHandler;
 
@@ -82,14 +85,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
      * @param will  instance with the will information
      * @param isCleanSession    if the sessione should be cleaned or not
      * @param protocolVersion   protocol version required by the client
+     * @param keepAliveTimeSeconds  keep alive timeout (in seconds)
      */
-    public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion) {
+    public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion, int keepAliveTimeSeconds) {
         this.conn = conn;
         this.clientIdentifier = clientIdentifier;
         this.auth = auth;
         this.will = will;
         this.isCleanSession = isCleanSession;
         this.protocolVersion = protocolVersion;
+        this.keepAliveTimeSeconds = keepAliveTimeSeconds;
     }
 
     public String clientIdentifier() {
@@ -109,6 +114,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
 
     public int protocolVersion() { return this.protocolVersion; }
+
+    public int keepAliveTimeSeconds() { return this.keepAliveTimeSeconds; }
 
     @Override
     public void subscriptionAutoAck(boolean isSubscriptionAutoAck) { this.isSubscriptionAutoAck = isSubscriptionAutoAck; }
@@ -190,6 +197,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
         synchronized (this.conn) {
             this.checkClosed();
             this.pubcompHandler = handler;
+            return this;
+        }
+    }
+
+    public MqttEndpointImpl pingreqHandler(Handler<Void> handler) {
+
+        synchronized (this.conn) {
+            this.checkClosed();
+            this.pingreqHandler = handler;
             return this;
         }
     }
@@ -461,6 +477,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
     void handlePingreq() {
 
         synchronized (this.conn) {
+
+            if (this.pingreqHandler != null) {
+                this.pingreqHandler.handle(null);
+            }
 
             MqttFixedHeader fixedHeader =
                     new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);

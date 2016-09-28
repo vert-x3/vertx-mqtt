@@ -56,6 +56,9 @@ public class MqttApp {
                         log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
                                 " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
                     }
+
+                    log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
                     // accept connection from the remote client
                     endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
 
@@ -76,6 +79,12 @@ public class MqttApp {
                                 subscribe.topicSubscriptions().get(0).qualityOfService(),
                                 false,
                                 false);
+                    });
+
+                    // handling ping from client
+                    endpoint.pingreqHandler(v -> {
+
+                        log.info("Ping received from client");
                     });
 
                     // handling disconnect message
