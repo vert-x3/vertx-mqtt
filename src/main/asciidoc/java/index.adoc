@@ -40,3 +40,44 @@ compile io.vertx:vertx-mqtt-server:3.4.0-SNAPSHOT
 ----
 maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 ----
+
+== Getting Started
+
+=== Handling client connection
+
+This example shows how it's possible to handle the connection request from a remote MQTT client. First, an *_MqttServer_* instance is created and the _endpointHandler_ method is used to specify the handler called when a remote client sends a CONNECT message for connecting to the server itself. The *_MqttEndpoint_* instance, provided as parameter to the handler, brings all main information related to the CONNECT message like client identifier, username/password, "will" information, clean session flag, protocol version and the "keep alive" timeout. Inside that handler, the _endpoint_ instance provides the _writeConnack_ method for replying to the remote client with the corresponding CONNACK message : in this way, the connection is established. Finally, the server is started using the _listen_ method with the default behavior (on localhost and default MQTT port 1883). The same method allows to specify an handler in order to check if the server is started properly or not.
+
+[source,java]
+----
+MqttServer mqttServer = MqttServer.create(vertx);
+mqttServer.endpointHandler(endpoint -> {
+
+                // shows main connect info
+                log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+                if (endpoint.auth() != null) {
+                    log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+                }
+                if (endpoint.will() != null) {
+                    log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+                            " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+                }
+
+                log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+                // accept connection from the remote client
+                endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+
+          })
+          .listen(ar -> {
+
+              if (ar.succeeded()) {
+
+                  log.info("MQTT server is listening on port " + ar.result().actualPort());
+              } else {
+
+                  log.info("Error on starting the server");
+                  ar.cause().printStackTrace();
+              }
+          });
+----
