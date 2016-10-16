@@ -81,6 +81,16 @@ public class MqttApp {
                                 false);
                     });
 
+                    // handling requests for unsubscriptions
+                    endpoint.unsubscribeHandler(unsubscribe -> {
+
+                        for (String t: unsubscribe.topics()) {
+                          log.info("Unsubscription for " + t);
+                        }
+                        // ack the subscriptions request
+                        endpoint.writeUnsuback(unsubscribe.messageId());
+                    });
+
                     // handling ping from client
                     endpoint.pingreqHandler(v -> {
 

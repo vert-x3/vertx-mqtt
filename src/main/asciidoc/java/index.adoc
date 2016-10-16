@@ -81,3 +81,38 @@ mqttServer.endpointHandler(endpoint -> {
               }
           });
 ----
+
+=== Handling client subscription/unsubscription request
+
+After a connection is established between client and server, the client can send a subscription request for a topic using the SUBSCRIBE message. The *_MqttEndpoint_* class allows to specify an handler for the incoming subscription request using the _subscribeHandler_ method. Such handler receives an instance of the *_MqttSubscribeMessage_* class which brings the list of topics with related QoS levels as desired by the client. Finally, the endpoint instance provides the _writeSuback_ method for replying to the client with the related SUBACK message containing the granted QoS levels.
+
+[source,java]
+----
+// handling requests for subscriptions
+endpoint.subscribeHandler(subscribe -> {
+
+    List<Integer> grantedQosLevels = new ArrayList<>();
+    for (MqttTopicSubscription s: subscribe.topicSubscriptions()) {
+        log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
+        grantedQosLevels.add(s.qualityOfService().value());
+    }
+    // ack the subscriptions request
+    endpoint.writeSuback(subscribe.messageId(), grantedQosLevels);
+
+});
+----
+
+In the same way, it's possible to use the _unsubscribeHandler_ method on the endpoint in order to specify the handler called when the client sends an UNSUBSCRIBE message. This handler receives an instance of the *_MqttUnsubscribeMessage_* class as parameter with the list of topics to unsubscribe. Finally, the endpoint instance provides the _writeUnsuback_ method for replying to the client with the related UNSUBACK message.
+
+[source,java]
+----
+// handling requests for unsubscriptions
+endpoint.unsubscribeHandler(unsubscribe -> {
+
+    for (String t: unsubscribe.topics()) {
+      log.info("Unsubscription for " + t);
+    }
+    // ack the subscriptions request
+    endpoint.writeUnsuback(unsubscribe.messageId());
+});
+----
