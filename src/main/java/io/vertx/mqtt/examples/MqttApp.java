@@ -79,6 +79,20 @@ public class MqttApp {
                                 subscribe.topicSubscriptions().get(0).qualityOfService(),
                                 false,
                                 false);
+
+                        // specifing handlers for handling QoS 1 and 2
+                        endpoint.pubackHandler(messageId -> {
+
+                          log.info("Received ack for message = " +  messageId);
+
+                        }).pubrecHandler(messageId -> {
+
+                          endpoint.writePubrel(messageId);
+
+                        }).pubcompHandler(messageId -> {
+
+                          log.info("Received ack for message = " +  messageId);
+                        });
                     });
 
                     // handling requests for unsubscriptions

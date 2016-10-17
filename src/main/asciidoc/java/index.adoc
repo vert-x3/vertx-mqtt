@@ -130,7 +130,7 @@ endpoint.unsubscribeHandler(unsubscribe -> {
 
 === Handling client published message
 
-In order to handle incoming messages published by the remote client, the *_MqttEndpoint_* class provides the _publishHandler_ method for specifying the handler called when the client sends a PUBLISH message. This handler receives an instance of the *_MqttPublishMessage_* class as parameter with the payload, the QoS level, the duplicate and retaing flags.
+In order to handle incoming messages published by the remote client, the *_MqttEndpoint_* class provides the _publishHandler_ method for specifying the handler called when the client sends a PUBLISH message. This handler receives an instance of the *_MqttPublishMessage_* class as parameter with the payload, the QoS level, the duplicate and retain flags.
 
 If the QoS level is 0 (AT_MOST_ONCE), there is no need from the endpoint to reply the client.
 
@@ -154,5 +154,39 @@ endpoint.publishHandler(message -> {
 }).pubrelHandler(messageId -> {
 
     endpoint.writePubcomp(messageId);
+});
+----
+
+=== Publish message to the client
+
+The endpoint can publish a message to the remote client (sending a PUBLISH message) using the _writePublish_ method which takes the following input parameters : the topic to publish, the payload, the QoS level, the duplicate and retain flags.
+
+If the QoS level is 0 (AT_MOST_ONCE), the endpoint won't receiving any feedback from the client.
+
+If the QoS level is 1 (AT_LEAST_ONCE), the endpoint needs to handle the PUBACK message received from the client in order to receive final acknowledge of delivery. It's possible using the _pubackHandler_ method specifying such an handler.
+
+If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to handle the PUBREC message received from the client. The _pubrecHandler_ method allows to specify the handler for that. Inside that handler, the endpoint can use the _writePubrel_ method for replying to the client with the PUBREL message. The last step is to handle the PUBCOMP message received from the client as final acknowledge for the published message; it's possible using the _pubcompHandler_ for specifying the handler called when the final PUBCOMP message is received.
+
+[source,java]
+----
+// just as example, publish a message with QoS level 2
+endpoint.writePublish("my_topic",
+        Buffer.buffer("Hello from the Vert.x MQTT server"),
+        MqttQoS.EXACTLY_ONCE,
+        false,
+        false);
+
+// specifing handlers for handling QoS 1 and 2
+endpoint.pubackHandler(messageId -> {
+
+  log.info("Received ack for message = " +  messageId);
+
+}).pubrecHandler(messageId -> {
+
+  endpoint.writePubrel(messageId);
+
+}).pubcompHandler(messageId -> {
+
+  log.info("Received ack for message = " +  messageId);
 });
 ----
