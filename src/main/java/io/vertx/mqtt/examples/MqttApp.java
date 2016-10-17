@@ -116,7 +116,13 @@ public class MqttApp {
 
                         if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
                             endpoint.writePuback(message.messageId());
+                        } else if (message.qosLevel() == MqttQoS.EXACTLY_ONCE) {
+                            endpoint.writePubrec(message.messageId());
                         }
+
+                    }).pubrelHandler(messageId -> {
+
+                        endpoint.writePubcomp(messageId);
                     });
 
                 })

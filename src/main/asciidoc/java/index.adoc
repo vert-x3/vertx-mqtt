@@ -127,3 +127,32 @@ endpoint.unsubscribeHandler(unsubscribe -> {
     endpoint.writeUnsuback(unsubscribe.messageId());
 });
 ----
+
+=== Handling client published message
+
+In order to handle incoming messages published by the remote client, the *_MqttEndpoint_* class provides the _publishHandler_ method for specifying the handler called when the client sends a PUBLISH message. This handler receives an instance of the *_MqttPublishMessage_* class as parameter with the payload, the QoS level, the duplicate and retaing flags.
+
+If the QoS level is 0 (AT_MOST_ONCE), there is no need from the endpoint to reply the client.
+
+If the QoS level is 1 (AT_LEAST_ONCE), the endpoind needs to reply with a PUBACK message using the available _writePuback_ method.
+
+If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to reply with a PUBREC message using the available _writePubrec_ method; in this case the same endpoint should handle the PUBREL message received from the client as well (the remote client sends it after receiving the PUBREC from the endpoint) and it can do that specifying the handler through the _pubrelHandler_ method. In order to close the QoS level 2 delivery, the endpoint can use the _writePubcomp_ method for sending the PUBCOMP message to the client.
+
+[source,java]
+----
+// handling incoming published messages
+endpoint.publishHandler(message -> {
+
+    log.info("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+
+    if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
+        endpoint.writePuback(message.messageId());
+    } else if (message.qosLevel() == MqttQoS.EXACTLY_ONCE) {
+        endpoint.writePubrec(message.messageId());
+    }
+
+}).pubrelHandler(messageId -> {
+
+    endpoint.writePubcomp(messageId);
+});
+----
