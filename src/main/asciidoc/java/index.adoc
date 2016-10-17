@@ -190,3 +190,18 @@ endpoint.pubackHandler(messageId -> {
   log.info("Received ack for message = " +  messageId);
 });
 ----
+
+=== Be notified by client keep alive
+
+The underlying MQTT keep alive mechanism is handled by the server internally. When the CONNECT message is received, the server takes care of the keep alive timeout specified inside that message in order to check if the client doesn't send messages in such timeout. At same time, for every PINGREQ received, the server replies with the related PINGRESP.
+
+Even if there is no need for the high level application to handle that, the *_MqttEndpoint_* class provides the _pingreqHandler_ method for specifying an handler called when a PINGREQ message is received from the client. It's just a notification to the application that the client isn't sending meaningful messages but only pings for keeping alive; in any case the PINGRESP is automatically sent by the server internally as described above.
+
+[source,java]
+----
+// handling ping from client
+endpoint.pingreqHandler(v -> {
+
+    log.info("Ping received from client");
+});
+----
