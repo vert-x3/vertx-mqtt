@@ -26,48 +26,48 @@ import io.vertx.core.net.NetServerOptions;
 @DataObject
 public class MqttServerOptions extends NetServerOptions {
 
-    public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
+  public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
 
-    /**
-     * Default constructor
-     */
-    public MqttServerOptions() {
-        super();
-        // override the default port
-        this.setPort(DEFAULT_PORT);
-    }
+  /**
+   * Default constructor
+   */
+  public MqttServerOptions() {
+    super();
+    // override the default port
+    this.setPort(DEFAULT_PORT);
+  }
 
-    /**
-     * Create an options from JSON
-     *
-     * @param json  the JSON
-     */
-    public MqttServerOptions(JsonObject json) {
-        super(json);
-        // override the default port
-        this.setPort(json.getInteger("port", DEFAULT_PORT));
-    }
+  /**
+   * Create an options from JSON
+   *
+   * @param json the JSON
+   */
+  public MqttServerOptions(JsonObject json) {
+    super(json);
+    // override the default port
+    this.setPort(json.getInteger("port", DEFAULT_PORT));
+  }
 
-    /**
-     * Copy constructor
-     *
-     * @param other the options to copy
-     */
-    public MqttServerOptions(MqttServerOptions other) {
-        super(other);
-        // override the default port
-        this.setPort(DEFAULT_PORT);
-    }
+  /**
+   * Copy constructor
+   *
+   * @param other the options to copy
+   */
+  public MqttServerOptions(MqttServerOptions other) {
+    super(other);
+    // override the default port
+    this.setPort(DEFAULT_PORT);
+  }
 
-    @Override
-    public MqttServerOptions setPort(int port) {
-        super.setPort(port);
-        return this;
-    }
+  @Override
+  public MqttServerOptions setPort(int port) {
+    super.setPort(port);
+    return this;
+  }
 
-    @Override
-    public MqttServerOptions setHost(String host) {
-        super.setHost(host);
-        return this;
-    }
+  @Override
+  public MqttServerOptions setHost(String host) {
+    super.setHost(host);
+    return this;
+  }
 }

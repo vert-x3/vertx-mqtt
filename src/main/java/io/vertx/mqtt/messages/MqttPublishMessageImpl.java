@@ -25,36 +25,46 @@ import io.vertx.core.buffer.Buffer;
  */
 public class MqttPublishMessageImpl implements MqttPublishMessage {
 
-    private final int messageId;
-    private final MqttQoS qosLevel;
-    private final boolean isDup;
-    private final boolean isRetain;
-    private final Buffer payload;
+  private final int messageId;
+  private final MqttQoS qosLevel;
+  private final boolean isDup;
+  private final boolean isRetain;
+  private final Buffer payload;
 
-    /**
-     * Constructor
-     *
-     * @param messageId message identifier
-     * @param qosLevel  quality of service level
-     * @param isDup if the message is a duplicate
-     * @param isRetain if the message needs to be retained
-     * @param payload   payload message
-     */
-    MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
-        this.messageId = messageId;
-        this.qosLevel = qosLevel;
-        this.isDup = isDup;
-        this.isRetain = isRetain;
-        this.payload = Buffer.buffer(payload);
-    }
+  /**
+   * Constructor
+   *
+   * @param messageId message identifier
+   * @param qosLevel  quality of service level
+   * @param isDup     if the message is a duplicate
+   * @param isRetain  if the message needs to be retained
+   * @param payload   payload message
+   */
+  MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
+    this.messageId = messageId;
+    this.qosLevel = qosLevel;
+    this.isDup = isDup;
+    this.isRetain = isRetain;
+    this.payload = Buffer.buffer(payload);
+  }
 
-    public int messageId() { return this.messageId; }
+  public int messageId() {
+    return this.messageId;
+  }
 
-    public MqttQoS qosLevel() { return this.qosLevel; }
+  public MqttQoS qosLevel() {
+    return this.qosLevel;
+  }
 
-    public boolean isDup() { return this.isDup; }
+  public boolean isDup() {
+    return this.isDup;
+  }
 
-    public boolean isRetain() { return this.isRetain; }
+  public boolean isRetain() {
+    return this.isRetain;
+  }
 
-    public Buffer payload() { return this.payload; }
+  public Buffer payload() {
+    return this.payload;
+  }
 }

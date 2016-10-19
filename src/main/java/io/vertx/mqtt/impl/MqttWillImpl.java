@@ -23,37 +23,39 @@ import io.vertx.mqtt.MqttWill;
  */
 public class MqttWillImpl implements MqttWill {
 
-    private final String willTopic;
-    private final String willMessage;
-    private final int willQos;
-    private final boolean isWillRetain;
+  private final String willTopic;
+  private final String willMessage;
+  private final int willQos;
+  private final boolean isWillRetain;
 
-    /**
-     * Constructor
-     *
-     * @param willTopic topic to publish the will
-     * @param willMessage   payload of the will
-     * @param willQos   qos level for the will
-     * @param isWillRetain  if the will message must be retained
-     */
-    MqttWillImpl(String willTopic, String willMessage, int willQos, boolean isWillRetain) {
-        this.willTopic = willTopic;
-        this.willMessage = willMessage;
-        this.willQos = willQos;
-        this.isWillRetain = isWillRetain;
-    }
+  /**
+   * Constructor
+   *
+   * @param willTopic    topic to publish the will
+   * @param willMessage  payload of the will
+   * @param willQos      qos level for the will
+   * @param isWillRetain if the will message must be retained
+   */
+  MqttWillImpl(String willTopic, String willMessage, int willQos, boolean isWillRetain) {
+    this.willTopic = willTopic;
+    this.willMessage = willMessage;
+    this.willQos = willQos;
+    this.isWillRetain = isWillRetain;
+  }
 
-    public String willTopic() {
-        return this.willTopic;
-    }
+  public String willTopic() {
+    return this.willTopic;
+  }
 
-    public String willMessage() {
-        return this.willMessage;
-    }
+  public String willMessage() {
+    return this.willMessage;
+  }
 
-    public int willQos() {
-        return this.willQos;
-    }
+  public int willQos() {
+    return this.willQos;
+  }
 
-    public boolean isWillRetain() { return this.isWillRetain; }
+  public boolean isWillRetain() {
+    return this.isWillRetain;
+  }
 }

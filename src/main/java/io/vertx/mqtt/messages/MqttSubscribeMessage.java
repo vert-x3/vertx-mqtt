@@ -28,22 +28,23 @@ import java.util.List;
 @VertxGen
 public interface MqttSubscribeMessage extends MqttMessage {
 
-    /**
-     * Create a concrete instance of a Vert.x subscribe message
-     *
-     * @param messageId message identifier
-     * @param topicSubscriptions    list with topics and related quality of service levels (from Netty)
-     * @return  Vert.x subscribe message
-     */
-    @GenIgnore
-    static MqttSubscribeMessageImpl create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
+  /**
+   * Create a concrete instance of a Vert.x subscribe message
+   *
+   * @param messageId          message identifier
+   * @param topicSubscriptions list with topics and related quality of service levels (from Netty)
+   * @return Vert.x subscribe message
+   */
+  @GenIgnore
+  static MqttSubscribeMessageImpl create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
 
-        return new MqttSubscribeMessageImpl(messageId, topicSubscriptions);
-    }
+    return new MqttSubscribeMessageImpl(messageId, topicSubscriptions);
+  }
 
-    /**
-     * List with topics and related quolity of service levels
-     * @return
-     */
-    List<MqttTopicSubscription> topicSubscriptions();
+  /**
+   * List with topics and related quolity of service levels
+   *
+   * @return
+   */
+  List<MqttTopicSubscription> topicSubscriptions();
 }

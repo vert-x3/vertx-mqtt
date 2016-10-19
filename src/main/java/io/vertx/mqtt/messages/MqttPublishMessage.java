@@ -28,43 +28,47 @@ import io.vertx.core.buffer.Buffer;
 @VertxGen
 public interface MqttPublishMessage extends MqttMessage {
 
-    /**
-     * Create a concrete instance of a Vert.x publish message
-     *
-     * @param messageId message identifier
-     * @param qosLevel  quality of service level
-     * @param isDup if the message is a duplicate
-     * @param isRetain if the message needs to be retained
-     * @param payload   payload message
-     * @return  Vert.x publish message
-     */
-    @GenIgnore
-    static MqttPublishMessageImpl create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
+  /**
+   * Create a concrete instance of a Vert.x publish message
+   *
+   * @param messageId message identifier
+   * @param qosLevel  quality of service level
+   * @param isDup     if the message is a duplicate
+   * @param isRetain  if the message needs to be retained
+   * @param payload   payload message
+   * @return Vert.x publish message
+   */
+  @GenIgnore
+  static MqttPublishMessageImpl create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
 
-        return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, payload);
-    }
+    return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, payload);
+  }
 
-    /**
-     * Quality of service level
-     * @return
-     */
-    MqttQoS qosLevel();
+  /**
+   * Quality of service level
+   *
+   * @return
+   */
+  MqttQoS qosLevel();
 
-    /**
-     * If the message is a duplicate
-     * @return
-     */
-    boolean isDup();
+  /**
+   * If the message is a duplicate
+   *
+   * @return
+   */
+  boolean isDup();
 
-    /**
-     * If the message needs to be retained
-     * @return
-     */
-    boolean isRetain();
+  /**
+   * If the message needs to be retained
+   *
+   * @return
+   */
+  boolean isRetain();
 
-    /**
-     * Payload message
-     * @return
-     */
-    Buffer payload();
+  /**
+   * Payload message
+   *
+   * @return
+   */
+  Buffer payload();
 }

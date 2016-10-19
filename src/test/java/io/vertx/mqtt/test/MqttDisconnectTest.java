@@ -34,42 +34,42 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class MqttDisconnectTest extends MqttBaseTest {
 
-    @Before
-    public void before(TestContext context) {
+  @Before
+  public void before(TestContext context) {
 
-        this.setUp(context);
+    this.setUp(context);
+  }
+
+  @After
+  public void after(TestContext context) {
+
+    this.tearDown(context);
+  }
+
+  @Test
+  public void disconnect(TestContext context) {
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+      client.disconnect();
+      context.assertTrue(true);
+    } catch (MqttException e) {
+      context.assertTrue(false);
+      e.printStackTrace();
     }
+  }
 
-    @After
-    public void after(TestContext context) {
+  @Override
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-        this.tearDown(context);
-    }
+    endpoint.disconnectHandler(v -> {
 
-    @Test
-    public void disconnect(TestContext context) {
+      System.out.println("MQTT remote client disconnected");
 
-        try {
-            MemoryPersistence persistence = new MemoryPersistence();
-            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-            client.connect();
-            client.disconnect();
-            context.assertTrue(true);
-        } catch (MqttException e) {
-            context.assertTrue(false);
-            e.printStackTrace();
-        }
-    }
+    });
 
-    @Override
-    protected void endpointHandler(MqttEndpoint endpoint) {
-
-        endpoint.disconnectHandler(v -> {
-
-            System.out.println("MQTT remote client disconnected");
-
-        });
-
-        endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
-    }
+    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+  }
 }

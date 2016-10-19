@@ -32,241 +32,241 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
  */
 public class MqttConnection extends ConnectionBase {
 
-    // handler to call when a remote MQTT client connects and establishes a connection
-    private Handler<MqttEndpoint> endpointHandler;
-    // endpoint for handling point-to-point communication with the remote MQTT client
-    private MqttEndpointImpl endpoint;
+  // handler to call when a remote MQTT client connects and establishes a connection
+  private Handler<MqttEndpoint> endpointHandler;
+  // endpoint for handling point-to-point communication with the remote MQTT client
+  private MqttEndpointImpl endpoint;
 
-    /**
-     * Constructor
-     *
-     * @param vertx     Vert.x instance
-     * @param channel   Channel (netty) used for communication with MQTT remote client
-     * @param context   Vert.x context
-     * @param metrics   metricss
-     */
-    public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
-        super(vertx, channel, context, metrics);
+  /**
+   * Constructor
+   *
+   * @param vertx   Vert.x instance
+   * @param channel Channel (netty) used for communication with MQTT remote client
+   * @param context Vert.x context
+   * @param metrics metricss
+   */
+  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
+    super(vertx, channel, context, metrics);
+  }
+
+  @Override
+  protected Object metric() {
+    return null;
+  }
+
+  @Override
+  protected void handleInterestedOpsChanged() {
+
+  }
+
+  synchronized void endpointHandler(Handler<MqttEndpoint> handler) {
+    this.endpointHandler = handler;
+  }
+
+  /**
+   * Handle the MQTT message received by the remote MQTT client
+   *
+   * @param msg message to handle
+   */
+  synchronized void handleMessage(Object msg) {
+
+    // handling directly native Netty MQTT messages because we don't need to
+    // expose them at higher level (so no need for polyglotization)
+    if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
+
+      io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
+
+      switch (mqttMessage.fixedHeader().messageType()) {
+
+        case PUBACK:
+
+          io.netty.handler.codec.mqtt.MqttPubAckMessage mqttPubackMessage = (io.netty.handler.codec.mqtt.MqttPubAckMessage) mqttMessage;
+          this.handlePuback(mqttPubackMessage.variableHeader().messageId());
+          break;
+
+        case PUBREC:
+
+          int pubrecMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
+          this.handlePubrec(pubrecMessageId);
+          break;
+
+        case PUBREL:
+
+          int pubrelMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
+          this.handlePubrel(pubrelMessageId);
+          break;
+
+        case PUBCOMP:
+
+          int pubcompMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
+          this.handlePubcomp(pubcompMessageId);
+          break;
+
+        case PINGREQ:
+
+          this.handlePingreq();
+          break;
+
+        case DISCONNECT:
+
+          this.handleDisconnect();
+          break;
+
+        default:
+
+          this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
+          break;
+
+      }
+
+      // handling mapped Vert.x MQTT messages (from Netty ones) because they'll be provided
+      // to the higher layer (so need for ployglotization)
+    } else {
+
+      if (msg instanceof MqttSubscribeMessage) {
+
+        this.handleSubscribe((MqttSubscribeMessage) msg);
+
+      } else if (msg instanceof MqttUnsubscribeMessage) {
+
+        this.handleUnsubscribe((MqttUnsubscribeMessage) msg);
+
+      } else if (msg instanceof MqttPublishMessage) {
+
+        this.handlePublish((MqttPublishMessage) msg);
+
+      } else {
+
+        this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
+      }
     }
+  }
 
-    @Override
-    protected Object metric() {
-        return null;
+  /**
+   * Used for calling the endpoint handler when a connection is established with a remote MQTT client
+   *
+   * @param endpoint the local endpoint for MQTT point-to-point communication with remote
+   */
+  synchronized void handleConnect(MqttEndpointImpl endpoint) {
+
+    if (this.endpointHandler != null) {
+      this.endpointHandler.handle(endpoint);
+      this.endpoint = endpoint;
     }
+  }
 
-    @Override
-    protected void handleInterestedOpsChanged() {
+  /**
+   * Used for calling the subscribe handler when the remote MQTT client subscribes to topics
+   *
+   * @param msg message with subscribe information
+   */
+  synchronized void handleSubscribe(MqttSubscribeMessage msg) {
 
+    if (this.endpoint != null) {
+      this.endpoint.handleSubscribe(msg);
     }
+  }
 
-    synchronized void endpointHandler(Handler<MqttEndpoint> handler) {
-        this.endpointHandler = handler;
+  /**
+   * Used for calling the unsubscribe handler when the remote MQTT client unsubscribe to topics
+   *
+   * @param msg message with unsubscribe information
+   */
+  synchronized void handleUnsubscribe(MqttUnsubscribeMessage msg) {
+
+    if (this.endpoint != null) {
+      this.endpoint.handleUnsubscribe(msg);
     }
+  }
 
-    /**
-     * Handle the MQTT message received by the remote MQTT client
-     *
-     * @param msg   message to handle
-     */
-    synchronized void handleMessage(Object msg) {
+  /**
+   * Used for calling the publish handler when the remote MQTT client publishes a message
+   *
+   * @param msg published message
+   */
+  synchronized void handlePublish(MqttPublishMessage msg) {
 
-        // handling directly native Netty MQTT messages because we don't need to
-        // expose them at higher level (so no need for polyglotization)
-        if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
-
-            io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
-
-            switch (mqttMessage.fixedHeader().messageType()) {
-
-                case PUBACK:
-
-                    io.netty.handler.codec.mqtt.MqttPubAckMessage mqttPubackMessage = (io.netty.handler.codec.mqtt.MqttPubAckMessage) mqttMessage;
-                    this.handlePuback(mqttPubackMessage.variableHeader().messageId());
-                    break;
-
-                case PUBREC:
-
-                    int pubrecMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-                    this.handlePubrec(pubrecMessageId);
-                    break;
-
-                case PUBREL:
-
-                    int pubrelMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-                    this.handlePubrel(pubrelMessageId);
-                    break;
-
-                case PUBCOMP:
-
-                    int pubcompMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-                    this.handlePubcomp(pubcompMessageId);
-                    break;
-
-                case PINGREQ:
-
-                    this.handlePingreq();
-                    break;
-
-                case DISCONNECT:
-
-                    this.handleDisconnect();
-                    break;
-
-                default:
-
-                    this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
-                    break;
-
-            }
-
-        // handling mapped Vert.x MQTT messages (from Netty ones) because they'll be provided
-        // to the higher layer (so need for ployglotization)
-        } else {
-
-            if (msg instanceof MqttSubscribeMessage) {
-
-                this.handleSubscribe((MqttSubscribeMessage) msg);
-
-            } else if (msg instanceof MqttUnsubscribeMessage) {
-
-                this.handleUnsubscribe((MqttUnsubscribeMessage) msg);
-
-            } else if (msg instanceof MqttPublishMessage) {
-
-                this.handlePublish((MqttPublishMessage) msg);
-
-            } else {
-
-                this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
-            }
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handlePublish(msg);
     }
+  }
 
-    /**
-     * Used for calling the endpoint handler when a connection is established with a remote MQTT client
-     *
-     * @param endpoint  the local endpoint for MQTT point-to-point communication with remote
-     */
-    synchronized void handleConnect(MqttEndpointImpl endpoint) {
+  /**
+   * Used for calling the puback handler when the remote MQTT client acknowledge a QoS 1 message with puback
+   *
+   * @param pubackMessageId identifier of the message acknowledged by the remote MQTT client
+   */
+  synchronized void handlePuback(int pubackMessageId) {
 
-        if (this.endpointHandler != null) {
-            this.endpointHandler.handle(endpoint);
-            this.endpoint = endpoint;
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handlePuback(pubackMessageId);
     }
+  }
 
-    /**
-     * Used for calling the subscribe handler when the remote MQTT client subscribes to topics
-     *
-     * @param msg   message with subscribe information
-     */
-    synchronized void handleSubscribe(MqttSubscribeMessage msg) {
+  /**
+   * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
+   *
+   * @param pubrecMessageId identifier of the message acknowledged by the remote MQTT client
+   */
+  synchronized void handlePubrec(int pubrecMessageId) {
 
-        if (this.endpoint != null) {
-            this.endpoint.handleSubscribe(msg);
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handlePubrec(pubrecMessageId);
     }
+  }
 
-    /**
-     * Used for calling the unsubscribe handler when the remote MQTT client unsubscribe to topics
-     *
-     * @param msg   message with unsubscribe information
-     */
-    synchronized void handleUnsubscribe(MqttUnsubscribeMessage msg) {
+  /**
+   * Used for calling the pubrel handler when the remote MQTT client acknowledge a QoS 2 message with pubrel
+   *
+   * @param pubrelMessageId identifier of the message acknowledged by the remote MQTT client
+   */
+  synchronized void handlePubrel(int pubrelMessageId) {
 
-        if (this.endpoint != null) {
-            this.endpoint.handleUnsubscribe(msg);
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handlePubrel(pubrelMessageId);
     }
+  }
 
-    /**
-     * Used for calling the publish handler when the remote MQTT client publishes a message
-     *
-     * @param msg   published message
-     */
-    synchronized void handlePublish(MqttPublishMessage msg) {
+  /**
+   * Used for calling the pubcomp handler when the remote MQTT client acknowledge a QoS 2 message with pubcomp
+   *
+   * @param pubcompMessageId identifier of the message acknowledged by the remote MQTT client
+   */
+  synchronized void handlePubcomp(int pubcompMessageId) {
 
-        if (this.endpoint != null) {
-            this.endpoint.handlePublish(msg);
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handlePubcomp(pubcompMessageId);
     }
+  }
 
-    /**
-     * Used for calling the puback handler when the remote MQTT client acknowledge a QoS 1 message with puback
-     *
-     * @param pubackMessageId   identifier of the message acknowledged by the remote MQTT client
-     */
-    synchronized void handlePuback(int pubackMessageId) {
+  /**
+   * Used internally for handling the pinreq from the remote MQTT client
+   */
+  synchronized void handlePingreq() {
 
-        if (this.endpoint != null) {
-            this.endpoint.handlePuback(pubackMessageId);
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handlePingreq();
     }
+  }
 
-    /**
-     * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
-     *
-     * @param pubrecMessageId   identifier of the message acknowledged by the remote MQTT client
-     */
-    synchronized void handlePubrec(int pubrecMessageId) {
+  /**
+   * Used for calling the disconnect handler when the remote MQTT client disconnects
+   */
+  synchronized void handleDisconnect() {
 
-        if (this.endpoint != null) {
-            this.endpoint.handlePubrec(pubrecMessageId);
-        }
+    if (this.endpoint != null) {
+      this.endpoint.handleDisconnect();
     }
+  }
 
-    /**
-     * Used for calling the pubrel handler when the remote MQTT client acknowledge a QoS 2 message with pubrel
-     *
-     * @param pubrelMessageId   identifier of the message acknowledged by the remote MQTT client
-     */
-    synchronized void handlePubrel(int pubrelMessageId) {
+  /**
+   * Used for calling the close handler when the remote MQTT client closes the connection
+   */
+  synchronized protected void handleClosed() {
 
-        if (this.endpoint != null) {
-            this.endpoint.handlePubrel(pubrelMessageId);
-        }
+    super.handleClosed();
+    if (this.endpoint != null) {
+      this.endpoint.handleClosed();
     }
-
-    /**
-     * Used for calling the pubcomp handler when the remote MQTT client acknowledge a QoS 2 message with pubcomp
-     *
-     * @param pubcompMessageId   identifier of the message acknowledged by the remote MQTT client
-     */
-    synchronized void handlePubcomp(int pubcompMessageId) {
-
-        if (this.endpoint != null) {
-            this.endpoint.handlePubcomp(pubcompMessageId);
-        }
-    }
-
-    /**
-     * Used internally for handling the pinreq from the remote MQTT client
-     */
-    synchronized void handlePingreq() {
-
-        if (this.endpoint != null) {
-            this.endpoint.handlePingreq();
-        }
-    }
-
-    /**
-     * Used for calling the disconnect handler when the remote MQTT client disconnects
-     */
-    synchronized void handleDisconnect() {
-
-        if (this.endpoint != null) {
-            this.endpoint.handleDisconnect();
-        }
-    }
-
-    /**
-     * Used for calling the close handler when the remote MQTT client closes the connection
-     */
-    synchronized protected void handleClosed() {
-
-        super.handleClosed();
-        if (this.endpoint != null) {
-            this.endpoint.handleClosed();
-        }
-    }
+  }
 }

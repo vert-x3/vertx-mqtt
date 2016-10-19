@@ -25,15 +25,17 @@ import io.vertx.codegen.annotations.VertxGen;
 @VertxGen
 public interface MqttTopicSubscription {
 
-    /**
-     * Subscription topic name
-     * @return
-     */
-    String topicName();
+  /**
+   * Subscription topic name
+   *
+   * @return
+   */
+  String topicName();
 
-    /**
-     * Quality of Service level for the subscription
-     * @return
-     */
-    MqttQoS qualityOfService();
+  /**
+   * Quality of Service level for the subscription
+   *
+   * @return
+   */
+  MqttQoS qualityOfService();
 }

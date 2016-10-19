@@ -39,89 +39,89 @@ import java.util.List;
 @RunWith(VertxUnitRunner.class)
 public class MqttSubscribeTest extends MqttBaseTest {
 
-    private Async async;
+  private Async async;
 
-    private static final String MQTT_TOPIC = "/my_topic";
-    private static final String MQTT_TOPIC_FAILURE = "/my_topic/failure";
+  private static final String MQTT_TOPIC = "/my_topic";
+  private static final String MQTT_TOPIC_FAILURE = "/my_topic/failure";
 
-    @Before
-    public void before(TestContext context) {
+  @Before
+  public void before(TestContext context) {
 
-        this.setUp(context);
+    this.setUp(context);
+  }
+
+  @After
+  public void after(TestContext context) {
+
+    this.tearDown(context);
+  }
+
+  @Test
+  public void subscribeQos0(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC, 0);
+  }
+
+  @Test
+  public void subscribeQos1(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC, 1);
+  }
+
+  @Test
+  public void subscribeQos2(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC, 2);
+  }
+
+  @Test
+  public void subscribeFailure(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC_FAILURE, 0);
+  }
+
+  private void subscribe(TestContext context, String topic, int expectedQos) {
+
+    this.async = context.async();
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+
+      String[] topics = new String[]{topic};
+      int[] qos = new int[]{expectedQos};
+      // after calling subscribe, the qos is replaced with granted QoS that should be the same
+      client.subscribe(topics, qos);
+
+      this.async.await();
+
+      context.assertTrue(qos[0] == expectedQos);
+
+    } catch (MqttException e) {
+
+      context.assertTrue(!topic.equals(MQTT_TOPIC_FAILURE) ? false : true);
+      e.printStackTrace();
     }
+  }
 
-    @After
-    public void after(TestContext context) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-        this.tearDown(context);
-    }
+    endpoint.subscribeHandler(subscribe -> {
 
-    @Test
-    public void subscribeQos0(TestContext context) {
+      List<Integer> qos = new ArrayList<>();
 
-        this.subscribe(context, MQTT_TOPIC, 0);
-    }
+      Integer grantedQos =
+        subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
+          MqttQoS.FAILURE.value() :
+          subscribe.topicSubscriptions().get(0).qualityOfService().value();
 
-    @Test
-    public void subscribeQos1(TestContext context) {
+      qos.add(grantedQos);
+      endpoint.writeSuback(subscribe.messageId(), qos);
 
-        this.subscribe(context, MQTT_TOPIC, 1);
-    }
+      this.async.complete();
+    });
 
-    @Test
-    public void subscribeQos2(TestContext context) {
-
-        this.subscribe(context, MQTT_TOPIC, 2);
-    }
-
-    @Test
-    public void subscribeFailure(TestContext context) {
-
-        this.subscribe(context, MQTT_TOPIC_FAILURE, 0);
-    }
-
-    private void subscribe(TestContext context, String topic, int expectedQos) {
-
-        this.async = context.async();
-
-        try {
-            MemoryPersistence persistence = new MemoryPersistence();
-            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-            client.connect();
-
-            String[] topics = new String[] { topic };
-            int[] qos = new int[] { expectedQos };
-            // after calling subscribe, the qos is replaced with granted QoS that should be the same
-            client.subscribe(topics, qos);
-
-            this.async.await();
-
-            context.assertTrue(qos[0] == expectedQos);
-
-        } catch (MqttException e) {
-
-            context.assertTrue(!topic.equals(MQTT_TOPIC_FAILURE) ? false : true);
-            e.printStackTrace();
-        }
-    }
-
-    protected void endpointHandler(MqttEndpoint endpoint) {
-
-        endpoint.subscribeHandler(subscribe -> {
-
-            List<Integer> qos = new ArrayList<>();
-
-            Integer grantedQos =
-                    subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
-                            MqttQoS.FAILURE.value() :
-                            subscribe.topicSubscriptions().get(0).qualityOfService().value();
-
-            qos.add(grantedQos);
-            endpoint.writeSuback(subscribe.messageId(), qos);
-
-            this.async.complete();
-        });
-
-        endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
-    }
+    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+  }
 }

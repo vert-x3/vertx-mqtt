@@ -23,22 +23,25 @@ import io.vertx.mqtt.MqttAuth;
  */
 public class MqttAuthImpl implements MqttAuth {
 
-    private final String userName;
-    private final String password;
+  private final String userName;
+  private final String password;
 
-    /**
-     * Constructor
-     * @param userName  MQTT client username
-     * @param password  MQTT client password
-     */
-    MqttAuthImpl(String userName, String password) {
-        this.userName = userName;
-        this.password = password;
-    }
+  /**
+   * Constructor
+   *
+   * @param userName MQTT client username
+   * @param password MQTT client password
+   */
+  MqttAuthImpl(String userName, String password) {
+    this.userName = userName;
+    this.password = password;
+  }
 
-    public String userName() {
-        return this.userName;
-    }
+  public String userName() {
+    return this.userName;
+  }
 
-    public String password() { return this.password; }
+  public String password() {
+    return this.password;
+  }
 }

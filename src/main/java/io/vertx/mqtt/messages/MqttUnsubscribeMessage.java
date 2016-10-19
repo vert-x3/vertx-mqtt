@@ -27,21 +27,22 @@ import java.util.List;
 @VertxGen
 public interface MqttUnsubscribeMessage extends MqttMessage {
 
-    /**
-     * Create a concrete instance of a Vert.x unsubscribe message
-     *
-     * @param messageId message identifier
-     * @param topics    list of topics to unsubscribe
-     */
-    @GenIgnore
-    static MqttUnsubscribeMessageImpl create(int messageId, List<String> topics) {
+  /**
+   * Create a concrete instance of a Vert.x unsubscribe message
+   *
+   * @param messageId message identifier
+   * @param topics    list of topics to unsubscribe
+   */
+  @GenIgnore
+  static MqttUnsubscribeMessageImpl create(int messageId, List<String> topics) {
 
-        return new MqttUnsubscribeMessageImpl(messageId, topics);
-    }
+    return new MqttUnsubscribeMessageImpl(messageId, topics);
+  }
 
-    /**
-     * List of topics to unsubscribe
-     * @return
-     */
-    List<String> topics();
+  /**
+   * List of topics to unsubscribe
+   *
+   * @return
+   */
+  List<String> topics();
 }

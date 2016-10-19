@@ -24,21 +24,25 @@ import io.netty.handler.codec.mqtt.MqttQoS;
  */
 public class MqttTopicSubscriptionImpl implements MqttTopicSubscription {
 
-    private final String topicName;
-    private final MqttQoS qualityOfService;
+  private final String topicName;
+  private final MqttQoS qualityOfService;
 
-    /**
-     * Constructor
-     *
-     * @param topicName topic name for the subscription
-     * @param qualityOfService  quality of service level
-     */
-    public MqttTopicSubscriptionImpl(String topicName, MqttQoS qualityOfService) {
-        this.topicName = topicName;
-        this.qualityOfService = qualityOfService;
-    }
+  /**
+   * Constructor
+   *
+   * @param topicName        topic name for the subscription
+   * @param qualityOfService quality of service level
+   */
+  public MqttTopicSubscriptionImpl(String topicName, MqttQoS qualityOfService) {
+    this.topicName = topicName;
+    this.qualityOfService = qualityOfService;
+  }
 
-    public String topicName() { return this.topicName; }
+  public String topicName() {
+    return this.topicName;
+  }
 
-    public MqttQoS qualityOfService() { return this.qualityOfService; }
+  public MqttQoS qualityOfService() {
+    return this.qualityOfService;
+  }
 }

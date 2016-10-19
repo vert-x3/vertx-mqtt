@@ -31,50 +31,50 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public abstract class MqttBaseTest {
 
-    protected static final String MQTT_SERVER_HOST = "localhost";
-    protected static final int MQTT_SERVER_PORT = 1883;
+  protected static final String MQTT_SERVER_HOST = "localhost";
+  protected static final int MQTT_SERVER_PORT = 1883;
 
-    protected Vertx vertx;
-    protected MqttServer mqttServer;
+  protected Vertx vertx;
+  protected MqttServer mqttServer;
 
-    /**
-     * Setup the needs for starting the MQTT server
-     *
-     * @param context   TestContext instance
-     */
-    protected void setUp(TestContext context) {
+  /**
+   * Setup the needs for starting the MQTT server
+   *
+   * @param context TestContext instance
+   */
+  protected void setUp(TestContext context) {
 
-        this.vertx = Vertx.vertx();
-        this.mqttServer = MqttServer.create(this.vertx);
+    this.vertx = Vertx.vertx();
+    this.mqttServer = MqttServer.create(this.vertx);
 
-        // be sure that all other tests will start only if the MQTT server starts correctly
-        Async async = context.async();
+    // be sure that all other tests will start only if the MQTT server starts correctly
+    Async async = context.async();
 
-        this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
+    this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
 
-            if (ar.succeeded()) {
-                System.out.println("MQTT server listening on port " + ar.result().actualPort());
-                async.complete();
-            } else {
-                System.out.println("Error starting MQTT server");
-                System.exit(1);
-            }
-        });
-    }
+      if (ar.succeeded()) {
+        System.out.println("MQTT server listening on port " + ar.result().actualPort());
+        async.complete();
+      } else {
+        System.out.println("Error starting MQTT server");
+        System.exit(1);
+      }
+    });
+  }
 
-    /**
-     * Teardown the stuff used for testing (i.e. MQTT server)
-     *
-     * @param context   TestContext instance
-     */
-    protected void tearDown(TestContext context) {
+  /**
+   * Teardown the stuff used for testing (i.e. MQTT server)
+   *
+   * @param context TestContext instance
+   */
+  protected void tearDown(TestContext context) {
 
-        this.mqttServer.close();
-        this.vertx.close();
-    }
+    this.mqttServer.close();
+    this.vertx.close();
+  }
 
-    protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-        endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
-    }
+    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+  }
 }

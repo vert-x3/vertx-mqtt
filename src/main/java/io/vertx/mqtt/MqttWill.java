@@ -24,27 +24,31 @@ import io.vertx.codegen.annotations.VertxGen;
 @VertxGen
 public interface MqttWill {
 
-    /**
-     * Topic for the will as provided by the remote MQTT client
-     * @return
-     */
-    String willTopic();
+  /**
+   * Topic for the will as provided by the remote MQTT client
+   *
+   * @return
+   */
+  String willTopic();
 
-    /**
-     * Payload for the will as provided by the remote MQTT client
-     * @return
-     */
-    String willMessage();
+  /**
+   * Payload for the will as provided by the remote MQTT client
+   *
+   * @return
+   */
+  String willMessage();
 
-    /**
-     * QoS level for the will as provided by the remote MQTT client
-     * @return
-     */
-    int willQos();
+  /**
+   * QoS level for the will as provided by the remote MQTT client
+   *
+   * @return
+   */
+  int willQos();
 
-    /**
-     * If the will must be retained as provided by the remote MQTT client
-     * @return
-     */
-    boolean isWillRetain();
+  /**
+   * If the will must be retained as provided by the remote MQTT client
+   *
+   * @return
+   */
+  boolean isWillRetain();
 }

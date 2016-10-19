@@ -24,15 +24,17 @@ import io.vertx.codegen.annotations.VertxGen;
 @VertxGen
 public interface MqttAuth {
 
-    /**
-     * Username provided by the remote MQTT client
-     * @return
-     */
-    String userName();
+  /**
+   * Username provided by the remote MQTT client
+   *
+   * @return
+   */
+  String userName();
 
-    /**
-     * Password provided by the remote MQTT client
-     * @return
-     */
-    String password();
+  /**
+   * Password provided by the remote MQTT client
+   *
+   * @return
+   */
+  String password();
 }

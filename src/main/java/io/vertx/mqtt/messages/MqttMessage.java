@@ -24,9 +24,10 @@ import io.vertx.codegen.annotations.VertxGen;
 @VertxGen(concrete = false)
 public interface MqttMessage {
 
-    /**
-     * Message identifier
-     * @return
-     */
-    int messageId();
+  /**
+   * Message identifier
+   *
+   * @return
+   */
+  int messageId();
 }

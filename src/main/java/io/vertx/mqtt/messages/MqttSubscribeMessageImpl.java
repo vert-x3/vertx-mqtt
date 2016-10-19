@@ -27,26 +27,30 @@ import java.util.stream.Collectors;
  */
 public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
 
-    private final int messageId;
-    private final List<MqttTopicSubscription> topicSubscriptions;
+  private final int messageId;
+  private final List<MqttTopicSubscription> topicSubscriptions;
 
-    /**
-     * Constructor
-     *
-     * @param messageId message identifier
-     * @param topicSubscriptions    list with topics and related quality of service levels (from Netty)
-     */
-    MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
+  /**
+   * Constructor
+   *
+   * @param messageId          message identifier
+   * @param topicSubscriptions list with topics and related quality of service levels (from Netty)
+   */
+  MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
 
-        this.messageId = messageId;
-        this.topicSubscriptions = topicSubscriptions.stream().map(ts -> {
+    this.messageId = messageId;
+    this.topicSubscriptions = topicSubscriptions.stream().map(ts -> {
 
-            return new MqttTopicSubscriptionImpl(ts.topicName(), ts.qualityOfService());
+      return new MqttTopicSubscriptionImpl(ts.topicName(), ts.qualityOfService());
 
-        }).collect(Collectors.toList());
-    }
+    }).collect(Collectors.toList());
+  }
 
-    public int messageId() { return this.messageId; }
+  public int messageId() {
+    return this.messageId;
+  }
 
-    public List<MqttTopicSubscription> topicSubscriptions() { return this.topicSubscriptions; }
+  public List<MqttTopicSubscription> topicSubscriptions() {
+    return this.topicSubscriptions;
+  }
 }

@@ -39,69 +39,69 @@ import java.util.List;
 @RunWith(VertxUnitRunner.class)
 public class MqttUnsubscribeTest extends MqttBaseTest {
 
-    private Async async;
+  private Async async;
 
-    private static final String MQTT_TOPIC = "/my_topic";
+  private static final String MQTT_TOPIC = "/my_topic";
 
-    @Before
-    public void before(TestContext context) {
+  @Before
+  public void before(TestContext context) {
 
-        this.setUp(context);
+    this.setUp(context);
+  }
+
+  @After
+  public void after(TestContext context) {
+
+    this.tearDown(context);
+  }
+
+  @Test
+  @Ignore
+  public void unsubscribe(TestContext context) {
+
+    this.async = context.async();
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+
+      String[] topics = new String[]{MQTT_TOPIC};
+      int[] qos = new int[]{0};
+      client.subscribe(topics, qos);
+
+      this.async.await();
+
+      client.unsubscribe(topics);
+
+      this.async.await();
+
+      context.assertTrue(true);
+
+    } catch (MqttException e) {
+
+      context.assertTrue(false);
+      e.printStackTrace();
     }
+  }
 
-    @After
-    public void after(TestContext context) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-        this.tearDown(context);
-    }
+    endpoint.subscribeHandler(subscribe -> {
 
-    @Test
-    @Ignore
-    public void unsubscribe(TestContext context) {
+      List<Integer> qos = new ArrayList<>();
+      qos.add(subscribe.topicSubscriptions().get(0).qualityOfService().value());
+      endpoint.writeSuback(subscribe.messageId(), qos);
 
-        this.async = context.async();
+      this.async.complete();
 
-        try {
-            MemoryPersistence persistence = new MemoryPersistence();
-            MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-            client.connect();
+    }).unsubscribeHandler(unsubscribe -> {
 
-            String[] topics = new String[] { MQTT_TOPIC };
-            int[] qos = new int[] { 0 };
-            client.subscribe(topics, qos);
+      endpoint.writeUnsuback(unsubscribe.messageId());
 
-            this.async.await();
+      this.async.complete();
+    });
 
-            client.unsubscribe(topics);
-
-            this.async.await();
-
-            context.assertTrue(true);
-
-        } catch (MqttException e) {
-
-            context.assertTrue(false);
-            e.printStackTrace();
-        }
-    }
-
-    protected void endpointHandler(MqttEndpoint endpoint) {
-
-        endpoint.subscribeHandler(subscribe -> {
-
-            List<Integer> qos = new ArrayList<>();
-            qos.add(subscribe.topicSubscriptions().get(0).qualityOfService().value());
-            endpoint.writeSuback(subscribe.messageId(), qos);
-
-            this.async.complete();
-
-        }).unsubscribeHandler(unsubscribe -> {
-
-            endpoint.writeUnsuback(unsubscribe.messageId());
-
-            this.async.complete();
-        });
-
-        endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
-    }
+    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+  }
 }

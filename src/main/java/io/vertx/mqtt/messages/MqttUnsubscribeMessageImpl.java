@@ -23,22 +23,26 @@ import java.util.List;
  */
 public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
 
-    private final int messageId;
-    private final List<String> topics;
+  private final int messageId;
+  private final List<String> topics;
 
-    /**
-     * Constructor
-     *
-     * @param messageId message identifier
-     * @param topics    list of topics to unsubscribe
-     */
-    MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
+  /**
+   * Constructor
+   *
+   * @param messageId message identifier
+   * @param topics    list of topics to unsubscribe
+   */
+  MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
 
-        this.messageId = messageId;
-        this.topics = topics;
-    }
+    this.messageId = messageId;
+    this.topics = topics;
+  }
 
-    public int messageId() { return this.messageId; }
+  public int messageId() {
+    return this.messageId;
+  }
 
-    public List<String> topics() { return this.topics; }
+  public List<String> topics() {
+    return this.topics;
+  }
 }
