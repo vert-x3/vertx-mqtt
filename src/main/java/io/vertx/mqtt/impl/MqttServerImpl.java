@@ -16,11 +16,13 @@
 
 package io.vertx.mqtt.impl;
 
-import io.vertx.mqtt.MqttServer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttDecoder;
@@ -28,6 +30,7 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -39,6 +42,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
@@ -58,10 +62,11 @@ public class MqttServerImpl implements MqttServer {
   private final MqttServerOptions options;
   private final VertxInternal vertx;
   private ServerBootstrap bootstrap;
-  private Channel serverChannel;
   private final Map<Channel, MqttConnection> connectionMap = new ConcurrentHashMap<>();
   private Handler<MqttEndpoint> handler;
 
+
+  private ChannelGroup serverChannelGroup;
   private volatile int actualPort;
   private boolean logEnabled;
 
@@ -100,6 +105,8 @@ public class MqttServerImpl implements MqttServer {
     if (this.bootstrap != null) {
       throw new IllegalStateException("The MQTT server is already started");
     }
+
+    this.serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
     // get the current context as a Vert.x internal context
     ContextInternal context = vertx.getOrCreateContext();
@@ -143,8 +150,9 @@ public class MqttServerImpl implements MqttServer {
             // callback the listen handler either with a success or a failure
             if (channelFuture.isSuccess()) {
 
-              serverChannel = channelFuture.channel();
+              Channel serverChannel = channelFuture.channel();
               actualPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+              serverChannelGroup.add(serverChannel);
 
               listenHandler.handle(Future.succeededFuture(MqttServerImpl.this));
 
@@ -174,21 +182,32 @@ public class MqttServerImpl implements MqttServer {
   }
 
   public void close() {
+    this.close(null);
+  }
 
-    // close the server channel used for listening
-    if (this.serverChannel != null) {
-      this.serverChannel.close();
-      this.serverChannel = null;
-    }
+  public void close(Handler<AsyncResult<Void>> completionHandler) {
+
+    ContextImpl context = vertx.getOrCreateContext();
+
+    this.actualClose(context, completionHandler);
+  }
+
+  private void actualClose(ContextImpl closeContext, Handler<AsyncResult<Void>> done) {
 
     // close all remote MQTT client connections
     for (MqttConnection conn : this.connectionMap.values()) {
       conn.close();
     }
+
+    ChannelGroupFuture fut = this.serverChannelGroup.close();
+    fut.addListener(cfg -> this.executeCloseDone(closeContext, done, fut.cause()));
   }
 
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    // TODO
+  private void executeCloseDone(ContextImpl closeContext, Handler<AsyncResult<Void>> done, Exception e) {
+    if (done != null) {
+      Future<Void> fut = (e != null) ? Future.failedFuture(e) : Future.succeededFuture();
+      closeContext.runOnContext(v -> done.handle(fut));
+    }
   }
 
   public int actualPort() {

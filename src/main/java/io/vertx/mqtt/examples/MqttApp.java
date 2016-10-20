@@ -154,7 +154,9 @@ public class MqttApp {
 
     try {
       System.in.read();
-      mqttServer.close();
+      mqttServer.close(v -> {
+        log.info("MQTT server closed");
+      });
       vertx.close();
     } catch (IOException e) {
       e.printStackTrace();
