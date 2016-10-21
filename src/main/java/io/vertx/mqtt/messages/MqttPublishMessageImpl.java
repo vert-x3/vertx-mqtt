@@ -29,6 +29,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   private final MqttQoS qosLevel;
   private final boolean isDup;
   private final boolean isRetain;
+  private final String topicName;
   private final Buffer payload;
 
   /**
@@ -38,13 +39,15 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
    * @param qosLevel  quality of service level
    * @param isDup     if the message is a duplicate
    * @param isRetain  if the message needs to be retained
+   * @param topicName topic on which the message was published
    * @param payload   payload message
    */
-  MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
+  MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
     this.messageId = messageId;
     this.qosLevel = qosLevel;
     this.isDup = isDup;
     this.isRetain = isRetain;
+    this.topicName = topicName;
     this.payload = Buffer.buffer(payload);
   }
 
@@ -62,6 +65,10 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
 
   public boolean isRetain() {
     return this.isRetain;
+  }
+
+  public String topicName() {
+    return this.topicName;
   }
 
   public Buffer payload() {

@@ -35,13 +35,14 @@ public interface MqttPublishMessage extends MqttMessage {
    * @param qosLevel  quality of service level
    * @param isDup     if the message is a duplicate
    * @param isRetain  if the message needs to be retained
+   * @param topicName topic on which the message was published
    * @param payload   payload message
    * @return Vert.x publish message
    */
   @GenIgnore
-  static MqttPublishMessageImpl create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, ByteBuf payload) {
+  static MqttPublishMessageImpl create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
 
-    return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, payload);
+    return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload);
   }
 
   /**
@@ -64,6 +65,13 @@ public interface MqttPublishMessage extends MqttMessage {
    * @return
    */
   boolean isRetain();
+
+  /**
+   * Topic on which the message was published
+   *
+   * @return
+   */
+  String topicName();
 
   /**
    * Payload message

@@ -126,7 +126,7 @@ public class MqttApp {
         // handling incoming published messages
         endpoint.publishHandler(message -> {
 
-          log.info("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+          log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
           if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
             endpoint.writePuback(message.messageId());

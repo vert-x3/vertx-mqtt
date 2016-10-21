@@ -293,6 +293,7 @@ public class MqttServerImpl implements MqttServer {
               publish.fixedHeader().qosLevel(),
               publish.fixedHeader().isDup(),
               publish.fixedHeader().isRetain(),
+              publish.variableHeader().topicName(),
               newBuf);
         }
       }

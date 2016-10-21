@@ -98,7 +98,7 @@ public class MqttClientPublishTest extends MqttBaseTest {
 
     endpoint.publishHandler(message -> {
 
-      System.out.println("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      System.out.println("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
       switch (message.qosLevel()) {
 
