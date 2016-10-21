@@ -34,7 +34,6 @@ public class MqttServerVerticleApp {
     Vertx vertx = Vertx.vertx();
 
     vertx.deployVerticle("io.vertx.mqtt.examples.verticle.MqttServerVerticle");
-    vertx.deployVerticle("io.vertx.mqtt.examples.verticle.MqttServerVerticle");
 
     try {
       System.in.read();

@@ -24,6 +24,8 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 
+import java.nio.charset.Charset;
+
 /**
  * An example of using the MQTT server as a verticle
  */
@@ -44,6 +46,12 @@ public class MqttServerVerticle extends AbstractVerticle {
     this.server.endpointHandler(endpoint -> {
 
       log.info("connected client " + endpoint.clientIdentifier());
+
+      endpoint.publishHandler(message -> {
+
+        log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+
+      });
 
       endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
     });
