@@ -52,21 +52,21 @@ This example shows how it's possible to handle the connection request from a rem
 MqttServer mqttServer = MqttServer.create(vertx);
 mqttServer.endpointHandler(endpoint -> {
 
-                // shows main connect info
-                log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+              // shows main connect info
+              log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
 
-                if (endpoint.auth() != null) {
-                    log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
-                }
-                if (endpoint.will() != null) {
-                    log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
-                            " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-                }
+              if (endpoint.auth() != null) {
+                  log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+              }
+              if (endpoint.will() != null) {
+                  log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+                          " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+              }
 
-                log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+              log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
 
-                // accept connection from the remote client
-                endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+              // accept connection from the remote client
+              endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
 
           })
           .listen(ar -> {
@@ -203,5 +203,17 @@ Even if there is no need for the high level application to handle that, the *_Mq
 endpoint.pingreqHandler(v -> {
 
     log.info("Ping received from client");
+});
+----
+
+=== Closing the server
+
+The *_MqttServer_* interface provides the _close_ method that can be used for closing the server; it stops to listen for incoming connections and closes all the active connections with remote clients. This method is asynchronous and one overload provides the possibility to specify a complention handler that will be called when the server is really closed.
+
+[source,java]
+----
+mqttServer.close(v -> {
+
+        log.info("MQTT server closed");
 });
 ----
