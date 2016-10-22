@@ -214,6 +214,6 @@ The *_MqttServer_* interface provides the _close_ method that can be used for cl
 ----
 mqttServer.close(v -> {
 
-        log.info("MQTT server closed");
+    log.info("MQTT server closed");
 });
 ----
