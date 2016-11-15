@@ -53,7 +53,7 @@ public class MqttApp {
           log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
         }
         if (endpoint.will() != null) {
-          log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+          log.info("[will flag = " + endpoint.will().isWillFlag() + " topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
             " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
         }
 

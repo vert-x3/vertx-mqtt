@@ -359,12 +359,12 @@ public class MqttServerImpl implements MqttServer {
       mqttConn.endpointHandler(handler);
 
       // retrieve will information from CONNECT message
-      MqttWillImpl will = mqttConnectMessage.variableHeader().isWillFlag() ?
-        new MqttWillImpl(
+      MqttWillImpl will =
+        new MqttWillImpl(mqttConnectMessage.variableHeader().isWillFlag(),
           mqttConnectMessage.payload().willTopic(),
           mqttConnectMessage.payload().willMessage(),
           mqttConnectMessage.variableHeader().willQos(),
-          mqttConnectMessage.variableHeader().isWillRetain()) : null;
+          mqttConnectMessage.variableHeader().isWillRetain());
 
       // retrieve authorization information from CONNECT message
       MqttAuthImpl auth = (mqttConnectMessage.variableHeader().hasUserName() &&

@@ -25,6 +25,13 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface MqttWill {
 
   /**
+   * Will flag for indicating the will message presence
+   *
+   * @return
+   */
+  boolean isWillFlag();
+
+  /**
    * Topic for the will as provided by the remote MQTT client
    *
    * @return
