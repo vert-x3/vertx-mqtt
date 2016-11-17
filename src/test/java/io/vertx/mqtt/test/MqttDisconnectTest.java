@@ -16,10 +16,10 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.mqtt.MqttEndpoint;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.mqtt.MqttEndpoint;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -57,6 +57,21 @@ public class MqttDisconnectTest extends MqttBaseTest {
       context.assertTrue(true);
     } catch (MqttException e) {
       context.assertTrue(false);
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void bruteDisconnect(TestContext context) {
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+      client.close();
+      context.assertTrue(false);
+    } catch (MqttException e) {
+      context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_CLIENT_CONNECTED);
       e.printStackTrace();
     }
   }
