@@ -354,5 +354,5 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writePingresp();
+  MqttEndpoint pong();
 }

@@ -402,7 +402,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writePingresp() {
+  public MqttEndpointImpl pong() {
 
     this.checkConnected();
 
@@ -559,7 +559,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
 
       if (this.isAutoKeepAlive) {
-        this.writePingresp();
+        this.pong();
       }
     }
   }
