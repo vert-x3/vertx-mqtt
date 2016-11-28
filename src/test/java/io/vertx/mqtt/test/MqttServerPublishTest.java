@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test;
 
 import io.vertx.mqtt.MqttEndpoint;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -114,7 +113,7 @@ public class MqttServerPublishTest extends MqttBaseTest {
 
     endpoint.subscribeHandler(subscribe -> {
 
-      endpoint.writeSuback(subscribe.messageId(),
+      endpoint.subscribeAcknowledge(subscribe.messageId(),
         subscribe.topicSubscriptions().stream().map(sub -> {
           return sub.qualityOfService().value();
         })

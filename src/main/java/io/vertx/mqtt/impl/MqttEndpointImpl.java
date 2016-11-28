@@ -278,7 +278,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this.connack(returnCode, false);
   }
 
-  public MqttEndpointImpl writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels) {
+  public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<Integer> grantedQoSLevels) {
 
     this.checkConnected();
 
@@ -296,7 +296,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writeUnsuback(int unsubscribeMessageId) {
+  public MqttEndpointImpl unsubscribeAcknowledge(int unsubscribeMessageId) {
 
     this.checkConnected();
 
@@ -422,7 +422,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
       // with auto ack enabled, the requested QoS levels are granted
       if (this.isSubscriptionAutoAck) {
-        this.writeSuback(msg.messageId(), msg.topicSubscriptions().stream().map(t -> {
+        this.subscribeAcknowledge(msg.messageId(), msg.topicSubscriptions().stream().map(t -> {
           return t.qualityOfService().value();
         }).collect(Collectors.toList()));
       }
@@ -442,7 +442,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
 
       if (this.isSubscriptionAutoAck) {
-        this.writeUnsuback(msg.messageId());
+        this.unsubscribeAcknowledge(msg.messageId());
       }
     }
   }

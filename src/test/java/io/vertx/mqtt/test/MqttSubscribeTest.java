@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test;
 
 import io.vertx.mqtt.MqttEndpoint;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -117,7 +116,7 @@ public class MqttSubscribeTest extends MqttBaseTest {
           subscribe.topicSubscriptions().get(0).qualityOfService().value();
 
       qos.add(grantedQos);
-      endpoint.writeSuback(subscribe.messageId(), qos);
+      endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
       this.async.complete();
     });

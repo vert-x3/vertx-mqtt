@@ -18,7 +18,6 @@ package io.vertx.mqtt.examples;
 
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttTopicSubscription;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -71,7 +70,7 @@ public class MqttApp {
             grantedQosLevels.add(s.qualityOfService().value());
           }
           // ack the subscriptions request
-          endpoint.writeSuback(subscribe.messageId(), grantedQosLevels);
+          endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);
 
           // just as example, publish a message on the first topic with requested QoS
           endpoint.writePublish(subscribe.topicSubscriptions().get(0).topicName(),
@@ -102,7 +101,7 @@ public class MqttApp {
             log.info("Unsubscription for " + t);
           }
           // ack the subscriptions request
-          endpoint.writeUnsuback(unsubscribe.messageId());
+          endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
         });
 
         // handling ping from client

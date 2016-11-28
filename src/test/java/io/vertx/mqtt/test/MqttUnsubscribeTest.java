@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test;
 
 import io.vertx.mqtt.MqttEndpoint;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -91,13 +90,13 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
 
       List<Integer> qos = new ArrayList<>();
       qos.add(subscribe.topicSubscriptions().get(0).qualityOfService().value());
-      endpoint.writeSuback(subscribe.messageId(), qos);
+      endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
       this.async.complete();
 
     }).unsubscribeHandler(unsubscribe -> {
 
-      endpoint.writeUnsuback(unsubscribe.messageId());
+      endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
 
       this.async.complete();
     });

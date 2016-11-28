@@ -288,7 +288,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels);
+  MqttEndpoint subscribeAcknowledge(int subscribeMessageId, List<Integer> grantedQoSLevels);
 
   /**
    * Sends the UNSUBACK message to the remote MQTT client
@@ -297,7 +297,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writeUnsuback(int unsubscribeMessageId);
+  MqttEndpoint unsubscribeAcknowledge(int unsubscribeMessageId);
 
   /**
    * Sends the PUBACK message to the remote MQTT client
