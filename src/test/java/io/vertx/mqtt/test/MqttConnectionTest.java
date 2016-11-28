@@ -40,6 +40,8 @@ public class MqttConnectionTest extends MqttBaseTest {
   private static final String MQTT_USERNAME = "username";
   private static final String MQTT_PASSWORD = "password";
 
+  private MqttEndpoint endpoint;
+
   @Before
   public void before(TestContext context) {
 
@@ -154,6 +156,27 @@ public class MqttConnectionTest extends MqttBaseTest {
     }
   }
 
+  @Test
+  public void connectionAlreadyAccepted(TestContext context) {
+
+    this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+      // try to accept a connection already accepted
+      this.endpoint.accept(false);
+      context.assertTrue(false);
+    } catch (MqttException e) {
+      context.assertTrue(false);
+      e.printStackTrace();
+    } catch (IllegalStateException e) {
+      context.assertTrue(true);
+      e.printStackTrace();
+    }
+  }
+
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
 
@@ -184,5 +207,6 @@ public class MqttConnectionTest extends MqttBaseTest {
       endpoint.reject(returnCode);
     }
 
+    this.endpoint = endpoint;
   }
 }
