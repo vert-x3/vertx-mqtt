@@ -16,11 +16,10 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.mqtt.MqttEndpoint;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.mqtt.MqttEndpoint;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -104,13 +103,13 @@ public class MqttClientPublishTest extends MqttBaseTest {
 
         case AT_LEAST_ONCE:
 
-          endpoint.writePuback(message.messageId());
+          endpoint.publishAcknowledge(message.messageId());
           this.async.complete();
           break;
 
         case EXACTLY_ONCE:
 
-          endpoint.writePubrec(message.messageId());
+          endpoint.publishReceived(message.messageId());
           break;
 
         case AT_MOST_ONCE:
@@ -121,7 +120,7 @@ public class MqttClientPublishTest extends MqttBaseTest {
 
     }).pubrelHandler(messageId -> {
 
-      endpoint.writePubcomp(messageId);
+      endpoint.publishComplete(messageId);
       this.async.complete();
     });
 

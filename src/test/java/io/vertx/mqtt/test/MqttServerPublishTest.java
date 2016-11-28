@@ -16,10 +16,10 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.mqtt.MqttEndpoint;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -119,14 +119,14 @@ public class MqttServerPublishTest extends MqttBaseTest {
         })
           .collect(Collectors.toList()));
 
-      endpoint.writePublish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
     }).pubackHandler(messageId -> {
 
       System.out.print("Message [" + messageId + "] acknowledged");
       this.async.complete();
     }).pubrecHandler(messageId -> {
 
-      endpoint.writePubrel(messageId);
+      endpoint.publishRelease(messageId);
     }).pubcompHandler(messageId -> {
 
       System.out.print("Message [" + messageId + "] acknowledged");

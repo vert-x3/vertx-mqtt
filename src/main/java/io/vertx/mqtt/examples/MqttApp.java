@@ -16,13 +16,13 @@
 
 package io.vertx.mqtt.examples;
 
-import io.vertx.mqtt.MqttServer;
-import io.vertx.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttTopicSubscription;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -73,7 +73,7 @@ public class MqttApp {
           endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);
 
           // just as example, publish a message on the first topic with requested QoS
-          endpoint.writePublish(subscribe.topicSubscriptions().get(0).topicName(),
+          endpoint.publish(subscribe.topicSubscriptions().get(0).topicName(),
             Buffer.buffer("Hello from the Vert.x MQTT server"),
             subscribe.topicSubscriptions().get(0).qualityOfService(),
             false,
@@ -86,7 +86,7 @@ public class MqttApp {
 
           }).pubrecHandler(messageId -> {
 
-            endpoint.writePubrel(messageId);
+            endpoint.publishRelease(messageId);
 
           }).pubcompHandler(messageId -> {
 
@@ -128,14 +128,14 @@ public class MqttApp {
           log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
           if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
-            endpoint.writePuback(message.messageId());
+            endpoint.publishAcknowledge(message.messageId());
           } else if (message.qosLevel() == MqttQoS.EXACTLY_ONCE) {
-            endpoint.writePubrec(message.messageId());
+            endpoint.publishReceived(message.messageId());
           }
 
         }).pubrelHandler(messageId -> {
 
-          endpoint.writePubcomp(messageId);
+          endpoint.publishComplete(messageId);
         });
 
       })

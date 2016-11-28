@@ -306,7 +306,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writePuback(int publishMessageId);
+  MqttEndpoint publishAcknowledge(int publishMessageId);
 
   /**
    * Sends the PUBREC message to the remote MQTT client
@@ -315,7 +315,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writePubrec(int publishMessageId);
+  MqttEndpoint publishReceived(int publishMessageId);
 
   /**
    * Sends the PUBREL message to the remote MQTT client
@@ -324,7 +324,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writePubrel(int publishMessageId);
+  MqttEndpoint publishRelease(int publishMessageId);
 
   /**
    * Sends the PUBCOMP message to the remote MQTT client
@@ -333,7 +333,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writePubcomp(int publishMessageId);
+  MqttEndpoint publishComplete(int publishMessageId);
 
   /**
    * Sends the PUBLISH message to the remote MQTT client
@@ -346,7 +346,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+  MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 
   /**
    * Sends the PINGRESP message to the remote MQTT client

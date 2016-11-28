@@ -16,15 +16,23 @@
 
 package io.vertx.mqtt.impl;
 
-import io.vertx.mqtt.MqttAuth;
-import io.vertx.mqtt.MqttEndpoint;
-import io.vertx.mqtt.MqttWill;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageFactory;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.mqtt.MqttAuth;
+import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttWill;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -312,7 +320,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writePuback(int publishMessageId) {
+  public MqttEndpointImpl publishAcknowledge(int publishMessageId) {
 
     this.checkConnected();
 
@@ -328,7 +336,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writePubrec(int publishMessageId) {
+  public MqttEndpointImpl publishReceived(int publishMessageId) {
 
     this.checkConnected();
 
@@ -344,7 +352,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writePubrel(int publishMessageId) {
+  public MqttEndpointImpl publishRelease(int publishMessageId) {
 
     this.checkConnected();
 
@@ -360,7 +368,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writePubcomp(int publishMessageId) {
+  public MqttEndpointImpl publishComplete(int publishMessageId) {
 
     this.checkConnected();
 
@@ -376,7 +384,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl writePublish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
 
     this.checkConnected();
 
@@ -464,11 +472,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
         switch (msg.qosLevel()) {
 
           case AT_LEAST_ONCE:
-            this.writePuback(msg.messageId());
+            this.publishAcknowledge(msg.messageId());
             break;
 
           case EXACTLY_ONCE:
-            this.writePubrec(msg.messageId());
+            this.publishReceived(msg.messageId());
             break;
         }
       }
@@ -502,7 +510,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
 
       if (this.isPublishAutoAck) {
-        this.writePubrel(pubrecMessageId);
+        this.publishRelease(pubrecMessageId);
       }
     }
   }
@@ -520,7 +528,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
 
       if (this.isPublishAutoAck) {
-        this.writePubcomp(pubrelMessageId);
+        this.publishComplete(pubrelMessageId);
       }
     }
   }
