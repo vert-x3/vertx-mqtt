@@ -120,14 +120,14 @@ public class MqttServerPublishTest extends MqttBaseTest {
           .collect(Collectors.toList()));
 
       endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
-    }).pubackHandler(messageId -> {
+    }).publishAcknowledgeHandler(messageId -> {
 
       System.out.print("Message [" + messageId + "] acknowledged");
       this.async.complete();
-    }).pubrecHandler(messageId -> {
+    }).publishReceivedHandler(messageId -> {
 
       endpoint.publishRelease(messageId);
-    }).pubcompHandler(messageId -> {
+    }).publishCompleteHandler(messageId -> {
 
       System.out.print("Message [" + messageId + "] acknowledged");
       this.async.complete();

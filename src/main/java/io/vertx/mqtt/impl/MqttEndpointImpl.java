@@ -192,7 +192,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl pubackHandler(Handler<Integer> handler) {
+  public MqttEndpointImpl publishAcknowledgeHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
       this.checkClosed();
@@ -201,7 +201,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl pubrecHandler(Handler<Integer> handler) {
+  public MqttEndpointImpl publishReceivedHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
       this.checkClosed();
@@ -210,7 +210,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl pubrelHandler(Handler<Integer> handler) {
+  public MqttEndpointImpl publishReleaseHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
       this.checkClosed();
@@ -219,7 +219,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl pubcompHandler(Handler<Integer> handler) {
+  public MqttEndpointImpl publishCompleteHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
       this.checkClosed();
@@ -228,7 +228,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl pingreqHandler(Handler<Void> handler) {
+  public MqttEndpointImpl pingHandler(Handler<Void> handler) {
 
     synchronized (this.conn) {
       this.checkClosed();

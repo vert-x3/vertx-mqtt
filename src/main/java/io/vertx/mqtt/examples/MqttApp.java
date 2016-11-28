@@ -80,15 +80,15 @@ public class MqttApp {
             false);
 
           // specifing handlers for handling QoS 1 and 2
-          endpoint.pubackHandler(messageId -> {
+          endpoint.publishAcknowledgeHandler(messageId -> {
 
             log.info("Received ack for message = " + messageId);
 
-          }).pubrecHandler(messageId -> {
+          }).publishReceivedHandler(messageId -> {
 
             endpoint.publishRelease(messageId);
 
-          }).pubcompHandler(messageId -> {
+          }).publishCompleteHandler(messageId -> {
 
             log.info("Received ack for message = " + messageId);
           });
@@ -105,7 +105,7 @@ public class MqttApp {
         });
 
         // handling ping from client
-        endpoint.pingreqHandler(v -> {
+        endpoint.pingHandler(v -> {
 
           log.info("Ping received from client");
         });
@@ -133,7 +133,7 @@ public class MqttApp {
             endpoint.publishReceived(message.messageId());
           }
 
-        }).pubrelHandler(messageId -> {
+        }).publishReleaseHandler(messageId -> {
 
           endpoint.publishComplete(messageId);
         });

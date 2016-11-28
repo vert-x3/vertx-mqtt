@@ -208,7 +208,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint pubackHandler(Handler<Integer> handler);
+  MqttEndpoint publishAcknowledgeHandler(Handler<Integer> handler);
 
   /**
    * Set the pubrec handler on the MQTT endpoint. This handler is called when a PUBREC
@@ -218,7 +218,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint pubrecHandler(Handler<Integer> handler);
+  MqttEndpoint publishReceivedHandler(Handler<Integer> handler);
 
   /**
    * Set the pubrel handler on the MQTT endpoint. This handler is called when a PUBREL
@@ -228,7 +228,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint pubrelHandler(Handler<Integer> handler);
+  MqttEndpoint publishReleaseHandler(Handler<Integer> handler);
 
   /**
    * Set the pubcomp handler on the MQTT endpoint. This handler is called when a PUBCOMP
@@ -238,7 +238,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint pubcompHandler(Handler<Integer> handler);
+  MqttEndpoint publishCompleteHandler(Handler<Integer> handler);
 
   /**
    * Set the pingreq handler on the MQTT endpoint. This handler is called when a PINGREQ
@@ -249,7 +249,7 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint pingreqHandler(Handler<Void> handler);
+  MqttEndpoint pingHandler(Handler<Void> handler);
 
   /**
    * Set a close handler. This will be called when the MQTT endpoint is closed

@@ -118,7 +118,7 @@ public class MqttClientPublishTest extends MqttBaseTest {
           break;
       }
 
-    }).pubrelHandler(messageId -> {
+    }).publishReleaseHandler(messageId -> {
 
       endpoint.publishComplete(messageId);
       this.async.complete();
