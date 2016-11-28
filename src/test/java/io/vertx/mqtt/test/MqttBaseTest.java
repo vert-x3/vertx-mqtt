@@ -75,6 +75,6 @@ public abstract class MqttBaseTest {
 
   protected void endpointHandler(MqttEndpoint endpoint) {
 
-    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+    endpoint.accept(false);
   }
 }

@@ -60,7 +60,7 @@ public class MqttApp {
         log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
 
         // accept connection from the remote client
-        endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+        endpoint.accept(false);
 
         // handling requests for subscriptions
         endpoint.subscribeHandler(subscribe -> {

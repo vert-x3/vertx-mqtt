@@ -178,6 +178,11 @@ public class MqttConnectionTest extends MqttBaseTest {
         break;
     }
 
-    endpoint.writeConnack(returnCode, false);
+    if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+      endpoint.accept(false);
+    } else {
+      endpoint.reject(returnCode);
+    }
+
   }
 }

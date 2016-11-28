@@ -237,23 +237,38 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent) {
+  private MqttEndpointImpl connack(MqttConnectReturnCode returnCode, boolean sessionPresent) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
     MqttConnAckVariableHeader variableHeader =
-      new MqttConnAckVariableHeader(connectReturnCode, sessionPresent);
+      new MqttConnAckVariableHeader(returnCode, sessionPresent);
 
     io.netty.handler.codec.mqtt.MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
     this.write(connack);
 
     // if a server sends a CONNACK packet containing a non zero return code it MUST then close the Network Connection (MQTT 3.1.1 spec)
-    if (connectReturnCode != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+    if (returnCode != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
       this.close();
     }
 
     return this;
+  }
+
+  public MqttEndpointImpl accept(boolean sessionPresent) {
+
+    return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent);
+  }
+
+  public MqttEndpointImpl reject(MqttConnectReturnCode returnCode) {
+
+    if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+      throw new IllegalArgumentException("Need to use the 'accept' method for accepting connection");
+    }
+
+    // sessionPresent flag has no meaning in this case, the network connection will be closed
+    return this.connack(returnCode, false);
   }
 
   public MqttEndpointImpl writeSuback(int subscribeMessageId, List<Integer> grantedQoSLevels) {

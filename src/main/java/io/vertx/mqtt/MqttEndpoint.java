@@ -261,14 +261,24 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
   MqttEndpoint closeHandler(Handler<Void> handler);
 
   /**
-   * Sends the CONNACK message to the remote MQTT client
+   * Sends the CONNACK message to the remote MQTT client with "connection accepted"
+   * return code. See {@link #reject(MqttConnectReturnCode)} for refusing connection
    *
-   * @param connectReturnCode the connect return code
-   * @param sessionPresent    if a previous session is present
-   * @return a reference to this, so the API can be used fluently
-   */
+   * @param sessionPresent  if a previous session is present
+   * @return  a reference to this, so the API can be used fluently
+     */
   @Fluent
-  MqttEndpoint writeConnack(MqttConnectReturnCode connectReturnCode, boolean sessionPresent);
+  MqttEndpoint accept(boolean sessionPresent);
+
+  /**
+   * Sends the CONNACK message to the remote MQTT client rejecting the connection
+   * request with specified return code. See {@link #accept(boolean)} for accepting connection
+   *
+   * @param returnCode  the connect return code
+   * @return  a reference to this, so the API can be used fluently
+     */
+  @Fluent
+  MqttEndpoint reject(MqttConnectReturnCode returnCode);
 
   /**
    * Sends the SUBACK message to the remote MQTT client

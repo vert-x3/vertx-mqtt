@@ -53,7 +53,7 @@ public class MqttServerVerticle extends AbstractVerticle {
 
       });
 
-      endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+      endpoint.accept(false);
     });
 
     this.server.listen(ar -> {

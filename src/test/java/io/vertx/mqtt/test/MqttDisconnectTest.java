@@ -85,6 +85,6 @@ public class MqttDisconnectTest extends MqttBaseTest {
 
     });
 
-    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+    endpoint.accept(false);
   }
 }

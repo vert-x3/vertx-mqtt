@@ -125,6 +125,6 @@ public class MqttClientPublishTest extends MqttBaseTest {
       this.async.complete();
     });
 
-    endpoint.writeConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
+    endpoint.accept(false);
   }
 }
