@@ -132,6 +132,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this.keepAliveTimeSeconds;
   }
 
+  public int lastMessageId() {
+    return this.messageIdCounter;
+  }
+
   public void subscriptionAutoAck(boolean isSubscriptionAutoAck) {
     this.isSubscriptionAutoAck = isSubscriptionAutoAck;
   }

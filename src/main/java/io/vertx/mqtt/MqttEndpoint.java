@@ -119,6 +119,14 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
   int keepAliveTimeSeconds();
 
   /**
+   * Message identifier used for last published message
+   *
+   * @return
+   */
+  @CacheReturn
+  int lastMessageId();
+
+  /**
    * Enable/disable subscription/unsubscription requests auto acknowledge
    *
    * @param isSubscriptionAutoAck auto acknowledge status
