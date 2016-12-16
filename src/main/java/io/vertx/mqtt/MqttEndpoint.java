@@ -103,6 +103,14 @@ public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttM
   int protocolVersion();
 
   /**
+   * Protocol name provided by the remote MQTT client
+   *
+   * @return
+   */
+  @CacheReturn
+  String protocolName();
+
+  /**
    * If clean session is requested by the remote MQTT client
    *
    * @return

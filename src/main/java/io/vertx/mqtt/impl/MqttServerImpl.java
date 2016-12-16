@@ -382,6 +382,7 @@ public class MqttServerImpl implements MqttServer {
           will,
           mqttConnectMessage.variableHeader().isCleanSession(),
           mqttConnectMessage.variableHeader().version(),
+          mqttConnectMessage.variableHeader().name(),
           mqttConnectMessage.variableHeader().keepAliveTimeSeconds());
 
       mqttConn.handleConnect(endpoint);

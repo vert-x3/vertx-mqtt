@@ -53,6 +53,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final MqttWill will;
   private final boolean isCleanSession;
   private final int protocolVersion;
+  private final String protocolName;
   private final int keepAliveTimeSeconds;
 
   // handler to call when a subscribe request comes in
@@ -96,15 +97,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param will                 instance with the will information
    * @param isCleanSession       if the sessione should be cleaned or not
    * @param protocolVersion      protocol version required by the client
+   * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeSeconds keep alive timeout (in seconds)
    */
-  public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion, int keepAliveTimeSeconds) {
+  public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeSeconds) {
     this.conn = conn;
     this.clientIdentifier = clientIdentifier;
     this.auth = auth;
     this.will = will;
     this.isCleanSession = isCleanSession;
     this.protocolVersion = protocolVersion;
+    this.protocolName = protocolName;
     this.keepAliveTimeSeconds = keepAliveTimeSeconds;
   }
 
@@ -127,6 +130,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public int protocolVersion() {
     return this.protocolVersion;
   }
+
+  public String protocolName() { return this.protocolName; }
 
   public int keepAliveTimeSeconds() {
     return this.keepAliveTimeSeconds;
