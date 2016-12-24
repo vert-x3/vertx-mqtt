@@ -16,12 +16,18 @@
 
 package examples;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.docgen.Source;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttTopicSubscription;
+
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 @Source
 public class VertxMqttServerExamples {
@@ -77,6 +83,66 @@ public class VertxMqttServerExamples {
     endpoint.disconnectHandler(v -> {
 
       log.info("Received disconnect from client");
+    });
+  }
+
+  /**
+   * Example for handling client subscription request
+   * @param endpoint
+   */
+  public void example3(MqttEndpoint endpoint) {
+
+    // handling requests for subscriptions
+    endpoint.subscribeHandler(subscribe -> {
+
+      List<Integer> grantedQosLevels = new ArrayList<>();
+      for (MqttTopicSubscription s: subscribe.topicSubscriptions()) {
+        log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
+        grantedQosLevels.add(s.qualityOfService().value());
+      }
+      // ack the subscriptions request
+      endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);
+
+    });
+  }
+
+  /**
+   * Example for handling client unsubscription request
+   * @param endpoint
+   */
+  public void example4(MqttEndpoint endpoint) {
+
+    // handling requests for unsubscriptions
+    endpoint.unsubscribeHandler(unsubscribe -> {
+
+      for (String t: unsubscribe.topics()) {
+        log.info("Unsubscription for " + t);
+      }
+      // ack the subscriptions request
+      endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
+    });
+  }
+
+  /**
+   * Example for handling client published message
+   * @param endpoint
+   */
+  public void example5(MqttEndpoint endpoint) {
+
+    // handling incoming published messages
+    endpoint.publishHandler(message -> {
+
+      log.info("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+
+      if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
+        endpoint.publishAcknowledge(message.messageId());
+      } else if (message.qosLevel() == MqttQoS.EXACTLY_ONCE) {
+        endpoint.publishRelease(message.messageId());
+      }
+
+    }).publishReleaseHandler(messageId -> {
+
+      endpoint.publishComplete(messageId);
     });
   }
 }

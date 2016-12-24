@@ -90,6 +90,56 @@
  * ----
  * {@link examples.VertxMqttServerExamples#example2}
  * ----
+ *
+ * === Handling client subscription/unsubscription request
+ *
+ * After a connection is established between client and server, the client can send a subscription request for a topic
+ * using the SUBSCRIBE message. The {@link io.vertx.mqtt.MqttEndpoint} class allows to specify an handler for the
+ * incoming subscription request using the {@link io.vertx.mqtt.MqttEndpoint#subscribeHandler(io.vertx.core.Handler)} method.
+ * Such handler receives an instance of the {@link io.vertx.mqtt.messages.MqttSubscribeMessage} class which brings
+ * the list of topics with related QoS levels as desired by the client.
+ * Finally, the endpoint instance provides the {@link io.vertx.mqtt.MqttEndpoint#subscribeAcknowledge(int, java.util.List)} method
+ * for replying to the client with the related SUBACK message containing the granted QoS levels.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example3}
+ * ----
+ *
+ * In the same way, it's possible to use the {@link io.vertx.mqtt.MqttEndpoint#unsubscribeHandler(io.vertx.core.Handler)} method
+ * on the endpoint in order to specify the handler called when the client sends an UNSUBSCRIBE message. This handler receives
+ * an instance of the {@link io.vertx.mqtt.messages.MqttUnsubscribeMessage} class as parameter with the list of topics to unsubscribe.
+ * Finally, the endpoint instance provides the {@link io.vertx.mqtt.MqttEndpoint#unsubscribeAcknowledge(int)} method
+ * for replying to the client with the related UNSUBACK message.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example4}
+ * ----
+ *
+ * === Handling client published message
+ *
+ * In order to handle incoming messages published by the remote client, the {@link io.vertx.mqtt.MqttEndpoint} class provides
+ * the {@link io.vertx.mqtt.MqttEndpoint#publishHandler(io.vertx.core.Handler)} method for specifying the handler called
+ * when the client sends a PUBLISH message. This handler receives an instance of the {@link io.vertx.mqtt.messages.MqttPublishMessage}
+ * class as parameter with the payload, the QoS level, the duplicate and retain flags.
+ *
+ * If the QoS level is 0 (AT_MOST_ONCE), there is no need from the endpoint to reply the client.
+ *
+ * If the QoS level is 1 (AT_LEAST_ONCE), the endpoind needs to reply with a PUBACK message using the
+ * available {@link io.vertx.mqtt.MqttEndpoint#publishAcknowledge(int)} method.
+ *
+ * If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to reply with a PUBREC message using the
+ * available {@link io.vertx.mqtt.MqttEndpoint#publishReceived(int)} method; in this case the same endpoint should handle
+ * the PUBREL message received from the client as well (the remote client sends it after receiving the PUBREC from the endpoint)
+ * and it can do that specifying the handler through the {@link io.vertx.mqtt.MqttEndpoint#publishReleaseHandler(io.vertx.core.Handler)} method.
+ * In order to close the QoS level 2 delivery, the endpoint can use the {@link io.vertx.mqtt.MqttEndpoint#publishComplete(int)} method
+ * for sending the PUBCOMP message to the client.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example5}
+ * ----
  */
 @Document(fileName = "index.adoc")
 @ModuleGen(name = "vertx-mqtt-server", groupPackage = "io.vertx")
