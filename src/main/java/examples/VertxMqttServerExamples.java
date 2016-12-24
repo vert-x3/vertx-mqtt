@@ -18,6 +18,7 @@ package examples;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.docgen.Source;
@@ -143,6 +144,59 @@ public class VertxMqttServerExamples {
     }).publishReleaseHandler(messageId -> {
 
       endpoint.publishComplete(messageId);
+    });
+  }
+
+  /**
+   * Example for handling publish message to the client
+   * @param endpoint
+   */
+  public void example6(MqttEndpoint endpoint) {
+
+    // just as example, publish a message with QoS level 2
+    endpoint.publish("my_topic",
+      Buffer.buffer("Hello from the Vert.x MQTT server"),
+      MqttQoS.EXACTLY_ONCE,
+      false,
+      false);
+
+    // specifing handlers for handling QoS 1 and 2
+    endpoint.publishAcknowledgeHandler(messageId -> {
+
+      log.info("Received ack for message = " +  messageId);
+
+    }).publishReceivedHandler(messageId -> {
+
+      endpoint.publishRelease(messageId);
+
+    }).publishCompleteHandler(messageId -> {
+
+      log.info("Received ack for message = " +  messageId);
+    });
+  }
+
+  /**
+   * Example for being notified by client keep alive
+   * @param endpoint
+   */
+  public void example7(MqttEndpoint endpoint) {
+
+    // handling ping from client
+    endpoint.pingHandler(v -> {
+
+      log.info("Ping received from client");
+    });
+  }
+
+  /**
+   * Example for closing the server
+   * @param mqttServer
+   */
+  public void example8(MqttServer mqttServer) {
+
+    mqttServer.close(v -> {
+
+      log.info("MQTT server closed");
     });
   }
 }

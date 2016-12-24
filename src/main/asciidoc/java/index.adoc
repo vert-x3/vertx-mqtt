@@ -112,9 +112,9 @@ endpoint.disconnectHandler(v -> {
 === Handling client subscription/unsubscription request
 
 After a connection is established between client and server, the client can send a subscription request for a topic
-using the SUBSCRIBE message. The `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html[MqttEndpoint]` class allows to specify an handler for the
+using the SUBSCRIBE message. The `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html[MqttEndpoint]` interface allows to specify an handler for the
 incoming subscription request using the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#subscribeHandler-io.vertx.core.Handler-[subscribeHandler]` method.
-Such handler receives an instance of the `link:../../apidocs/io/vertx/mqtt/messages/MqttSubscribeMessage.html[MqttSubscribeMessage]` class which brings
+Such handler receives an instance of the `link:../../apidocs/io/vertx/mqtt/messages/MqttSubscribeMessage.html[MqttSubscribeMessage]` interface which brings
 the list of topics with related QoS levels as desired by the client.
 Finally, the endpoint instance provides the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#subscribeAcknowledge-int-java.util.List-[subscribeAcknowledge]` method
 for replying to the client with the related SUBACK message containing the granted QoS levels.
@@ -136,7 +136,7 @@ endpoint.subscribeHandler(subscribe -> {
 
 In the same way, it's possible to use the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#unsubscribeHandler-io.vertx.core.Handler-[unsubscribeHandler]` method
 on the endpoint in order to specify the handler called when the client sends an UNSUBSCRIBE message. This handler receives
-an instance of the `link:../../apidocs/io/vertx/mqtt/messages/MqttUnsubscribeMessage.html[MqttUnsubscribeMessage]` class as parameter with the list of topics to unsubscribe.
+an instance of the `link:../../apidocs/io/vertx/mqtt/messages/MqttUnsubscribeMessage.html[MqttUnsubscribeMessage]` interface as parameter with the list of topics to unsubscribe.
 Finally, the endpoint instance provides the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#unsubscribeAcknowledge-int-[unsubscribeAcknowledge]` method
 for replying to the client with the related UNSUBACK message.
 
@@ -154,10 +154,10 @@ endpoint.unsubscribeHandler(unsubscribe -> {
 
 === Handling client published message
 
-In order to handle incoming messages published by the remote client, the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html[MqttEndpoint]` class provides
+In order to handle incoming messages published by the remote client, the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html[MqttEndpoint]` interface provides
 the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishHandler-io.vertx.core.Handler-[publishHandler]` method for specifying the handler called
 when the client sends a PUBLISH message. This handler receives an instance of the `link:../../apidocs/io/vertx/mqtt/messages/MqttPublishMessage.html[MqttPublishMessage]`
-class as parameter with the payload, the QoS level, the duplicate and retain flags.
+interface as parameter with the payload, the QoS level, the duplicate and retain flags.
 
 If the QoS level is 0 (AT_MOST_ONCE), there is no need from the endpoint to reply the client.
 
@@ -186,5 +186,82 @@ endpoint.publishHandler(message -> {
 }).publishReleaseHandler(messageId -> {
 
   endpoint.publishComplete(messageId);
+});
+----
+
+=== Publish message to the client
+
+The endpoint can publish a message to the remote client (sending a PUBLISH message) using the
+`link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publish-java.lang.String-io.vertx.core.buffer.Buffer-io.netty.handler.codec.mqtt.MqttQoS-boolean-boolean-[publish]` method
+which takes the following input parameters : the topic to publish, the payload, the QoS level, the duplicate and retain flags.
+
+If the QoS level is 0 (AT_MOST_ONCE), the endpoint won't receiving any feedback from the client.
+
+If the QoS level is 1 (AT_LEAST_ONCE), the endpoint needs to handle the PUBACK message received from the client
+in order to receive final acknowledge of delivery. It's possible using the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishAcknowledgeHandler-io.vertx.core.Handler-[publishAcknowledgeHandler]` method
+specifying such an handler.
+
+If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to handle the PUBREC message received from the client.
+The `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishReceivedHandler-io.vertx.core.Handler-[publishReceivedHandler]` method allows to specify
+the handler for that. Inside that handler, the endpoint can use the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishRelease-int-[publishRelease]` method
+for replying to the client with the PUBREL message. The last step is to handle the PUBCOMP message received from the client
+as final acknowledge for the published message; it's possible using the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishCompleteHandler-io.vertx.core.Handler-[publishCompleteHandler]`
+for specifying the handler called when the final PUBCOMP message is received.
+
+[source,java]
+----
+endpoint.publish("my_topic",
+  Buffer.buffer("Hello from the Vert.x MQTT server"),
+  MqttQoS.EXACTLY_ONCE,
+  false,
+  false);
+
+// specifing handlers for handling QoS 1 and 2
+endpoint.publishAcknowledgeHandler(messageId -> {
+
+  log.info("Received ack for message = " +  messageId);
+
+}).publishReceivedHandler(messageId -> {
+
+  endpoint.publishRelease(messageId);
+
+}).publishCompleteHandler(messageId -> {
+
+  log.info("Received ack for message = " +  messageId);
+});
+----
+
+=== Be notified by client keep alive
+
+The underlying MQTT keep alive mechanism is handled by the server internally. When the CONNECT message is received,
+the server takes care of the keep alive timeout specified inside that message in order to check if the client doesn't
+send messages in such timeout. At same time, for every PINGREQ received, the server replies with the related PINGRESP.
+
+Even if there is no need for the high level application to handle that, the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html[MqttEndpoint]` interface
+provides the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#pingHandler-io.vertx.core.Handler-[pingHandler]` method for specifying an handler
+called when a PINGREQ message is received from the client. It's just a notification to the application that the client
+isn't sending meaningful messages but only pings for keeping alive; in any case the PINGRESP is automatically sent
+by the server internally as described above.
+
+[source,java]
+----
+endpoint.pingHandler(v -> {
+
+  log.info("Ping received from client");
+});
+----
+
+=== Closing the server
+
+The `link:../../apidocs/io/vertx/mqtt/MqttServer.html[MqttServer]` interface provides the `link:../../apidocs/io/vertx/mqtt/MqttServer.html#close-io.vertx.core.Handler-[close]` method
+that can be used for closing the server; it stops to listen for incoming connections and closes all the active connections
+with remote clients. This method is asynchronous and one overload provides the possibility to specify a complention handler
+that will be called when the server is really closed.
+
+[source,java]
+----
+mqttServer.close(v -> {
+
+  log.info("MQTT server closed");
 });
 ----
