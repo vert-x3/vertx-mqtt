@@ -61,6 +61,35 @@
  * ----
  * compile io.vertx:vertx-mqtt-server:3.4.0-SNAPSHOT
  * ----
+ *
+ * == Getting Started
+ *
+ * === Handling client connection/disconnection
+ *
+ * This example shows how it's possible to handle the connection request from a remote MQTT client. First, an
+ * {@link io.vertx.mqtt.MqttServer} instance is created and the {@link io.vertx.mqtt.MqttServer#endpointHandler(io.vertx.core.Handler)} method is used to specify the handler called
+ * when a remote client sends a CONNECT message for connecting to the server itself. The {@link io.vertx.mqtt.MqttEndpoint}
+ * instance, provided as parameter to the handler, brings all main information related to the CONNECT message like client identifier,
+ * username/password, "will" information, clean session flag, protocol version and the "keep alive" timeout.
+ * Inside that handler, the _endpoint_ instance provides the {@link io.vertx.mqtt.MqttEndpoint#accept(boolean)} method
+ * for replying to the remote client with the corresponding CONNACK message : in this way, the connection is established.
+ * Finally, the server is started using the {@link io.vertx.mqtt.MqttServer#listen(io.vertx.core.Handler)} method with
+ * the default behavior (on localhost and default MQTT port 1883). The same method allows to specify an handler in order
+ * to check if the server is started properly or not.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example1}
+ * ----
+ *
+ * The same _endpoint_ instance provides the {@link io.vertx.mqtt.MqttEndpoint#disconnectHandler(io.vertx.core.Handler)}
+ * for specifying the handler called when the remote client sends a DISCONNECT message in order to disconnect from the server;
+ * this handler takes no parameters.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example2}
+ * ----
  */
 @Document(fileName = "index.adoc")
 @ModuleGen(name = "vertx-mqtt-server", groupPackage = "io.vertx")

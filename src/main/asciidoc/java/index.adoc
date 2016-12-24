@@ -46,3 +46,65 @@ maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 ----
 compile io.vertx:vertx-mqtt-server:3.4.0-SNAPSHOT
 ----
+
+== Getting Started
+
+=== Handling client connection/disconnection
+
+This example shows how it's possible to handle the connection request from a remote MQTT client. First, an
+`link:../../apidocs/io/vertx/mqtt/MqttServer.html[MqttServer]` instance is created and the `link:../../apidocs/io/vertx/mqtt/MqttServer.html#endpointHandler-io.vertx.core.Handler-[endpointHandler]` method is used to specify the handler called
+when a remote client sends a CONNECT message for connecting to the server itself. The `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html[MqttEndpoint]`
+instance, provided as parameter to the handler, brings all main information related to the CONNECT message like client identifier,
+username/password, "will" information, clean session flag, protocol version and the "keep alive" timeout.
+Inside that handler, the _endpoint_ instance provides the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#accept-boolean-[accept]` method
+for replying to the remote client with the corresponding CONNACK message : in this way, the connection is established.
+Finally, the server is started using the `link:../../apidocs/io/vertx/mqtt/MqttServer.html#listen-io.vertx.core.Handler-[listen]` method with
+the default behavior (on localhost and default MQTT port 1883). The same method allows to specify an handler in order
+to check if the server is started properly or not.
+
+[source,java]
+----
+MqttServer mqttServer = MqttServer.create(vertx);
+mqttServer.endpointHandler(endpoint -> {
+
+  // shows main connect info
+  log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+  if (endpoint.auth() != null) {
+    log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+  }
+  if (endpoint.will() != null) {
+    log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+      " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+  }
+
+  log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+  // accept connection from the remote client
+  endpoint.accept(false);
+
+})
+  .listen(ar -> {
+
+    if (ar.succeeded()) {
+
+      log.info("MQTT server is listening on port " + ar.result().actualPort());
+    } else {
+
+      log.info("Error on starting the server");
+      ar.cause().printStackTrace();
+    }
+  });
+----
+
+The same _endpoint_ instance provides the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#disconnectHandler-io.vertx.core.Handler-[disconnectHandler]`
+for specifying the handler called when the remote client sends a DISCONNECT message in order to disconnect from the server;
+this handler takes no parameters.
+
+[source,java]
+----
+endpoint.disconnectHandler(v -> {
+
+  log.info("Received disconnect from client");
+});
+----
