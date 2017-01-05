@@ -17,8 +17,15 @@
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TrustOptions;
 
 /**
  * Represents options used by the MQTT server
@@ -27,6 +34,7 @@ import io.vertx.core.net.NetServerOptions;
 public class MqttServerOptions extends NetServerOptions {
 
   public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
+  public static final int DEFAULT_TLS_PORT = 8883; // Default TLS port is 8883 for MQTT
 
   /**
    * Default constructor
@@ -55,8 +63,6 @@ public class MqttServerOptions extends NetServerOptions {
    */
   public MqttServerOptions(MqttServerOptions other) {
     super(other);
-    // override the default port
-    this.setPort(DEFAULT_PORT);
   }
 
   @Override
@@ -68,6 +74,84 @@ public class MqttServerOptions extends NetServerOptions {
   @Override
   public MqttServerOptions setHost(String host) {
     super.setHost(host);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setSsl(boolean ssl) {
+    super.setSsl(ssl);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setKeyCertOptions(KeyCertOptions options) {
+    super.setKeyCertOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setPfxKeyCertOptions(PfxOptions options) {
+    super.setPfxKeyCertOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    super.setPemKeyCertOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setTrustOptions(TrustOptions options) {
+    super.setTrustOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setPemTrustOptions(PemTrustOptions options) {
+    super.setPemTrustOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setPfxTrustOptions(PfxOptions options) {
+    super.setPfxTrustOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions addEnabledCipherSuite(String suite) {
+    super.addEnabledCipherSuite(suite);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions addEnabledSecureTransportProtocol(final String protocol) {
+    super.addEnabledSecureTransportProtocol(protocol);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions addCrlPath(String crlPath) throws NullPointerException {
+    super.addCrlPath(crlPath);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    super.addCrlValue(crlValue);
     return this;
   }
 }
