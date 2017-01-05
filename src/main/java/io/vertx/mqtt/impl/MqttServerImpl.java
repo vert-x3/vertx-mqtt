@@ -19,7 +19,14 @@ package io.vertx.mqtt.impl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -40,6 +47,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
@@ -61,6 +69,7 @@ public class MqttServerImpl implements MqttServer {
 
   private final MqttServerOptions options;
   private final VertxInternal vertx;
+  private final SSLHelper sslHelper;
   private ServerBootstrap bootstrap;
   private final Map<Channel, MqttConnection> connectionMap = new ConcurrentHashMap<>();
   private Handler<MqttEndpoint> handler;
@@ -80,6 +89,7 @@ public class MqttServerImpl implements MqttServer {
 
     this.vertx = (VertxInternal) vertx;
     this.options = options;
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.logEnabled = options.getLogActivity();
   }
 
@@ -126,7 +136,12 @@ public class MqttServerImpl implements MqttServer {
       @Override
       protected void initChannel(Channel channel) throws Exception {
 
+        sslHelper.validate(vertx);
+
         ChannelPipeline pipeline = channel.pipeline();
+        if (sslHelper.isSSL()) {
+          pipeline.addLast("ssl", sslHelper.createSslHandler(vertx));
+        }
         if (logEnabled) {
           pipeline.addLast("logging", new LoggingHandler());
         }
