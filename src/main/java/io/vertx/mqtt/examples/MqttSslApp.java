@@ -37,8 +37,8 @@ public class MqttSslApp {
     Vertx vertx = Vertx.vertx();
 
     PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
-      .setKeyPath("./src/test/certs/server-key.pem")
-      .setCertPath("./src/test/certs/server-cert.pem");
+      .setKeyPath("./src/test/resources/tls/server-key.pem")
+      .setCertPath("./src/test/resources/tls/server-cert.pem");
 
     MqttServerOptions options = new MqttServerOptions()
       .setPort(MqttServerOptions.DEFAULT_TLS_PORT)
