@@ -16,13 +16,13 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.mqtt.MqttEndpoint;
-import io.vertx.mqtt.MqttServer;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttServerOptions;
 import org.junit.runner.RunWith;
 
 /**
@@ -33,6 +33,7 @@ public abstract class MqttBaseTest {
 
   protected static final String MQTT_SERVER_HOST = "localhost";
   protected static final int MQTT_SERVER_PORT = 1883;
+  protected static final int MQTT_SERVER_TLS_PORT = 8883;
 
   protected Vertx vertx;
   protected MqttServer mqttServer;
@@ -41,11 +42,16 @@ public abstract class MqttBaseTest {
    * Setup the needs for starting the MQTT server
    *
    * @param context TestContext instance
+   * @param options MQTT server options
    */
-  protected void setUp(TestContext context) {
+  protected void setUp(TestContext context, MqttServerOptions options) {
 
     this.vertx = Vertx.vertx();
-    this.mqttServer = MqttServer.create(this.vertx);
+    if (options == null) {
+      this.mqttServer = MqttServer.create(this.vertx);
+    } else {
+      this.mqttServer = MqttServer.create(this.vertx, options);
+    }
 
     // be sure that all other tests will start only if the MQTT server starts correctly
     Async async = context.async();
@@ -60,6 +66,15 @@ public abstract class MqttBaseTest {
         System.exit(1);
       }
     });
+  }
+
+  /**
+   * Setup the needs for starting the MQTT server
+   *
+   * @param context TestContext instance
+   */
+  protected void setUp(TestContext context) {
+    this.setUp(context, null);
   }
 
   /**
