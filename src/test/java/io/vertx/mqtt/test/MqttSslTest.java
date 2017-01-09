@@ -62,6 +62,9 @@ public class MqttSslTest extends MqttBaseTest {
       .setKeyCertOptions(pemKeyCertOptions)
       .setSsl(true);
 
+    // just useful for enabling decryption using Wireshark (which doesn't support default Diffie-Hellmann for key exchange)
+    // options.addEnabledCipherSuite("TLS_RSA_WITH_AES_256_CBC_SHA256");
+
     this.setUp(context, options);
   }
 
@@ -74,7 +77,6 @@ public class MqttSslTest extends MqttBaseTest {
 
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("ssl://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_TLS_PORT), "12345", persistence);
-
 
       URL trustStore =  this.getClass().getResource("/tls/client-truststore.jks");
       System.setProperty("javax.net.ssl.trustStore", trustStore.getPath());
@@ -126,7 +128,6 @@ public class MqttSslTest extends MqttBaseTest {
     context.init(null, tmf.getTrustManagers(), null);
 
     return context.getSocketFactory();
-
   }
 
   protected void endpointHandler(MqttEndpoint endpoint) {
