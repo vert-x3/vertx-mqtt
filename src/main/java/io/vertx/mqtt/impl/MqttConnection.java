@@ -16,6 +16,9 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
@@ -33,9 +36,15 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 public class MqttConnection extends ConnectionBase {
 
   // handler to call when a remote MQTT client connects and establishes a connection
-  private Handler<MqttEndpoint> endpointHandler;
+  private final Handler<MqttEndpoint> endpointHandler;
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
+  private final TCPMetrics metrics;
+
+  @Override
+  public NetworkMetrics metrics() {
+    return metrics;
+  }
 
   /**
    * Constructor
@@ -43,24 +52,21 @@ public class MqttConnection extends ConnectionBase {
    * @param vertx   Vert.x instance
    * @param channel Channel (netty) used for communication with MQTT remote client
    * @param context Vert.x context
-   * @param metrics metricss
    */
-  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
-    super(vertx, channel, context, metrics);
+  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, Handler<MqttEndpoint> endpointHandler, TCPMetrics metrics) {
+    super(vertx, channel, context);
+
+    this.endpointHandler = endpointHandler;
+    this.metrics = metrics;
   }
 
   @Override
-  protected Object metric() {
+  public Object metric() {
     return null;
   }
 
   @Override
   protected void handleInterestedOpsChanged() {
-
-  }
-
-  synchronized void endpointHandler(Handler<MqttEndpoint> handler) {
-    this.endpointHandler = handler;
   }
 
   /**
@@ -77,6 +83,10 @@ public class MqttConnection extends ConnectionBase {
       io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
 
       switch (mqttMessage.fixedHeader().messageType()) {
+
+        case CONNECT:
+          handleConnect((MqttConnectMessage) msg);
+          break;
 
         case PUBACK:
 
@@ -114,7 +124,7 @@ public class MqttConnection extends ConnectionBase {
 
         default:
 
-          this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
+          this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
           break;
 
       }
@@ -144,15 +154,48 @@ public class MqttConnection extends ConnectionBase {
 
   /**
    * Used for calling the endpoint handler when a connection is established with a remote MQTT client
-   *
-   * @param endpoint the local endpoint for MQTT point-to-point communication with remote
    */
-  synchronized void handleConnect(MqttEndpointImpl endpoint) {
+  private void handleConnect(MqttConnectMessage msg) {
 
-    if (this.endpointHandler != null) {
-      this.endpointHandler.handle(endpoint);
-      this.endpoint = endpoint;
+    // retrieve will information from CONNECT message
+    MqttWillImpl will =
+      new MqttWillImpl(msg.variableHeader().isWillFlag(),
+        msg.payload().willTopic(),
+        msg.payload().willMessage(),
+        msg.variableHeader().willQos(),
+        msg.variableHeader().isWillRetain());
+
+    // retrieve authorization information from CONNECT message
+    MqttAuthImpl auth = (msg.variableHeader().hasUserName() &&
+      msg.variableHeader().hasPassword()) ?
+      new MqttAuthImpl(
+        msg.payload().userName(),
+        msg.payload().password()) : null;
+
+    // create the MQTT endpoint provided to the application handler
+    endpoint =
+      new MqttEndpointImpl(
+        this,
+        msg.payload().clientIdentifier(),
+        auth,
+        will,
+        msg.variableHeader().isCleanSession(),
+        msg.variableHeader().version(),
+        msg.variableHeader().name(),
+        msg.variableHeader().keepAliveTimeSeconds());
+
+    // keep alive == 0 means NO keep alive, no timeout to handle
+    if (msg.variableHeader().keepAliveTimeSeconds() != 0) {
+
+      // the server waits for one and a half times the keep alive time period (MQTT spec)
+      int timeout = msg.variableHeader().keepAliveTimeSeconds() +
+        msg.variableHeader().keepAliveTimeSeconds() / 2;
+
+      // modifying the channel pipeline for adding the idle state handler with previous timeout
+      channel.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
     }
+
+    endpointHandler.handle(endpoint);
   }
 
   /**
