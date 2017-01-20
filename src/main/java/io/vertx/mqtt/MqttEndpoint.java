@@ -23,9 +23,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.WriteStream;
-import io.vertx.mqtt.messages.MqttMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
@@ -36,34 +33,7 @@ import java.util.List;
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
  */
 @VertxGen
-public interface MqttEndpoint extends ReadStream<MqttMessage>, WriteStream<MqttMessage> {
-
-  @Override
-  MqttEndpoint exceptionHandler(Handler<Throwable> handler);
-
-  @Override
-  MqttEndpoint handler(Handler<MqttMessage> handler);
-
-  @Override
-  MqttEndpoint pause();
-
-  @Override
-  MqttEndpoint resume();
-
-  @Override
-  MqttEndpoint endHandler(Handler<Void> handler);
-
-  @Override
-  MqttEndpoint write(MqttMessage mqttMessage);
-
-  @Override
-  MqttEndpoint setWriteQueueMaxSize(int i);
-
-  @Override
-  MqttEndpoint drainHandler(Handler<Void> handler);
-
-  @Override
-  void end();
+public interface MqttEndpoint {
 
   /**
    * Close the endpoint, so the connection with remote MQTT client

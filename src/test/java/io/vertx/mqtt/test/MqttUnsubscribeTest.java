@@ -16,16 +16,15 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.mqtt.MqttEndpoint;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -55,7 +54,6 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
   }
 
   @Test
-  @Ignore
   public void unsubscribe(TestContext context) {
 
     this.async = context.async();

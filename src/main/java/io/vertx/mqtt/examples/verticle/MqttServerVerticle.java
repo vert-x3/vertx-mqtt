@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.examples.verticle;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.logging.Logger;

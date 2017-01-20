@@ -16,8 +16,8 @@
 
 package io.vertx.mqtt.impl;
 
-import io.vertx.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.mqtt.MqttTopicSubscription;
 
 /**
  * Represents a subscription to a topic

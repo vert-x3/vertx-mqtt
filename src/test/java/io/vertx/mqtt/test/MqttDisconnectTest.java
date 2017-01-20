@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.test;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;

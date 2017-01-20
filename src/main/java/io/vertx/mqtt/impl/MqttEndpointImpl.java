@@ -602,10 +602,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public void end() {
-    this.close();
-  }
-
   public void close() {
 
     synchronized (this.conn) {
@@ -616,52 +612,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public void end(io.vertx.mqtt.messages.MqttMessage mqttMessage) {
-
-  }
-
-  public MqttEndpointImpl drainHandler(Handler<Void> handler) {
-    return null;
-  }
-
-  public MqttEndpointImpl setWriteQueueMaxSize(int i) {
-    return null;
-  }
-
-  public boolean writeQueueFull() {
-    return false;
-  }
-
   public MqttEndpointImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
       this.checkClosed();
       this.conn.writeToChannel(mqttMessage);
       return this;
     }
-  }
-
-  public MqttEndpointImpl write(io.vertx.mqtt.messages.MqttMessage mqttMessage) {
-    throw new UnsupportedOperationException("TODO");
-  }
-
-  public MqttEndpointImpl endHandler(Handler<Void> handler) {
-    return this;
-  }
-
-  public MqttEndpointImpl resume() {
-    return this;
-  }
-
-  public MqttEndpointImpl pause() {
-    return this;
-  }
-
-  public MqttEndpointImpl handler(Handler<io.vertx.mqtt.messages.MqttMessage> handler) {
-    return null;
-  }
-
-  public MqttEndpointImpl exceptionHandler(Handler<Throwable> handler) {
-    return null;
   }
 
   /**

@@ -16,9 +16,9 @@
 
 package io.vertx.mqtt.messages;
 
-import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.mqtt.MqttTopicSubscription;
 
 import java.util.List;
 

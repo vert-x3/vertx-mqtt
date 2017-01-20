@@ -16,19 +16,19 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.mqtt.MqttEndpoint;
-import io.vertx.mqtt.messages.MqttPublishMessage;
-import io.vertx.mqtt.messages.MqttSubscribeMessage;
-import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
-import io.netty.channel.Channel;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.messages.MqttPublishMessage;
+import io.vertx.mqtt.messages.MqttSubscribeMessage;
+import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
 /**
  * Represents an MQTT connection with a remote client
