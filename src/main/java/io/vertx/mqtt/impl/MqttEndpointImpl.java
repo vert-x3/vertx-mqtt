@@ -633,7 +633,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
-
     synchronized (this.conn) {
       this.checkClosed();
       this.conn.writeToChannel(mqttMessage);
@@ -646,15 +645,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl endHandler(Handler<Void> handler) {
-    return null;
+    return this;
   }
 
   public MqttEndpointImpl resume() {
-    return null;
+    return this;
   }
 
   public MqttEndpointImpl pause() {
-    return null;
+    return this;
   }
 
   public MqttEndpointImpl handler(Handler<io.vertx.mqtt.messages.MqttMessage> handler) {

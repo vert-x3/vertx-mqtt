@@ -52,33 +52,33 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   public MqttServer listen() {
-    throw new UnsupportedOperationException();
+    return listen(ar -> {});
   }
 
   @Override
   public MqttServer listen(int port, String host) {
-    throw new UnsupportedOperationException();
+    return listen(port, host, ar -> {});
+  }
+
+  @Override
+  public MqttServer listen(int port) {
+    return listen(port, ar -> {});
+  }
+
+  @Override
+  public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
+    return listen(port, this.options.getHost(), listenHandler);
+  }
+
+  @Override
+  public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
+    return listen(this.options.getPort(), listenHandler);
   }
 
   @Override
   public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
     listen(c -> {}, port, host, ar -> listenHandler.handle(ar.map(this)));
     return this;
-  }
-
-  @Override
-  public MqttServer listen(int port) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
-    return listen(this.options.getPort(), this.options.getHost(), listenHandler);
   }
 
   @Override
