@@ -21,9 +21,11 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.docgen.Source;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.MqttTopicSubscription;
 
 import java.nio.charset.Charset;
@@ -88,10 +90,58 @@ public class VertxMqttServerExamples {
   }
 
   /**
+   * Example for handling client connection using SSL/TLS
+   * @param vertx
+   */
+  public void example3(Vertx vertx) {
+
+    PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
+      .setKeyPath("./src/test/resources/tls/server-key.pem")
+      .setCertPath("./src/test/resources/tls/server-cert.pem");
+
+    MqttServerOptions options = new MqttServerOptions()
+      .setPort(MqttServerOptions.DEFAULT_TLS_PORT)
+      .setKeyCertOptions(pemKeyCertOptions)
+      .setSsl(true);
+
+    MqttServer mqttServer = MqttServer.create(vertx, options);
+    mqttServer.endpointHandler(endpoint -> {
+
+      // shows main connect info
+      log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+      if (endpoint.auth() != null) {
+        log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+      }
+      if (endpoint.will() != null) {
+        log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+          " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+      }
+
+      log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+      // accept connection from the remote client
+      endpoint.accept(false);
+
+    })
+      .listen(ar -> {
+
+        if (ar.succeeded()) {
+
+          log.info("MQTT server is listening on port " + ar.result().actualPort());
+        } else {
+
+          log.info("Error on starting the server");
+          ar.cause().printStackTrace();
+        }
+      });
+  }
+
+  /**
    * Example for handling client subscription request
    * @param endpoint
    */
-  public void example3(MqttEndpoint endpoint) {
+  public void example4(MqttEndpoint endpoint) {
 
     // handling requests for subscriptions
     endpoint.subscribeHandler(subscribe -> {
@@ -111,7 +161,7 @@ public class VertxMqttServerExamples {
    * Example for handling client unsubscription request
    * @param endpoint
    */
-  public void example4(MqttEndpoint endpoint) {
+  public void example5(MqttEndpoint endpoint) {
 
     // handling requests for unsubscriptions
     endpoint.unsubscribeHandler(unsubscribe -> {
@@ -128,7 +178,7 @@ public class VertxMqttServerExamples {
    * Example for handling client published message
    * @param endpoint
    */
-  public void example5(MqttEndpoint endpoint) {
+  public void example6(MqttEndpoint endpoint) {
 
     // handling incoming published messages
     endpoint.publishHandler(message -> {
@@ -151,7 +201,7 @@ public class VertxMqttServerExamples {
    * Example for handling publish message to the client
    * @param endpoint
    */
-  public void example6(MqttEndpoint endpoint) {
+  public void example7(MqttEndpoint endpoint) {
 
     // just as example, publish a message with QoS level 2
     endpoint.publish("my_topic",
@@ -179,7 +229,7 @@ public class VertxMqttServerExamples {
    * Example for being notified by client keep alive
    * @param endpoint
    */
-  public void example7(MqttEndpoint endpoint) {
+  public void example8(MqttEndpoint endpoint) {
 
     // handling ping from client
     endpoint.pingHandler(v -> {
@@ -192,7 +242,7 @@ public class VertxMqttServerExamples {
    * Example for closing the server
    * @param mqttServer
    */
-  public void example8(MqttServer mqttServer) {
+  public void example9(MqttServer mqttServer) {
 
     mqttServer.close(v -> {
 

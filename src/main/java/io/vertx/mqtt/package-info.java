@@ -91,6 +91,27 @@
  * {@link examples.VertxMqttServerExamples#example2}
  * ----
  *
+ * === Handling client connection/disconnection with SSL/TLS support
+ *
+ * The server has the support for accepting connection requests through the SSL/TLS protocol for authentication and encryption.
+ * In order to do that, the {@link io.vertx.mqtt.MqttServerOptions} class provides the {@link io.vertx.mqtt.MqttServerOptions#setSsl(boolean)} method
+ * for setting the usage of SSL/TLS (passing 'true' as value) and some other useful methods for providing server certificate and
+ * related private key (as Java key store reference, PEM or PFX format). In the following example, the
+ * {@link io.vertx.mqtt.MqttServerOptions#setKeyCertOptions(io.vertx.core.net.KeyCertOptions)} method is used in order to
+ * pass the certificates in PEM format. This method requires an instance of the possible implementations of the
+ * {@link io.vertx.core.net.KeyCertOptions} interface and in this case the {@link io.vertx.core.net.PemKeyCertOptions} class
+ * is used in order to provide the path for the server certificate and the private key with the correspondent
+ * {@link io.vertx.core.net.PemKeyCertOptions#setCertPath(java.lang.String)} and
+ * {@link io.vertx.core.net.PemKeyCertOptions#setKeyPath(java.lang.String)} methods.
+ * The MQTT server is started passing the Vert.x instance as usual and the above MQTT options instance to the creation method.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example3}
+ * ----
+ *
+ * All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
+ *
  * === Handling client subscription/unsubscription request
  *
  * After a connection is established between client and server, the client can send a subscription request for a topic
@@ -103,7 +124,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.VertxMqttServerExamples#example3}
+ * {@link examples.VertxMqttServerExamples#example4}
  * ----
  *
  * In the same way, it's possible to use the {@link io.vertx.mqtt.MqttEndpoint#unsubscribeHandler(io.vertx.core.Handler)} method
@@ -114,7 +135,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.VertxMqttServerExamples#example4}
+ * {@link examples.VertxMqttServerExamples#example5}
  * ----
  *
  * === Handling client published message
@@ -138,7 +159,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.VertxMqttServerExamples#example5}
+ * {@link examples.VertxMqttServerExamples#example6}
  * ----
  *
  * === Publish message to the client
@@ -162,7 +183,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.VertxMqttServerExamples#example6}
+ * {@link examples.VertxMqttServerExamples#example7}
  * ----
  *
  * === Be notified by client keep alive
@@ -179,7 +200,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.VertxMqttServerExamples#example7}
+ * {@link examples.VertxMqttServerExamples#example8}
  * ----
  *
  * === Closing the server
@@ -191,7 +212,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.VertxMqttServerExamples#example8}
+ * {@link examples.VertxMqttServerExamples#example9}
  * ----
  */
 @Document(fileName = "index.adoc")

@@ -109,6 +109,66 @@ endpoint.disconnectHandler(v -> {
 });
 ----
 
+=== Handling client connection/disconnection with SSL/TLS support
+
+The server has the support for accepting connection requests through the SSL/TLS protocol for authentication and encryption.
+In order to do that, the `link:../../apidocs/io/vertx/mqtt/MqttServerOptions.html[MqttServerOptions]` class provides the `link:../../apidocs/io/vertx/mqtt/MqttServerOptions.html#setSsl-boolean-[setSsl]` method
+for setting the usage of SSL/TLS (passing 'true' as value) and some other useful methods for providing server certificate and
+related private key (as Java key store reference, PEM or PFX format). In the following example, the
+`link:../../apidocs/io/vertx/mqtt/MqttServerOptions.html#setKeyCertOptions-io.vertx.core.net.KeyCertOptions-[setKeyCertOptions]` method is used in order to
+pass the certificates in PEM format. This method requires an instance of the possible implementations of the
+`link:../../apidocs/io/vertx/core/net/KeyCertOptions.html[KeyCertOptions]` interface and in this case the `link:../../apidocs/io/vertx/core/net/PemKeyCertOptions.html[PemKeyCertOptions]` class
+is used in order to provide the path for the server certificate and the private key with the correspondent
+`link:../../apidocs/io/vertx/core/net/PemKeyCertOptions.html#setCertPath-java.lang.String-[setCertPath]` and
+`link:../../apidocs/io/vertx/core/net/PemKeyCertOptions.html#setKeyPath-java.lang.String-[setKeyPath]` methods.
+The MQTT server is started passing the Vert.x instance as usual and the above MQTT options instance to the creation method.
+
+[source,java]
+----
+PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
+  .setKeyPath("./src/test/resources/tls/server-key.pem")
+  .setCertPath("./src/test/resources/tls/server-cert.pem");
+
+MqttServerOptions options = new MqttServerOptions()
+  .setPort(MqttServerOptions.DEFAULT_TLS_PORT)
+  .setKeyCertOptions(pemKeyCertOptions)
+  .setSsl(true);
+
+MqttServer mqttServer = MqttServer.create(vertx, options);
+mqttServer.endpointHandler(endpoint -> {
+
+  // shows main connect info
+  log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+  if (endpoint.auth() != null) {
+    log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+  }
+  if (endpoint.will() != null) {
+    log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+      " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+  }
+
+  log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+  // accept connection from the remote client
+  endpoint.accept(false);
+
+})
+  .listen(ar -> {
+
+    if (ar.succeeded()) {
+
+      log.info("MQTT server is listening on port " + ar.result().actualPort());
+    } else {
+
+      log.info("Error on starting the server");
+      ar.cause().printStackTrace();
+    }
+  });
+----
+
+All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
+
 === Handling client subscription/unsubscription request
 
 After a connection is established between client and server, the client can send a subscription request for a topic
