@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.messages;
+package io.vertx.mqtt.messages.impl;
 
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.impl.MqttTopicSubscriptionImpl;
+import io.vertx.mqtt.messages.MqttSubscribeMessage;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
    * @param messageId          message identifier
    * @param topicSubscriptions list with topics and related quality of service levels (from Netty)
    */
-  MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
+  public MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
 
     this.messageId = messageId;
     this.topicSubscriptions = topicSubscriptions.stream().map(ts -> {

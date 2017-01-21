@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.messages;
+package io.vertx.mqtt.messages.impl;
+
+import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
 import java.util.List;
 
@@ -32,7 +34,7 @@ public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
    * @param messageId message identifier
    * @param topics    list of topics to unsubscribe
    */
-  MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
+  public MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
 
     this.messageId = messageId;
     this.topics = topics;

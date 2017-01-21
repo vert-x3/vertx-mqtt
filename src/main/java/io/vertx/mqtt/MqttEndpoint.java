@@ -122,13 +122,13 @@ public interface MqttEndpoint {
    * Enable/disable publishing (in/out) auto acknowledge
    *
    * @param isPublishAutoAck auto acknowledge status
+   * @return  a reference to this, so the API can be used fluently
    */
-  void publishAutoAck(boolean isPublishAutoAck);
+  @Fluent
+  MqttEndpoint publishAutoAck(boolean isPublishAutoAck);
 
   /**
-   * Return auto acknowledge status for publishing (in/out)
-   *
-   * @return
+   * @return  auto acknowledge status for publishing (in/out)
    */
   boolean isPublishAutoAck();
 
@@ -136,8 +136,10 @@ public interface MqttEndpoint {
    * Enable/disable auto keep alive (sending ping response)
    *
    * @param isAutoKeepAlive auto keep alive
+   * @return  a reference to this, so the API can be used fluently
    */
-  void autoKeepAlive(boolean isAutoKeepAlive);
+  @Fluent
+  MqttEndpoint autoKeepAlive(boolean isAutoKeepAlive);
 
   /**
    * Return auto keep alive status (sending ping response)

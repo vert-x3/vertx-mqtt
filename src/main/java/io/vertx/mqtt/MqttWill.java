@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -25,37 +26,32 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface MqttWill {
 
   /**
-   * Will flag for indicating the will message presence
-   *
-   * @return
+   * @return  Will flag for indicating the will message presence
    */
+  @CacheReturn
   boolean isWillFlag();
 
   /**
-   * Topic for the will as provided by the remote MQTT client
-   *
-   * @return
+   * @return  Topic for the will as provided by the remote MQTT client
    */
+  @CacheReturn
   String willTopic();
 
   /**
-   * Payload for the will as provided by the remote MQTT client
-   *
-   * @return
+   * @return  Payload for the will as provided by the remote MQTT client
    */
+  @CacheReturn
   String willMessage();
 
   /**
-   * QoS level for the will as provided by the remote MQTT client
-   *
-   * @return
+   * @return  QoS level for the will as provided by the remote MQTT client
    */
+  @CacheReturn
   int willQos();
 
   /**
-   * If the will must be retained as provided by the remote MQTT client
-   *
-   * @return
+   * @return  If the will must be retained as provided by the remote MQTT client
    */
+  @CacheReturn
   boolean isWillRetain();
 }

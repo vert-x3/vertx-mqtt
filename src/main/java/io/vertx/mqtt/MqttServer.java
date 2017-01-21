@@ -25,6 +25,11 @@ import io.vertx.mqtt.impl.MqttServerImpl;
 
 /**
  * An MQTT server
+ * <p>
+ *    You can accept incoming MQTT connection requests providing a {@link MqttServer#endpointHandler(Handler)}. As the
+ *    requests arrive, the handler will be called with an instance of {@link MqttEndpoint} in order to manage the
+ *    communication with the remote MQTT client.
+ * </p>
  */
 @VertxGen
 public interface MqttServer {

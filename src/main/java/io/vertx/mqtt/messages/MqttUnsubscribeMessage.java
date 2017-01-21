@@ -16,8 +16,10 @@
 
 package io.vertx.mqtt.messages;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.mqtt.messages.impl.MqttUnsubscribeMessageImpl;
 
 import java.util.List;
 
@@ -34,15 +36,14 @@ public interface MqttUnsubscribeMessage extends MqttMessage {
    * @param topics    list of topics to unsubscribe
    */
   @GenIgnore
-  static MqttUnsubscribeMessageImpl create(int messageId, List<String> topics) {
+  static MqttUnsubscribeMessage create(int messageId, List<String> topics) {
 
     return new MqttUnsubscribeMessageImpl(messageId, topics);
   }
 
   /**
-   * List of topics to unsubscribe
-   *
-   * @return
+   * @return  List of topics to unsubscribe
    */
+  @CacheReturn
   List<String> topics();
 }

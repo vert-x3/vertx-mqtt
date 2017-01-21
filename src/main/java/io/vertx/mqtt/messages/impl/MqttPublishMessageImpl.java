@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.messages;
+package io.vertx.mqtt.messages.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.mqtt.messages.MqttPublishMessage;
 
 /**
  * Represents an MQTT PUBLISH message
@@ -42,7 +43,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
    * @param topicName topic on which the message was published
    * @param payload   payload message
    */
-  MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
+  public MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
     this.messageId = messageId;
     this.qosLevel = qosLevel;
     this.isDup = isDup;

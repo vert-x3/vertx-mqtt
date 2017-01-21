@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.messages;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -25,9 +26,8 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface MqttMessage {
 
   /**
-   * Message identifier
-   *
-   * @return
+   * @return  Message identifier
    */
+  @CacheReturn
   int messageId();
 }

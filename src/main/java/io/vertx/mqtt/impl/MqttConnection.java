@@ -61,11 +61,6 @@ public class MqttConnection extends ConnectionBase {
   }
 
   @Override
-  public Object metric() {
-    return null;
-  }
-
-  @Override
   protected void handleInterestedOpsChanged() {
   }
 

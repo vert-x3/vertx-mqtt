@@ -17,6 +17,7 @@
 package io.vertx.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -30,6 +31,7 @@ public interface MqttTopicSubscription {
    *
    * @return
    */
+  @CacheReturn
   String topicName();
 
   /**
@@ -37,5 +39,6 @@ public interface MqttTopicSubscription {
    *
    * @return
    */
+  @CacheReturn
   MqttQoS qualityOfService();
 }

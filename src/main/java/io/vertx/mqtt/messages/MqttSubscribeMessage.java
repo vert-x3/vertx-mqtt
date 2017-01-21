@@ -16,9 +16,11 @@
 
 package io.vertx.mqtt.messages;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.mqtt.MqttTopicSubscription;
+import io.vertx.mqtt.messages.impl.MqttSubscribeMessageImpl;
 
 import java.util.List;
 
@@ -36,15 +38,14 @@ public interface MqttSubscribeMessage extends MqttMessage {
    * @return Vert.x subscribe message
    */
   @GenIgnore
-  static MqttSubscribeMessageImpl create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
+  static MqttSubscribeMessage create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
 
     return new MqttSubscribeMessageImpl(messageId, topicSubscriptions);
   }
 
   /**
-   * List with topics and related quolity of service levels
-   *
-   * @return
+   * @return  List with topics and related quolity of service levels
    */
+  @CacheReturn
   List<MqttTopicSubscription> topicSubscriptions();
 }

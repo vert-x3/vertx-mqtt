@@ -18,9 +18,11 @@ package io.vertx.mqtt.messages;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 /**
  * Represents an MQTT PUBLISH message
@@ -40,43 +42,38 @@ public interface MqttPublishMessage extends MqttMessage {
    * @return Vert.x publish message
    */
   @GenIgnore
-  static MqttPublishMessageImpl create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
+  static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
 
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload);
   }
 
   /**
-   * Quality of service level
-   *
-   * @return
+   * @return  Quality of service level
    */
+  @CacheReturn
   MqttQoS qosLevel();
 
   /**
-   * If the message is a duplicate
-   *
-   * @return
+   * @return  If the message is a duplicate
    */
+  @CacheReturn
   boolean isDup();
 
   /**
-   * If the message needs to be retained
-   *
-   * @return
+   * @return  If the message needs to be retained
    */
+  @CacheReturn
   boolean isRetain();
 
   /**
-   * Topic on which the message was published
-   *
-   * @return
+   * @return  Topic on which the message was published
    */
+  @CacheReturn
   String topicName();
 
   /**
-   * Payload message
-   *
-   * @return
+   * @return  Payload message
    */
+  @CacheReturn
   Buffer payload();
 }

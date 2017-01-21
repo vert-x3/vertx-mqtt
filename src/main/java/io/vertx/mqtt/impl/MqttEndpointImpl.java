@@ -149,16 +149,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this.isSubscriptionAutoAck;
   }
 
-  public void publishAutoAck(boolean isPublishAutoAck) {
+  public MqttEndpoint publishAutoAck(boolean isPublishAutoAck) {
+
     this.isPublishAutoAck = isPublishAutoAck;
+    return this;
   }
 
   public boolean isPublishAutoAck() {
     return this.isPublishAutoAck;
   }
 
-  public void autoKeepAlive(boolean isAutoKeepAlive) {
+  public MqttEndpoint autoKeepAlive(boolean isAutoKeepAlive) {
+
     this.isAutoKeepAlive = isAutoKeepAlive;
+    return this;
   }
 
   public boolean isAutoKeepAlive() {
