@@ -8,6 +8,8 @@ It's not a fully featured MQTT broker but can be used for building something lik
 
 See the in-source docs for more details:
 - [Java](src/main/asciidoc/java/index.adoc).
+- [JavaScript](src/main/asciidoc/js/index.adoc).
+- [Ruby](src/main/asciidoc/ruby/index.adoc).
 
 Some examples are available for getting started with the server under the [_examples_](src/main/java/io/vertx/mqtt/examples) folder.
 
