@@ -16,6 +16,8 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -32,6 +34,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttDisconnectTest extends MqttBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttDisconnectTest.class);
 
   @Before
   public void before(TestContext context) {
@@ -80,7 +84,7 @@ public class MqttDisconnectTest extends MqttBaseTest {
 
     endpoint.disconnectHandler(v -> {
 
-      System.out.println("MQTT remote client disconnected");
+      log.info("MQTT remote client disconnected");
 
     });
 

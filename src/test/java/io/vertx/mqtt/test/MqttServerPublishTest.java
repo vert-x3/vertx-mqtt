@@ -17,6 +17,8 @@
 package io.vertx.mqtt.test;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttEndpoint;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
  * MQTT server testing about server publish
  */
 public class MqttServerPublishTest extends MqttBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttServerPublishTest.class);
 
   private Async async;
 
@@ -91,7 +95,7 @@ public class MqttServerPublishTest extends MqttBaseTest {
         @Override
         public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
 
-          System.out.println("Just received message [" + mqttMessage.toString() + "] on topic [" + topic + "] with QoS [" + mqttMessage.getQos() + "]");
+          log.info("Just received message [" + mqttMessage.toString() + "] on topic [" + topic + "] with QoS [" + mqttMessage.getQos() + "]");
 
           if (mqttMessage.getQos() == 0)
             async.complete();
@@ -122,14 +126,14 @@ public class MqttServerPublishTest extends MqttBaseTest {
       endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
     }).publishAcknowledgeHandler(messageId -> {
 
-      System.out.print("Message [" + messageId + "] acknowledged");
+      log.info("Message [" + messageId + "] acknowledged");
       this.async.complete();
     }).publishReceivedHandler(messageId -> {
 
       endpoint.publishRelease(messageId);
     }).publishCompleteHandler(messageId -> {
 
-      System.out.print("Message [" + messageId + "] acknowledged");
+      log.info("Message [" + messageId + "] acknowledged");
       this.async.complete();
     });
 

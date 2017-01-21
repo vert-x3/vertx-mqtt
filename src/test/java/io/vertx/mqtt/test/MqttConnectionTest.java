@@ -17,6 +17,8 @@
 package io.vertx.mqtt.test;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -34,6 +36,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttConnectionTest extends MqttBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttConnectionTest.class);
 
   private MqttConnectReturnCode expectedReturnCode;
 
@@ -200,6 +204,8 @@ public class MqttConnectionTest extends MqttBaseTest {
           MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
         break;
     }
+
+    log.info("return code = " + returnCode);
 
     if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
       endpoint.accept(false);

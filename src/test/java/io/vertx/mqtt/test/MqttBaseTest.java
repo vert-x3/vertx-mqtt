@@ -17,6 +17,8 @@
 package io.vertx.mqtt.test;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -30,6 +32,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(VertxUnitRunner.class)
 public abstract class MqttBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttBaseTest.class);
 
   protected static final String MQTT_SERVER_HOST = "localhost";
   protected static final int MQTT_SERVER_PORT = 1883;
@@ -59,10 +63,10 @@ public abstract class MqttBaseTest {
     this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
 
       if (ar.succeeded()) {
-        System.out.println("MQTT server listening on port " + ar.result().actualPort());
+        log.info("MQTT server listening on port " + ar.result().actualPort());
         async.complete();
       } else {
-        System.out.println("Error starting MQTT server");
+        log.error("Error starting MQTT server", ar.cause());
         System.exit(1);
       }
     });

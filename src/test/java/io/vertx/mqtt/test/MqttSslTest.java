@@ -16,6 +16,8 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -44,6 +46,8 @@ import java.security.KeyStore;
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttSslTest extends MqttBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttSslTest.class);
 
   private Async async;
 
@@ -134,7 +138,7 @@ public class MqttSslTest extends MqttBaseTest {
 
     endpoint.publishHandler(message -> {
 
-      System.out.println("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
       switch (message.qosLevel()) {
 

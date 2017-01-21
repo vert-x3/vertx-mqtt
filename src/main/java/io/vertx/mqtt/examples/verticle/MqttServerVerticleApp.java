@@ -37,6 +37,7 @@ public class MqttServerVerticleApp {
 
     try {
       System.in.read();
+      vertx.close();
     } catch (IOException e) {
       e.printStackTrace();
     }

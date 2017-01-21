@@ -44,7 +44,7 @@ public class MqttServerVerticle extends AbstractVerticle {
 
     this.server.endpointHandler(endpoint -> {
 
-      log.info("connected client " + endpoint.clientIdentifier());
+      log.info("connected client " + endpoint.clientIdentifier() + " on verticle id = " + this.deploymentID());
 
       endpoint.publishHandler(message -> {
 
@@ -60,7 +60,7 @@ public class MqttServerVerticle extends AbstractVerticle {
       if (ar.succeeded()) {
         log.info("MQTT server started and listening on port " + ar.result().actualPort());
       } else {
-        log.info("MQTT server error on start", ar.cause());
+        log.error("MQTT server error on start", ar.cause());
       }
 
     });

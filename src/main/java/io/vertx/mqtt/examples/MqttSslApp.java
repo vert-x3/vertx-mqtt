@@ -60,12 +60,9 @@ public class MqttSslApp {
       .listen(ar -> {
 
         if (ar.succeeded()) {
-
           log.info("MQTT server is listening on port " + ar.result().actualPort());
         } else {
-
-          log.info("Error on starting the server");
-          ar.cause().printStackTrace();
+          log.error("Error on starting the server", ar.cause());
         }
       });
 

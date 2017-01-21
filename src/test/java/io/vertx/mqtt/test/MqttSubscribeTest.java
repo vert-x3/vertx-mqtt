@@ -17,6 +17,8 @@
 package io.vertx.mqtt.test;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -37,6 +39,8 @@ import java.util.List;
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttSubscribeTest extends MqttBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttSubscribeTest.class);
 
   private Async async;
 
