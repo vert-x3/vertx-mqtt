@@ -64,7 +64,38 @@ to check if the server is started properly or not.
 
 [source,ruby]
 ----
-Code not translatable
+require 'vertx-mqtt-server/mqtt_server'
+
+mqttServer = VertxMqttServer::MqttServer.create(vertx)
+mqttServer.endpoint_handler() { |endpoint|
+
+  # shows main connect info
+  puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
+
+  if (endpoint.auth() != nil)
+    puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
+  end
+  if (endpoint.will() != nil)
+    puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
+  end
+
+  puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
+
+  # accept connection from the remote client
+  endpoint.accept(false)
+
+}.listen() { |ar_err,ar|
+
+  if (ar_err == nil)
+
+    puts "MQTT server is listening on port #{ar.actual_port()}"
+  else
+
+    puts "Error on starting the server"
+    ar_err.print_stack_trace()
+  end
+}
+
 ----
 
 The same _endpoint_ instance provides the `link:../../yardoc/VertxMqttServer/MqttEndpoint.html#disconnect_handler-instance_method[disconnectHandler]`
@@ -73,7 +104,13 @@ this handler takes no parameters.
 
 [source,ruby]
 ----
-Code not translatable
+
+# handling disconnect message
+endpoint.disconnect_handler() { |v|
+
+  puts "Received disconnect from client"
+}
+
 ----
 
 === Handling client connection/disconnection with SSL/TLS support
@@ -92,7 +129,47 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,ruby]
 ----
-Code not translatable
+require 'vertx-mqtt-server/mqtt_server'
+
+options = {
+  'port' => 8883,
+  'keyCertOptions' => {
+    'keyPath' => "./src/test/resources/tls/server-key.pem",
+    'certPath' => "./src/test/resources/tls/server-cert.pem"
+  },
+  'ssl' => true
+}
+
+mqttServer = VertxMqttServer::MqttServer.create(vertx, options)
+mqttServer.endpoint_handler() { |endpoint|
+
+  # shows main connect info
+  puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
+
+  if (endpoint.auth() != nil)
+    puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
+  end
+  if (endpoint.will() != nil)
+    puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
+  end
+
+  puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
+
+  # accept connection from the remote client
+  endpoint.accept(false)
+
+}.listen() { |ar_err,ar|
+
+  if (ar_err == nil)
+
+    puts "MQTT server is listening on port #{ar.actual_port()}"
+  else
+
+    puts "Error on starting the server"
+    ar_err.print_stack_trace()
+  end
+}
+
 ----
 
 All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
@@ -109,7 +186,20 @@ for replying to the client with the related SUBACK message containing the grante
 
 [source,ruby]
 ----
-Code not translatable
+
+# handling requests for subscriptions
+endpoint.subscribe_handler() { |subscribe|
+
+  grantedQosLevels = Array.new
+  subscribe.topic_subscriptions().each do |s|
+    puts "Subscription for #{s.topic_name()} with QoS #{s.quality_of_service()}"
+    grantedQosLevels.push(s.quality_of_service().value())
+  end
+  # ack the subscriptions request
+  endpoint.subscribe_acknowledge(subscribe.message_id(), grantedQosLevels)
+
+}
+
 ----
 
 In the same way, it's possible to use the `link:../../yardoc/VertxMqttServer/MqttEndpoint.html#unsubscribe_handler-instance_method[unsubscribeHandler]` method
@@ -120,7 +210,17 @@ for replying to the client with the related UNSUBACK message.
 
 [source,ruby]
 ----
-Code not translatable
+
+# handling requests for unsubscriptions
+endpoint.unsubscribe_handler() { |unsubscribe|
+
+  unsubscribe.topics().each do |t|
+    puts "Unsubscription for #{t}"
+  end
+  # ack the subscriptions request
+  endpoint.unsubscribe_acknowledge(unsubscribe.message_id())
+}
+
 ----
 
 === Handling client published message
@@ -144,7 +244,23 @@ for sending the PUBCOMP message to the client.
 
 [source,ruby]
 ----
-Code not translatable
+
+# handling incoming published messages
+endpoint.publish_handler() { |message|
+
+  puts "Just received message [#{message.payload().to_string(Java::JavaNioCharset::Charset.default_charset())}] with QoS [#{message.qos_level()}]"
+
+  if (message.qos_level() == :AT_LEAST_ONCE)
+    endpoint.publish_acknowledge(message.message_id())
+  elsif (message.qos_level() == :EXACTLY_ONCE)
+    endpoint.publish_release(message.message_id())
+  end
+
+}.publish_release_handler() { |messageId|
+
+  endpoint.publish_complete(messageId)
+}
+
 ----
 
 === Publish message to the client
@@ -168,7 +284,25 @@ for specifying the handler called when the final PUBCOMP message is received.
 
 [source,ruby]
 ----
-Code not translatable
+require 'vertx/buffer'
+
+# just as example, publish a message with QoS level 2
+endpoint.publish("my_topic", Vertx::Buffer.buffer("Hello from the Vert.x MQTT server"), :EXACTLY_ONCE, false, false)
+
+# specifing handlers for handling QoS 1 and 2
+endpoint.publish_acknowledge_handler() { |messageId|
+
+  puts "Received ack for message = #{messageId}"
+
+}.publish_received_handler() { |messageId|
+
+  endpoint.publish_release(messageId)
+
+}.publish_complete_handler() { |messageId|
+
+  puts "Received ack for message = #{messageId}"
+}
+
 ----
 
 === Be notified by client keep alive
@@ -185,7 +319,13 @@ by the server internally as described above.
 
 [source,ruby]
 ----
-Code not translatable
+
+# handling ping from client
+endpoint.ping_handler() { |v|
+
+  puts "Ping received from client"
+}
+
 ----
 
 === Closing the server
@@ -197,5 +337,10 @@ that will be called when the server is really closed.
 
 [source,ruby]
 ----
-Code not translatable
+
+mqttServer.close() { |v_err,v|
+
+  puts "MQTT server closed"
+}
+
 ----

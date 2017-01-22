@@ -35,8 +35,6 @@ import java.util.List;
 @Source
 public class VertxMqttServerExamples {
 
-  private static final Logger log = LoggerFactory.getLogger(VertxMqttServerExamples.class);
-
   /**
    * Example for handling client connection
    * @param vertx
@@ -47,17 +45,17 @@ public class VertxMqttServerExamples {
     mqttServer.endpointHandler(endpoint -> {
 
       // shows main connect info
-      log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+      System.out.println("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
 
       if (endpoint.auth() != null) {
-        log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+        System.out.println("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
       }
       if (endpoint.will() != null) {
-        log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+        System.out.println("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
           " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
       }
 
-      log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
 
       // accept connection from the remote client
       endpoint.accept(false);
@@ -67,10 +65,10 @@ public class VertxMqttServerExamples {
 
         if (ar.succeeded()) {
 
-          log.info("MQTT server is listening on port " + ar.result().actualPort());
+          System.out.println("MQTT server is listening on port " + ar.result().actualPort());
         } else {
 
-          log.info("Error on starting the server");
+          System.out.println("Error on starting the server");
           ar.cause().printStackTrace();
         }
       });
@@ -85,7 +83,7 @@ public class VertxMqttServerExamples {
     // handling disconnect message
     endpoint.disconnectHandler(v -> {
 
-      log.info("Received disconnect from client");
+      System.out.println("Received disconnect from client");
     });
   }
 
@@ -95,30 +93,28 @@ public class VertxMqttServerExamples {
    */
   public void example3(Vertx vertx) {
 
-    PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
-      .setKeyPath("./src/test/resources/tls/server-key.pem")
-      .setCertPath("./src/test/resources/tls/server-cert.pem");
-
     MqttServerOptions options = new MqttServerOptions()
-      .setPort(MqttServerOptions.DEFAULT_TLS_PORT)
-      .setKeyCertOptions(pemKeyCertOptions)
+      .setPort(8883)
+      .setKeyCertOptions(new PemKeyCertOptions()
+        .setKeyPath("./src/test/resources/tls/server-key.pem")
+        .setCertPath("./src/test/resources/tls/server-cert.pem"))
       .setSsl(true);
 
     MqttServer mqttServer = MqttServer.create(vertx, options);
     mqttServer.endpointHandler(endpoint -> {
 
       // shows main connect info
-      log.info("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+      System.out.println("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
 
       if (endpoint.auth() != null) {
-        log.info("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+        System.out.println("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
       }
       if (endpoint.will() != null) {
-        log.info("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+        System.out.println("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
           " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
       }
 
-      log.info("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
 
       // accept connection from the remote client
       endpoint.accept(false);
@@ -128,10 +124,10 @@ public class VertxMqttServerExamples {
 
         if (ar.succeeded()) {
 
-          log.info("MQTT server is listening on port " + ar.result().actualPort());
+          System.out.println("MQTT server is listening on port " + ar.result().actualPort());
         } else {
 
-          log.info("Error on starting the server");
+          System.out.println("Error on starting the server");
           ar.cause().printStackTrace();
         }
       });
@@ -148,7 +144,7 @@ public class VertxMqttServerExamples {
 
       List<Integer> grantedQosLevels = new ArrayList<>();
       for (MqttTopicSubscription s: subscribe.topicSubscriptions()) {
-        log.info("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
+        System.out.println("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
         grantedQosLevels.add(s.qualityOfService().value());
       }
       // ack the subscriptions request
@@ -167,7 +163,7 @@ public class VertxMqttServerExamples {
     endpoint.unsubscribeHandler(unsubscribe -> {
 
       for (String t: unsubscribe.topics()) {
-        log.info("Unsubscription for " + t);
+        System.out.println("Unsubscription for " + t);
       }
       // ack the subscriptions request
       endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
@@ -183,7 +179,7 @@ public class VertxMqttServerExamples {
     // handling incoming published messages
     endpoint.publishHandler(message -> {
 
-      log.info("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      System.out.println("Just received message [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
       if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
         endpoint.publishAcknowledge(message.messageId());
@@ -213,7 +209,7 @@ public class VertxMqttServerExamples {
     // specifing handlers for handling QoS 1 and 2
     endpoint.publishAcknowledgeHandler(messageId -> {
 
-      log.info("Received ack for message = " +  messageId);
+      System.out.println("Received ack for message = " +  messageId);
 
     }).publishReceivedHandler(messageId -> {
 
@@ -221,7 +217,7 @@ public class VertxMqttServerExamples {
 
     }).publishCompleteHandler(messageId -> {
 
-      log.info("Received ack for message = " +  messageId);
+      System.out.println("Received ack for message = " +  messageId);
     });
   }
 
@@ -234,7 +230,7 @@ public class VertxMqttServerExamples {
     // handling ping from client
     endpoint.pingHandler(v -> {
 
-      log.info("Ping received from client");
+      System.out.println("Ping received from client");
     });
   }
 
@@ -246,7 +242,7 @@ public class VertxMqttServerExamples {
 
     mqttServer.close(v -> {
 
-      log.info("MQTT server closed");
+      System.out.println("MQTT server closed");
     });
   }
 }

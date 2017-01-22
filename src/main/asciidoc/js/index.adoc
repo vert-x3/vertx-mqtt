@@ -64,7 +64,38 @@ to check if the server is started properly or not.
 
 [source,js]
 ----
-Code not translatable
+var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
+
+var mqttServer = MqttServer.create(vertx);
+mqttServer.endpointHandler(function (endpoint) {
+
+  // shows main connect info
+  console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+  if (endpoint.auth() !== null) {
+    console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+  }
+  if (endpoint.will() !== null) {
+    console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+  }
+
+  console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+  // accept connection from the remote client
+  endpoint.accept(false);
+
+}).listen(function (ar, ar_err) {
+
+  if (ar_err == null) {
+
+    console.log("MQTT server is listening on port " + ar.actualPort());
+  } else {
+
+    console.log("Error on starting the server");
+    ar_err.printStackTrace();
+  }
+});
+
 ----
 
 The same _endpoint_ instance provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#disconnectHandler[disconnectHandler]`
@@ -73,7 +104,13 @@ this handler takes no parameters.
 
 [source,js]
 ----
-Code not translatable
+
+// handling disconnect message
+endpoint.disconnectHandler(function (v) {
+
+  console.log("Received disconnect from client");
+});
+
 ----
 
 === Handling client connection/disconnection with SSL/TLS support
@@ -92,7 +129,47 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,js]
 ----
-Code not translatable
+var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
+
+var options = {
+  "port" : 8883,
+  "keyCertOptions" : {
+    "keyPath" : "./src/test/resources/tls/server-key.pem",
+    "certPath" : "./src/test/resources/tls/server-cert.pem"
+  },
+  "ssl" : true
+};
+
+var mqttServer = MqttServer.create(vertx, options);
+mqttServer.endpointHandler(function (endpoint) {
+
+  // shows main connect info
+  console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+  if (endpoint.auth() !== null) {
+    console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+  }
+  if (endpoint.will() !== null) {
+    console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+  }
+
+  console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+  // accept connection from the remote client
+  endpoint.accept(false);
+
+}).listen(function (ar, ar_err) {
+
+  if (ar_err == null) {
+
+    console.log("MQTT server is listening on port " + ar.actualPort());
+  } else {
+
+    console.log("Error on starting the server");
+    ar_err.printStackTrace();
+  }
+});
+
 ----
 
 All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
@@ -109,7 +186,20 @@ for replying to the client with the related SUBACK message containing the grante
 
 [source,js]
 ----
-Code not translatable
+
+// handling requests for subscriptions
+endpoint.subscribeHandler(function (subscribe) {
+
+  var grantedQosLevels = [];
+  Array.prototype.forEach.call(subscribe.topicSubscriptions(), function(s) {
+    console.log("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
+    grantedQosLevels.push(s.qualityOfService().value());
+  });
+  // ack the subscriptions request
+  endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);
+
+});
+
 ----
 
 In the same way, it's possible to use the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#unsubscribeHandler[unsubscribeHandler]` method
@@ -120,7 +210,17 @@ for replying to the client with the related UNSUBACK message.
 
 [source,js]
 ----
-Code not translatable
+
+// handling requests for unsubscriptions
+endpoint.unsubscribeHandler(function (unsubscribe) {
+
+  Array.prototype.forEach.call(unsubscribe.topics(), function(t) {
+    console.log("Unsubscription for " + t);
+  });
+  // ack the subscriptions request
+  endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
+});
+
 ----
 
 === Handling client published message
@@ -144,7 +244,23 @@ for sending the PUBCOMP message to the client.
 
 [source,js]
 ----
-Code not translatable
+
+// handling incoming published messages
+endpoint.publishHandler(function (message) {
+
+  console.log("Just received message [" + message.payload().toString(Java.type("java.nio.charset.Charset").defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+
+  if (message.qosLevel() === 'AT_LEAST_ONCE') {
+    endpoint.publishAcknowledge(message.messageId());
+  } else if (message.qosLevel() === 'EXACTLY_ONCE') {
+    endpoint.publishRelease(message.messageId());
+  }
+
+}).publishReleaseHandler(function (messageId) {
+
+  endpoint.publishComplete(messageId);
+});
+
 ----
 
 === Publish message to the client
@@ -168,7 +284,25 @@ for specifying the handler called when the final PUBCOMP message is received.
 
 [source,js]
 ----
-Code not translatable
+var Buffer = require("vertx-js/buffer");
+
+// just as example, publish a message with QoS level 2
+endpoint.publish("my_topic", Buffer.buffer("Hello from the Vert.x MQTT server"), 'EXACTLY_ONCE', false, false);
+
+// specifing handlers for handling QoS 1 and 2
+endpoint.publishAcknowledgeHandler(function (messageId) {
+
+  console.log("Received ack for message = " + messageId);
+
+}).publishReceivedHandler(function (messageId) {
+
+  endpoint.publishRelease(messageId);
+
+}).publishCompleteHandler(function (messageId) {
+
+  console.log("Received ack for message = " + messageId);
+});
+
 ----
 
 === Be notified by client keep alive
@@ -185,7 +319,13 @@ by the server internally as described above.
 
 [source,js]
 ----
-Code not translatable
+
+// handling ping from client
+endpoint.pingHandler(function (v) {
+
+  console.log("Ping received from client");
+});
+
 ----
 
 === Closing the server
@@ -197,5 +337,10 @@ that will be called when the server is really closed.
 
 [source,js]
 ----
-Code not translatable
+
+mqttServer.close(function (v, v_err) {
+
+  console.log("MQTT server closed");
+});
+
 ----
