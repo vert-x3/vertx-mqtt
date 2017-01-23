@@ -32,11 +32,10 @@ var MqttTopicSubscription = function(j_val) {
   var that = this;
 
   /**
-   Subscription topic name
 
    @public
 
-   @return {string} 
+   @return {string} Subscription topic name
    */
   this.topicName = function() {
     var __args = arguments;
@@ -49,11 +48,10 @@ var MqttTopicSubscription = function(j_val) {
   };
 
   /**
-   Quality of Service level for the subscription
 
    @public
 
-   @return {Object} 
+   @return {Object} Quality of Service level for the subscription
    */
   this.qualityOfService = function() {
     var __args = arguments;

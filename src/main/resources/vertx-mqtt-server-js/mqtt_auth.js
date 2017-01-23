@@ -32,11 +32,10 @@ var MqttAuth = function(j_val) {
   var that = this;
 
   /**
-   Username provided by the remote MQTT client
 
    @public
 
-   @return {string} 
+   @return {string} Username provided by the remote MQTT client
    */
   this.userName = function() {
     var __args = arguments;
@@ -46,11 +45,10 @@ var MqttAuth = function(j_val) {
   };
 
   /**
-   Password provided by the remote MQTT client
 
    @public
 
-   @return {string} 
+   @return {string} Password provided by the remote MQTT client
    */
   this.password = function() {
     var __args = arguments;

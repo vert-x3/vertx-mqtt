@@ -29,8 +29,7 @@ module VertxMqttServer
     def self.j_class
       Java::IoVertxMqtt::MqttTopicSubscription.java_class
     end
-    #  Subscription topic name
-    # @return [String] 
+    # @return [String] Subscription topic name
     def topic_name
       if !block_given?
         if @cached_topic_name != nil
@@ -40,8 +39,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling topic_name()"
     end
-    #  Quality of Service level for the subscription
-    # @return [:AT_MOST_ONCE,:AT_LEAST_ONCE,:EXACTLY_ONCE,:FAILURE] 
+    # @return [:AT_MOST_ONCE,:AT_LEAST_ONCE,:EXACTLY_ONCE,:FAILURE] Quality of Service level for the subscription
     def quality_of_service
       if !block_given?
         if @cached_quality_of_service != nil

@@ -27,17 +27,13 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface MqttTopicSubscription {
 
   /**
-   * Subscription topic name
-   *
-   * @return
+   * @return  Subscription topic name
    */
   @CacheReturn
   String topicName();
 
   /**
-   * Quality of Service level for the subscription
-   *
-   * @return
+   * @return  Quality of Service level for the subscription
    */
   @CacheReturn
   MqttQoS qualityOfService();
