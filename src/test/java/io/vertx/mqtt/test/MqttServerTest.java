@@ -18,6 +18,7 @@ package io.vertx.mqtt.test;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;

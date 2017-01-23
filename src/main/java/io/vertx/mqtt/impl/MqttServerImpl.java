@@ -77,7 +77,9 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
-    listen(c -> {}, port, host, ar -> listenHandler.handle(ar.map(this)));
+    Handler<MqttEndpoint> handler = endpointHandler;
+    Handler<MqttConnection> mqttConnectionHandler = c -> c.setEndpointHandler(handler);
+    listen(mqttConnectionHandler, port, host, ar -> listenHandler.handle(ar.map(this)));
     return this;
   }
 
@@ -95,7 +97,7 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   protected MqttConnection createConnection(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), endpointHandler, metrics);
+    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), metrics);
   }
 
   @Override

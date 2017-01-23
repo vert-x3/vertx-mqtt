@@ -36,7 +36,7 @@ import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 public class MqttConnection extends ConnectionBase {
 
   // handler to call when a remote MQTT client connects and establishes a connection
-  private final Handler<MqttEndpoint> endpointHandler;
+  private Handler<MqttEndpoint> endpointHandler;
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
   private final TCPMetrics metrics;
@@ -46,6 +46,10 @@ public class MqttConnection extends ConnectionBase {
     return metrics;
   }
 
+  void setEndpointHandler(Handler<MqttEndpoint> endpointHandler) {
+    this.endpointHandler = endpointHandler;
+  }
+
   /**
    * Constructor
    *
@@ -53,10 +57,8 @@ public class MqttConnection extends ConnectionBase {
    * @param channel Channel (netty) used for communication with MQTT remote client
    * @param context Vert.x context
    */
-  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, Handler<MqttEndpoint> endpointHandler, TCPMetrics metrics) {
+  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, TCPMetrics metrics) {
     super(vertx, channel, context);
-
-    this.endpointHandler = endpointHandler;
     this.metrics = metrics;
   }
 
