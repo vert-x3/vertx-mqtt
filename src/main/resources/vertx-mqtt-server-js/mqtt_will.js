@@ -19,7 +19,7 @@ var utils = require('vertx-js/util/utils');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttWill = io.vertx.mqtt.MqttWill;
+var JMqttWill = Java.type('io.vertx.mqtt.MqttWill');
 
 /**
  Will information from the remote MQTT client

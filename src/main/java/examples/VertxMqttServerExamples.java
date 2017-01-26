@@ -17,6 +17,7 @@
 package examples;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
@@ -244,5 +245,35 @@ public class VertxMqttServerExamples {
 
       System.out.println("MQTT server closed");
     });
+  }
+
+  /**
+   * Example for scaling (sharing MQTT servers)
+   * @param vertx
+   */
+  public void example10(Vertx vertx) {
+
+    for (int i = 0; i < 10; i++) {
+
+      MqttServer mqttServer = MqttServer.create(vertx);
+      mqttServer.endpointHandler(endpoint -> {
+        // handling endpoint
+      })
+        .listen(ar -> {
+
+          // handling start listening
+        });
+
+    }
+  }
+
+  /**
+   * Example for scaling (sharing MQTT servers)
+   * @param vertx
+   */
+  public void example11(Vertx vertx) {
+
+    DeploymentOptions options = new DeploymentOptions().setInstances(10);
+    vertx.deployVerticle("com.mycompany.MyVerticle", options);
   }
 }

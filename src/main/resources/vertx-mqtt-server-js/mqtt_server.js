@@ -21,8 +21,8 @@ var MqttEndpoint = require('vertx-mqtt-server-js/mqtt_endpoint');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttServer = io.vertx.mqtt.MqttServer;
-var MqttServerOptions = io.vertx.mqtt.MqttServerOptions;
+var JMqttServer = Java.type('io.vertx.mqtt.MqttServer');
+var MqttServerOptions = Java.type('io.vertx.mqtt.MqttServerOptions');
 
 /**
  An MQTT server
@@ -177,7 +177,7 @@ MqttServer.create = function() {
   if (__args.length === 1 && typeof __args[0] === 'object' && __args[0]._jdel) {
     return utils.convReturnVertxGen(MqttServer, JMqttServer["create(io.vertx.core.Vertx)"](__args[0]._jdel));
   }else if (__args.length === 2 && typeof __args[0] === 'object' && __args[0]._jdel && (typeof __args[1] === 'object' && __args[1] != null)) {
-    return utils.convReturnVertxGen(MqttServer, JMqttServer["create(io.vertx.core.Vertx,io.vertx.mqtt.MqttServerOptions)"](__args[0]._jdel, __args[1] != null ? new MqttServerOptions(new JsonObject(JSON.stringify(__args[1]))) : null));
+    return utils.convReturnVertxGen(MqttServer, JMqttServer["create(io.vertx.core.Vertx,io.vertx.mqtt.MqttServerOptions)"](__args[0]._jdel, __args[1] != null ? new MqttServerOptions(new JsonObject(Java.asJSONCompatible(__args[1]))) : null));
   } else throw new TypeError('function invoked with invalid arguments');
 };
 

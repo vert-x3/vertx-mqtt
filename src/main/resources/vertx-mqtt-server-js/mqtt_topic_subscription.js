@@ -19,7 +19,7 @@ var utils = require('vertx-js/util/utils');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttTopicSubscription = io.vertx.mqtt.MqttTopicSubscription;
+var JMqttTopicSubscription = Java.type('io.vertx.mqtt.MqttTopicSubscription');
 
 /**
  Represents a subscription to a topic

@@ -19,7 +19,7 @@ var utils = require('vertx-js/util/utils');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttMessage = io.vertx.mqtt.messages.MqttMessage;
+var JMqttMessage = Java.type('io.vertx.mqtt.messages.MqttMessage');
 
 /**
  Represent the interface for each MQTT message

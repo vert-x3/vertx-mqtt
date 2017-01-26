@@ -323,3 +323,42 @@ mqttServer.close(v -> {
   System.out.println("MQTT server closed");
 });
 ----
+
+=== Automatic clean-up in verticles
+
+If you’re creating MQTT servers from inside verticles, those servers will be automatically closed when the verticle is undeployed.
+
+=== Scaling : sharing MQTT servers
+
+The handlers related to the MQTT server are always executed in the same event loop thread. It means that on a system with
+more cores, only one instance is deployed so only one core is used. In order to use more cores, it's possible to deploy
+more instances of the MQTT server.
+
+It's possible to do that programmatically:
+
+[source,java]
+----
+for (int i = 0; i < 10; i++) {
+
+  MqttServer mqttServer = MqttServer.create(vertx);
+  mqttServer.endpointHandler(endpoint -> {
+    // handling endpoint
+  })
+    .listen(ar -> {
+
+      // handling start listening
+    });
+
+}
+----
+
+or using a verticle specifying the number of instances:
+
+[source,java]
+----
+DeploymentOptions options = new DeploymentOptions().setInstances(10);
+vertx.deployVerticle("com.mycompany.MyVerticle", options);
+----
+
+What's really happen is that even only MQTT server is deployed but as incoming connections arrive, Vert.x distributes
+them in a round-robin fashion to any of the connect handlers executed on different cores.

@@ -21,7 +21,7 @@ var MqttMessage = require('vertx-mqtt-server-js/mqtt_message');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttPublishMessage = io.vertx.mqtt.messages.MqttPublishMessage;
+var JMqttPublishMessage = Java.type('io.vertx.mqtt.messages.MqttPublishMessage');
 
 /**
  Represents an MQTT PUBLISH message

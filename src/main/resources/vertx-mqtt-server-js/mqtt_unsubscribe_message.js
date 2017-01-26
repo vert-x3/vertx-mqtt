@@ -20,7 +20,7 @@ var MqttMessage = require('vertx-mqtt-server-js/mqtt_message');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttUnsubscribeMessage = io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+var JMqttUnsubscribeMessage = Java.type('io.vertx.mqtt.messages.MqttUnsubscribeMessage');
 
 /**
  Represents an MQTT UNSUBSCRIBE message

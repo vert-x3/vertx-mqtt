@@ -214,6 +214,33 @@
  * ----
  * {@link examples.VertxMqttServerExamples#example9}
  * ----
+ *
+ * === Automatic clean-up in verticles
+ *
+ * If you’re creating MQTT servers from inside verticles, those servers will be automatically closed when the verticle is undeployed.
+ *
+ * === Scaling : sharing MQTT servers
+ *
+ * The handlers related to the MQTT server are always executed in the same event loop thread. It means that on a system with
+ * more cores, only one instance is deployed so only one core is used. In order to use more cores, it's possible to deploy
+ * more instances of the MQTT server.
+ *
+ * It's possible to do that programmatically:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example10}
+ * ----
+ *
+ * or using a verticle specifying the number of instances:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.VertxMqttServerExamples#example11}
+ * ----
+ *
+ * What's really happen is that even only MQTT server is deployed but as incoming connections arrive, Vert.x distributes
+ * them in a round-robin fashion to any of the connect handlers executed on different cores.
  */
 @Document(fileName = "index.adoc")
 @ModuleGen(name = "vertx-mqtt-server", groupPackage = "io.vertx")

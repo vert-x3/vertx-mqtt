@@ -25,7 +25,7 @@ var MqttPublishMessage = require('vertx-mqtt-server-js/mqtt_publish_message');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttEndpoint = io.vertx.mqtt.MqttEndpoint;
+var JMqttEndpoint = Java.type('io.vertx.mqtt.MqttEndpoint');
 
 /**
  Represents an MQTT endpoint for point-to-point communication with the remote MQTT client

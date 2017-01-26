@@ -21,7 +21,7 @@ var MqttMessage = require('vertx-mqtt-server-js/mqtt_message');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttSubscribeMessage = io.vertx.mqtt.messages.MqttSubscribeMessage;
+var JMqttSubscribeMessage = Java.type('io.vertx.mqtt.messages.MqttSubscribeMessage');
 
 /**
  Represents an MQTT SUBSCRIBE message

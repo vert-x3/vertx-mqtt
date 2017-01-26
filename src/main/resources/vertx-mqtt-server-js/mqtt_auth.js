@@ -19,7 +19,7 @@ var utils = require('vertx-js/util/utils');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JMqttAuth = io.vertx.mqtt.MqttAuth;
+var JMqttAuth = Java.type('io.vertx.mqtt.MqttAuth');
 
 /**
  MQTT authentication information
