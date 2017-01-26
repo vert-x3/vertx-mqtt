@@ -11,6 +11,6 @@ See the in-source docs for more details:
 - [JavaScript](src/main/asciidoc/js/index.adoc).
 - [Ruby](src/main/asciidoc/ruby/index.adoc).
 
-Some examples are available for getting started with the server under the [_examples_](src/main/java/io/vertx/mqtt/examples) folder.
+Some examples are available for getting started with the server under the [vertx-examples](https://github.com/vert-x3/vertx-examples/tree/master/mqtt-server-examples) project.
 
 **Note: This module has Tech Preview status, this means the API can change between versions.**
