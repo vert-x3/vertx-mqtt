@@ -54,7 +54,7 @@ public class VertxMqttServerExamples {
           " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
       }
 
-      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeoutSeconds() + "]");
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
 
       // accept connection from the remote client
       endpoint.accept(false);
@@ -113,7 +113,7 @@ public class VertxMqttServerExamples {
           " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
       }
 
-      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeoutSeconds() + "]");
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
 
       // accept connection from the remote client
       endpoint.accept(false);

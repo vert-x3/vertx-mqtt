@@ -134,7 +134,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public String protocolName() { return this.protocolName; }
 
-  public int keepAliveTimeoutSeconds() {
+  public int keepAliveTimeSeconds() {
     return this.keepAliveTimeoutSeconds;
   }
 

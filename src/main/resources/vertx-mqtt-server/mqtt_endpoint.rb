@@ -104,14 +104,14 @@ module VertxMqttServer
       raise ArgumentError, "Invalid arguments when calling clean_session?()"
     end
     # @return [Fixnum] the keep alive timeout (in seconds) specified by the remote MQTT client
-    def keep_alive_timeout_seconds
+    def keep_alive_time_seconds
       if !block_given?
-        if @cached_keep_alive_timeout_seconds != nil
-          return @cached_keep_alive_timeout_seconds
+        if @cached_keep_alive_time_seconds != nil
+          return @cached_keep_alive_time_seconds
         end
-        return @cached_keep_alive_timeout_seconds = @j_del.java_method(:keepAliveTimeoutSeconds, []).call()
+        return @cached_keep_alive_time_seconds = @j_del.java_method(:keepAliveTimeSeconds, []).call()
       end
-      raise ArgumentError, "Invalid arguments when calling keep_alive_timeout_seconds()"
+      raise ArgumentError, "Invalid arguments when calling keep_alive_time_seconds()"
     end
     # @return [Fixnum] the message identifier used for last published message
     def last_message_id

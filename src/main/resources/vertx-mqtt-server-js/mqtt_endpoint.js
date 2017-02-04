@@ -152,13 +152,13 @@ var MqttEndpoint = function(j_val) {
 
    @return {number} the keep alive timeout (in seconds) specified by the remote MQTT client
    */
-  this.keepAliveTimeoutSeconds = function() {
+  this.keepAliveTimeSeconds = function() {
     var __args = arguments;
     if (__args.length === 0) {
-      if (that.cachedkeepAliveTimeoutSeconds == null) {
-        that.cachedkeepAliveTimeoutSeconds = j_mqttEndpoint["keepAliveTimeoutSeconds()"]();
+      if (that.cachedkeepAliveTimeSeconds == null) {
+        that.cachedkeepAliveTimeSeconds = j_mqttEndpoint["keepAliveTimeSeconds()"]();
       }
-      return that.cachedkeepAliveTimeoutSeconds;
+      return that.cachedkeepAliveTimeSeconds;
     } else throw new TypeError('function invoked with invalid arguments');
   };
 

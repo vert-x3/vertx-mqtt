@@ -80,7 +80,7 @@ public interface MqttEndpoint {
    * @return the keep alive timeout (in seconds) specified by the remote MQTT client
    */
   @CacheReturn
-  int keepAliveTimeoutSeconds();
+  int keepAliveTimeSeconds();
 
   /**
    * @return the message identifier used for last published message
