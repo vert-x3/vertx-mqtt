@@ -1,0 +1,4 @@
+moduleName = io.vertx.mqtt.MqttWill-module
+moduleVersion = 1.0
+extensionClasses = 
+staticExtensionClasses = io.vertx.groovy.mqtt.MqttServer_GroovyStaticExtension
