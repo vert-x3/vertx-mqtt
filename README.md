@@ -10,6 +10,8 @@ See the in-source docs for more details:
 - [Java](src/main/asciidoc/java/index.adoc).
 - [JavaScript](src/main/asciidoc/js/index.adoc).
 - [Ruby](src/main/asciidoc/ruby/index.adoc).
+- [Groovy](src/main/asciidoc/groovy/index.adoc).
+- [Kotlin](src/main/asciidoc/kotlin/index.adoc).
 
 Some examples are available for getting started with the server under the [vertx-examples](https://github.com/vert-x3/vertx-examples/tree/master/mqtt-server-examples) project.
 
