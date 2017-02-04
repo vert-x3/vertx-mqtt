@@ -119,7 +119,7 @@ var MqttServer = function(j_val) {
   };
 
   /**
-   Close the server supplying an handler that will be called when the server is actually closed (or has failed)
+   Close the server supplying an handler that will be called when the server is actually closed (or has failed).
 
    @public
    @param completionHandler {function} the handler called on completion 

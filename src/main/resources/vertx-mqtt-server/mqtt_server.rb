@@ -96,7 +96,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling actual_port()"
     end
-    #  Close the server supplying an handler that will be called when the server is actually closed (or has failed)
+    #  Close the server supplying an handler that will be called when the server is actually closed (or has failed).
     # @yield the handler called on completion
     # @return [void]
     def close

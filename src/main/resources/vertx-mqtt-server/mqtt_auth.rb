@@ -29,14 +29,14 @@ module VertxMqttServer
     def self.j_class
       Java::IoVertxMqtt::MqttAuth.java_class
     end
-    # @return [String] Username provided by the remote MQTT client
+    # @return [String] the username provided by the remote MQTT client
     def user_name
       if !block_given?
         return @j_del.java_method(:userName, []).call()
       end
       raise ArgumentError, "Invalid arguments when calling user_name()"
     end
-    # @return [String] Password provided by the remote MQTT client
+    # @return [String] the password provided by the remote MQTT client
     def password
       if !block_given?
         return @j_del.java_method(:password, []).call()

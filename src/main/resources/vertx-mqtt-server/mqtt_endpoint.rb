@@ -43,8 +43,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling close()"
     end
-    #  Client identifier as provided by the remote MQTT client
-    # @return [String] 
+    # @return [String] the client identifier as provided by the remote MQTT client
     def client_identifier
       if !block_given?
         if @cached_client_identifier != nil
@@ -54,8 +53,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling client_identifier()"
     end
-    #  Authentication information as provided by the remote MQTT client
-    # @return [::VertxMqttServer::MqttAuth] 
+    # @return [::VertxMqttServer::MqttAuth] the Authentication information as provided by the remote MQTT client
     def auth
       if !block_given?
         if @cached_auth != nil
@@ -65,8 +63,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling auth()"
     end
-    #  Will information as provided by the remote MQTT client
-    # @return [::VertxMqttServer::MqttWill] 
+    # @return [::VertxMqttServer::MqttWill] the Will information as provided by the remote MQTT client
     def will
       if !block_given?
         if @cached_will != nil
@@ -76,8 +73,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling will()"
     end
-    #  Protocol version required by the remote MQTT client
-    # @return [Fixnum] 
+    # @return [Fixnum] the protocol version required by the remote MQTT client
     def protocol_version
       if !block_given?
         if @cached_protocol_version != nil
@@ -87,8 +83,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling protocol_version()"
     end
-    #  Protocol name provided by the remote MQTT client
-    # @return [String] 
+    # @return [String] the protocol name provided by the remote MQTT client
     def protocol_name
       if !block_given?
         if @cached_protocol_name != nil
@@ -98,8 +93,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling protocol_name()"
     end
-    #  If clean session is requested by the remote MQTT client
-    # @return [true,false] 
+    # @return [true,false] true when clean session is requested by the remote MQTT client
     def clean_session?
       if !block_given?
         if @cached_is_clean_session != nil
@@ -109,19 +103,17 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling clean_session?()"
     end
-    #  Keep alive timeout (in seconds) specified by the remote MQTT client
-    # @return [Fixnum] 
-    def keep_alive_time_seconds
+    # @return [Fixnum] the keep alive timeout (in seconds) specified by the remote MQTT client
+    def keep_alive_timeout_seconds
       if !block_given?
-        if @cached_keep_alive_time_seconds != nil
-          return @cached_keep_alive_time_seconds
+        if @cached_keep_alive_timeout_seconds != nil
+          return @cached_keep_alive_timeout_seconds
         end
-        return @cached_keep_alive_time_seconds = @j_del.java_method(:keepAliveTimeSeconds, []).call()
+        return @cached_keep_alive_timeout_seconds = @j_del.java_method(:keepAliveTimeoutSeconds, []).call()
       end
-      raise ArgumentError, "Invalid arguments when calling keep_alive_time_seconds()"
+      raise ArgumentError, "Invalid arguments when calling keep_alive_timeout_seconds()"
     end
-    #  Message identifier used for last published message
-    # @return [Fixnum] 
+    # @return [Fixnum] the message identifier used for last published message
     def last_message_id
       if !block_given?
         if @cached_last_message_id != nil
@@ -140,8 +132,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling subscription_auto_ack(#{isSubscriptionAutoAck})"
     end
-    #  Return auto acknowledge status for subscription/unsubscription requests
-    # @return [true,false] 
+    # @return [true,false] true when auto acknowledge status for subscription/unsubscription requests
     def subscription_auto_ack?
       if !block_given?
         return @j_del.java_method(:isSubscriptionAutoAck, []).call()
@@ -175,8 +166,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling auto_keep_alive(#{isAutoKeepAlive})"
     end
-    #  Return auto keep alive status (sending ping response)
-    # @return [true,false] 
+    # @return [true,false] the auto keep alive status (sending ping response)
     def auto_keep_alive?
       if !block_given?
         return @j_del.java_method(:isAutoKeepAlive, []).call()
@@ -310,7 +300,7 @@ module VertxMqttServer
     # @return [self]
     def reject(returnCode=nil)
       if returnCode.class == Symbol && !block_given?
-        @j_del.java_method(:reject, [Java::IoNettyHandlerCodecMqtt::MqttConnectReturnCode.java_class]).call(Java::IoNettyHandlerCodecMqtt::MqttConnectReturnCode.valueOf(returnCode))
+        @j_del.java_method(:reject, [Java::IoNettyHandlerCodecMqtt::MqttConnectReturnCode.java_class]).call(Java::IoNettyHandlerCodecMqtt::MqttConnectReturnCode.valueOf(returnCode.to_s))
         return self
       end
       raise ArgumentError, "Invalid arguments when calling reject(#{returnCode})"
@@ -321,7 +311,7 @@ module VertxMqttServer
     # @return [self]
     def subscribe_acknowledge(subscribeMessageId=nil,grantedQoSLevels=nil)
       if subscribeMessageId.class == Fixnum && grantedQoSLevels.class == Array && !block_given?
-        @j_del.java_method(:subscribeAcknowledge, [Java::int.java_class,Java::JavaUtil::List.java_class]).call(subscribeMessageId,grantedQoSLevels.map { |element| Java::IoNettyHandlerCodecMqtt::MqttQoS.valueOf(element) })
+        @j_del.java_method(:subscribeAcknowledge, [Java::int.java_class,Java::JavaUtil::List.java_class]).call(subscribeMessageId,grantedQoSLevels.map { |element| Java::IoNettyHandlerCodecMqtt::MqttQoS.valueOf(element.to_s) })
         return self
       end
       raise ArgumentError, "Invalid arguments when calling subscribe_acknowledge(#{subscribeMessageId},#{grantedQoSLevels})"
@@ -385,7 +375,7 @@ module VertxMqttServer
     # @return [self]
     def publish(topic=nil,payload=nil,qosLevel=nil,isDup=nil,isRetain=nil)
       if topic.class == String && payload.class.method_defined?(:j_del) && qosLevel.class == Symbol && (isDup.class == TrueClass || isDup.class == FalseClass) && (isRetain.class == TrueClass || isRetain.class == FalseClass) && !block_given?
-        @j_del.java_method(:publish, [Java::java.lang.String.java_class,Java::IoVertxCoreBuffer::Buffer.java_class,Java::IoNettyHandlerCodecMqtt::MqttQoS.java_class,Java::boolean.java_class,Java::boolean.java_class]).call(topic,payload.j_del,Java::IoNettyHandlerCodecMqtt::MqttQoS.valueOf(qosLevel),isDup,isRetain)
+        @j_del.java_method(:publish, [Java::java.lang.String.java_class,Java::IoVertxCoreBuffer::Buffer.java_class,Java::IoNettyHandlerCodecMqtt::MqttQoS.java_class,Java::boolean.java_class,Java::boolean.java_class]).call(topic,payload.j_del,Java::IoNettyHandlerCodecMqtt::MqttQoS.valueOf(qosLevel.to_s),isDup,isRetain)
         return self
       end
       raise ArgumentError, "Invalid arguments when calling publish(#{topic},#{payload},#{qosLevel},#{isDup},#{isRetain})"

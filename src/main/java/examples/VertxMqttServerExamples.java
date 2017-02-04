@@ -20,8 +20,6 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.docgen.Source;
 import io.vertx.mqtt.MqttEndpoint;
@@ -56,7 +54,7 @@ public class VertxMqttServerExamples {
           " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
       }
 
-      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeoutSeconds() + "]");
 
       // accept connection from the remote client
       endpoint.accept(false);
@@ -115,7 +113,7 @@ public class VertxMqttServerExamples {
           " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
       }
 
-      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeoutSeconds() + "]");
 
       // accept connection from the remote client
       endpoint.accept(false);

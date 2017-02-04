@@ -35,7 +35,7 @@ var MqttWill = function(j_val) {
 
    @public
 
-   @return {boolean} Will flag for indicating the will message presence
+   @return {boolean} the will flag for indicating the will message presence
    */
   this.isWillFlag = function() {
     var __args = arguments;
@@ -51,7 +51,7 @@ var MqttWill = function(j_val) {
 
    @public
 
-   @return {string} Topic for the will as provided by the remote MQTT client
+   @return {string} the topic for the will as provided by the remote MQTT client
    */
   this.willTopic = function() {
     var __args = arguments;
@@ -67,7 +67,7 @@ var MqttWill = function(j_val) {
 
    @public
 
-   @return {string} Payload for the will as provided by the remote MQTT client
+   @return {string} the payload for the will as provided by the remote MQTT client
    */
   this.willMessage = function() {
     var __args = arguments;
@@ -83,7 +83,7 @@ var MqttWill = function(j_val) {
 
    @public
 
-   @return {number} QoS level for the will as provided by the remote MQTT client
+   @return {number} the QoS level for the will as provided by the remote MQTT client
    */
   this.willQos = function() {
     var __args = arguments;
@@ -99,7 +99,7 @@ var MqttWill = function(j_val) {
 
    @public
 
-   @return {boolean} If the will must be retained as provided by the remote MQTT client
+   @return {boolean} true if the will must be retained as provided by the remote MQTT client
    */
   this.isWillRetain = function() {
     var __args = arguments;

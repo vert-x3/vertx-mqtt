@@ -51,11 +51,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Client identifier as provided by the remote MQTT client
 
    @public
 
-   @return {string} 
+   @return {string} the client identifier as provided by the remote MQTT client
    */
   this.clientIdentifier = function() {
     var __args = arguments;
@@ -68,11 +67,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Authentication information as provided by the remote MQTT client
 
    @public
 
-   @return {MqttAuth} 
+   @return {MqttAuth} the Authentication information as provided by the remote MQTT client
    */
   this.auth = function() {
     var __args = arguments;
@@ -85,11 +83,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Will information as provided by the remote MQTT client
 
    @public
 
-   @return {MqttWill} 
+   @return {MqttWill} the Will information as provided by the remote MQTT client
    */
   this.will = function() {
     var __args = arguments;
@@ -102,11 +99,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Protocol version required by the remote MQTT client
 
    @public
 
-   @return {number} 
+   @return {number} the protocol version required by the remote MQTT client
    */
   this.protocolVersion = function() {
     var __args = arguments;
@@ -119,11 +115,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Protocol name provided by the remote MQTT client
 
    @public
 
-   @return {string} 
+   @return {string} the protocol name provided by the remote MQTT client
    */
   this.protocolName = function() {
     var __args = arguments;
@@ -136,11 +131,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   If clean session is requested by the remote MQTT client
 
    @public
 
-   @return {boolean} 
+   @return {boolean} true when clean session is requested by the remote MQTT client
    */
   this.isCleanSession = function() {
     var __args = arguments;
@@ -153,28 +147,26 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Keep alive timeout (in seconds) specified by the remote MQTT client
 
    @public
 
-   @return {number} 
+   @return {number} the keep alive timeout (in seconds) specified by the remote MQTT client
    */
-  this.keepAliveTimeSeconds = function() {
+  this.keepAliveTimeoutSeconds = function() {
     var __args = arguments;
     if (__args.length === 0) {
-      if (that.cachedkeepAliveTimeSeconds == null) {
-        that.cachedkeepAliveTimeSeconds = j_mqttEndpoint["keepAliveTimeSeconds()"]();
+      if (that.cachedkeepAliveTimeoutSeconds == null) {
+        that.cachedkeepAliveTimeoutSeconds = j_mqttEndpoint["keepAliveTimeoutSeconds()"]();
       }
-      return that.cachedkeepAliveTimeSeconds;
+      return that.cachedkeepAliveTimeoutSeconds;
     } else throw new TypeError('function invoked with invalid arguments');
   };
 
   /**
-   Message identifier used for last published message
 
    @public
 
-   @return {number} 
+   @return {number} the message identifier used for last published message
    */
   this.lastMessageId = function() {
     var __args = arguments;
@@ -200,11 +192,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Return auto acknowledge status for subscription/unsubscription requests
 
    @public
 
-   @return {boolean} 
+   @return {boolean} true when auto acknowledge status for subscription/unsubscription requests
    */
   this.isSubscriptionAutoAck = function() {
     var __args = arguments;
@@ -257,11 +248,10 @@ var MqttEndpoint = function(j_val) {
   };
 
   /**
-   Return auto keep alive status (sending ping response)
 
    @public
 
-   @return {boolean} 
+   @return {boolean} the auto keep alive status (sending ping response)
    */
   this.isAutoKeepAlive = function() {
     var __args = arguments;

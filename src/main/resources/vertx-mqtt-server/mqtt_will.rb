@@ -29,7 +29,7 @@ module VertxMqttServer
     def self.j_class
       Java::IoVertxMqtt::MqttWill.java_class
     end
-    # @return [true,false] Will flag for indicating the will message presence
+    # @return [true,false] the will flag for indicating the will message presence
     def will_flag?
       if !block_given?
         if @cached_is_will_flag != nil
@@ -39,7 +39,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling will_flag?()"
     end
-    # @return [String] Topic for the will as provided by the remote MQTT client
+    # @return [String] the topic for the will as provided by the remote MQTT client
     def will_topic
       if !block_given?
         if @cached_will_topic != nil
@@ -49,7 +49,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling will_topic()"
     end
-    # @return [String] Payload for the will as provided by the remote MQTT client
+    # @return [String] the payload for the will as provided by the remote MQTT client
     def will_message
       if !block_given?
         if @cached_will_message != nil
@@ -59,7 +59,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling will_message()"
     end
-    # @return [Fixnum] QoS level for the will as provided by the remote MQTT client
+    # @return [Fixnum] the QoS level for the will as provided by the remote MQTT client
     def will_qos
       if !block_given?
         if @cached_will_qos != nil
@@ -69,7 +69,7 @@ module VertxMqttServer
       end
       raise ArgumentError, "Invalid arguments when calling will_qos()"
     end
-    # @return [true,false] If the will must be retained as provided by the remote MQTT client
+    # @return [true,false] true if the will must be retained as provided by the remote MQTT client
     def will_retain?
       if !block_given?
         if @cached_is_will_retain != nil
