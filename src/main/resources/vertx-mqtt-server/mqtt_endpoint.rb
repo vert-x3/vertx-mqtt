@@ -317,11 +317,11 @@ module VertxMqttServer
     end
     #  Sends the SUBACK message to the remote MQTT client
     # @param [Fixnum] subscribeMessageId identifier of the SUBSCRIBE message to acknowledge
-    # @param [Array<Fixnum>] grantedQoSLevels granted QoS levels for the requested topics
+    # @param [Array<:AT_MOST_ONCE,:AT_LEAST_ONCE,:EXACTLY_ONCE,:FAILURE>] grantedQoSLevels granted QoS levels for the requested topics
     # @return [self]
     def subscribe_acknowledge(subscribeMessageId=nil,grantedQoSLevels=nil)
       if subscribeMessageId.class == Fixnum && grantedQoSLevels.class == Array && !block_given?
-        @j_del.java_method(:subscribeAcknowledge, [Java::int.java_class,Java::JavaUtil::List.java_class]).call(subscribeMessageId,grantedQoSLevels.map { |element| ::Vertx::Util::Utils.to_integer(element) })
+        @j_del.java_method(:subscribeAcknowledge, [Java::int.java_class,Java::JavaUtil::List.java_class]).call(subscribeMessageId,grantedQoSLevels.map { |element| Java::IoNettyHandlerCodecMqtt::MqttQoS.valueOf(element) })
         return self
       end
       raise ArgumentError, "Invalid arguments when calling subscribe_acknowledge(#{subscribeMessageId},#{grantedQoSLevels})"

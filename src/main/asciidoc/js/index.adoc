@@ -193,7 +193,7 @@ endpoint.subscribeHandler(function (subscribe) {
   var grantedQosLevels = [];
   Array.prototype.forEach.call(subscribe.topicSubscriptions(), function(s) {
     console.log("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
-    grantedQosLevels.push(s.qualityOfService().value());
+    grantedQosLevels.push(s.qualityOfService());
   });
   // ack the subscriptions request
   endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);

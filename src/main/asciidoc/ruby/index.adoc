@@ -193,7 +193,7 @@ endpoint.subscribe_handler() { |subscribe|
   grantedQosLevels = Array.new
   subscribe.topic_subscriptions().each do |s|
     puts "Subscription for #{s.topic_name()} with QoS #{s.quality_of_service()}"
-    grantedQosLevels.push(s.quality_of_service().value())
+    grantedQosLevels.push(s.quality_of_service())
   end
   # ack the subscriptions request
   endpoint.subscribe_acknowledge(subscribe.message_id(), grantedQosLevels)

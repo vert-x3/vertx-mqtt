@@ -181,10 +181,10 @@ for replying to the client with the related SUBACK message containing the grante
 ----
 endpoint.subscribeHandler(subscribe -> {
 
-  List<Integer> grantedQosLevels = new ArrayList<>();
+  List<MqttQoS> grantedQosLevels = new ArrayList<>();
   for (MqttTopicSubscription s: subscribe.topicSubscriptions()) {
     System.out.println("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
-    grantedQosLevels.add(s.qualityOfService().value());
+    grantedQosLevels.add(s.qualityOfService());
   }
   // ack the subscriptions request
   endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);

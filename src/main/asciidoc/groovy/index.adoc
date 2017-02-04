@@ -193,7 +193,7 @@ endpoint.subscribeHandler({ subscribe ->
   def grantedQosLevels = []
   subscribe.topicSubscriptions().each { s ->
     println("Subscription for ${s.topicName()} with QoS ${s.qualityOfService()}")
-    grantedQosLevels.add(s.qualityOfService().value())
+    grantedQosLevels.add(s.qualityOfService())
   }
   // ack the subscriptions request
   endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels)

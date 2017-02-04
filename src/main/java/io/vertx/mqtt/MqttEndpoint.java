@@ -276,7 +276,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint subscribeAcknowledge(int subscribeMessageId, List<Integer> grantedQoSLevels);
+  MqttEndpoint subscribeAcknowledge(int subscribeMessageId, List<MqttQoS> grantedQoSLevels);
 
   /**
    * Sends the UNSUBACK message to the remote MQTT client

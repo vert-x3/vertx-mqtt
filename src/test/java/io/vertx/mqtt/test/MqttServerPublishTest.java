@@ -22,6 +22,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttTopicSubscription;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -118,9 +119,9 @@ public class MqttServerPublishTest extends MqttBaseTest {
     endpoint.subscribeHandler(subscribe -> {
 
       endpoint.subscribeAcknowledge(subscribe.messageId(),
-        subscribe.topicSubscriptions().stream().map(sub -> {
-          return sub.qualityOfService().value();
-        })
+        subscribe.topicSubscriptions()
+          .stream()
+          .map(MqttTopicSubscription::qualityOfService)
           .collect(Collectors.toList()));
 
       endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);

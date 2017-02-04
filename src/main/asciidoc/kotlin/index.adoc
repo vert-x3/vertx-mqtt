@@ -199,7 +199,7 @@ endpoint.subscribeHandler({ subscribe ->
   var grantedQosLevels = mutableListOf<Any?>()
   for (s in subscribe.topicSubscriptions()) {
     println("Subscription for ${s.topicName()} with QoS ${s.qualityOfService()}")
-    grantedQosLevels.add(s.qualityOfService().value())
+    grantedQosLevels.add(s.qualityOfService())
   }
   // ack the subscriptions request
   endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels)

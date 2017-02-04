@@ -481,13 +481,13 @@ var MqttEndpoint = function(j_val) {
 
    @public
    @param subscribeMessageId {number} identifier of the SUBSCRIBE message to acknowledge 
-   @param grantedQoSLevels {Array.<number>} granted QoS levels for the requested topics 
+   @param grantedQoSLevels {Array.<Object>} granted QoS levels for the requested topics 
    @return {MqttEndpoint} a reference to this, so the API can be used fluently
    */
   this.subscribeAcknowledge = function(subscribeMessageId, grantedQoSLevels) {
     var __args = arguments;
     if (__args.length === 2 && typeof __args[0] ==='number' && typeof __args[1] === 'object' && __args[1] instanceof Array) {
-      j_mqttEndpoint["subscribeAcknowledge(int,java.util.List)"](subscribeMessageId, utils.convParamListBasicOther(grantedQoSLevels));
+      j_mqttEndpoint["subscribeAcknowledge(int,java.util.List)"](subscribeMessageId, utils.convParamListEnum(grantedQoSLevels, function(val) { return Packages.io.netty.handler.codec.mqtt.MqttQoS.valueOf(val); }));
       return that;
     } else throw new TypeError('function invoked with invalid arguments');
   };

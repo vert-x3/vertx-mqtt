@@ -32,6 +32,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.MqttWill;
 
 import java.util.List;
@@ -299,7 +300,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this.connack(returnCode, false);
   }
 
-  public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<Integer> grantedQoSLevels) {
+  public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<MqttQoS> grantedQoSLevels) {
 
     this.checkConnected();
 
@@ -308,7 +309,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(subscribeMessageId);
 
-    MqttSubAckPayload payload = new MqttSubAckPayload(grantedQoSLevels);
+    MqttSubAckPayload payload = new MqttSubAckPayload(grantedQoSLevels.stream().mapToInt(MqttQoS::value).toArray());
 
     io.netty.handler.codec.mqtt.MqttMessage suback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
@@ -443,9 +444,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
       // with auto ack enabled, the requested QoS levels are granted
       if (this.isSubscriptionAutoAck) {
-        this.subscribeAcknowledge(msg.messageId(), msg.topicSubscriptions().stream().map(t -> {
-          return t.qualityOfService().value();
-        }).collect(Collectors.toList()));
+        this.subscribeAcknowledge(msg.messageId(), msg.topicSubscriptions()
+          .stream()
+          .map(MqttTopicSubscription::qualityOfService)
+          .collect(Collectors.toList()));
       }
     }
   }
