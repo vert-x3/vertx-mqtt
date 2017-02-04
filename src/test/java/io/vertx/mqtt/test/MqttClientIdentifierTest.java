@@ -15,7 +15,6 @@
  */
 package io.vertx.mqtt.test;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -28,17 +27,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.eclipse.paho.client.mqttv3.MqttConnectOptions.MQTT_VERSION_3_1;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * MQTT server testing about invalid client identifier with 3.1 spec
+ * (less then 24 characters)
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttInvalidClientIdentifierTest extends MqttBaseTest {
+public class MqttClientIdentifierTest extends MqttBaseTest {
 
   @Before
   public void before(TestContext context) {
@@ -50,34 +46,45 @@ public class MqttInvalidClientIdentifierTest extends MqttBaseTest {
     this.tearDown(context);
   }
 
-  private final AtomicInteger publishCount = new AtomicInteger();
-
   @Test
-  public void testInvalidClientIdentifier() throws Exception {
+  public void testInvalidClientIdentifier(TestContext context) throws Exception {
+
     MemoryPersistence persistence = new MemoryPersistence();
-    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "a-very-long-identifier-that-is-invalid", persistence);
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "invalid-id-with-24-chars", persistence);
     MqttConnectOptions options = new MqttConnectOptions();
     options.setMqttVersion(MQTT_VERSION_3_1);
-    options.setAutomaticReconnect(false);
+
     try {
+
       client.connect(options);
-      for (int i = 0;i < 100;i++) {
-        client.publish("the-message-" + i, new byte[0], MqttQoS.AT_LEAST_ONCE.value(), false);
-        Thread.sleep(1);
-      }
-      fail();
+      context.assertTrue(false);
+
     } catch (MqttException ignore) {
-      assertEquals(0, publishCount.get());
-      // OK
+      context.assertTrue(true);
+    }
+  }
+
+  @Test
+  public void testValidClientIdentifier(TestContext context) throws Exception {
+
+    MemoryPersistence persistence = new MemoryPersistence();
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "id-madeof-23-characters", persistence);
+    MqttConnectOptions options = new MqttConnectOptions();
+    options.setMqttVersion(MQTT_VERSION_3_1);
+
+    try {
+
+      client.connect(options);
+      context.assertTrue(true);
+
+    } catch (MqttException ignore) {
+      context.assertTrue(false);
     }
   }
 
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
-    endpoint.publishAutoAck(true);
-    endpoint.publishHandler(msg -> {
-      publishCount.incrementAndGet();
-    });
+
     endpoint.accept(false);
   }
 }
