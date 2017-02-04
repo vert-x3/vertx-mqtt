@@ -136,14 +136,14 @@ public interface MqttServer {
   int actualPort();
 
   /**
-   * Close the server
+   * Close the server.
    * <p>
    * The close happens asynchronously and the server may not be closed until some time after the call has returned.
    */
   void close();
 
   /**
-   * Close the server supplying an handler that will be called when the server is actually closed (or has failed)
+   * Close the server supplying an handler that will be called when the server is actually closed (or has failed).
    *
    * @param completionHandler the handler called on completion
    */

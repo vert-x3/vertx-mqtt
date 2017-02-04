@@ -41,65 +41,49 @@ public interface MqttEndpoint {
   void close();
 
   /**
-   * Client identifier as provided by the remote MQTT client
-   *
-   * @return
+   * @return the client identifier as provided by the remote MQTT client
    */
   @CacheReturn
   String clientIdentifier();
 
   /**
-   * Authentication information as provided by the remote MQTT client
-   *
-   * @return
+   * @return the Authentication information as provided by the remote MQTT client
    */
   @CacheReturn
   MqttAuth auth();
 
   /**
-   * Will information as provided by the remote MQTT client
-   *
-   * @return
+   * @return the Will information as provided by the remote MQTT client
    */
   @CacheReturn
   MqttWill will();
 
   /**
-   * Protocol version required by the remote MQTT client
-   *
-   * @return
+   * @return the protocol version required by the remote MQTT client
    */
   @CacheReturn
   int protocolVersion();
 
   /**
-   * Protocol name provided by the remote MQTT client
-   *
-   * @return
+   * @return the protocol name provided by the remote MQTT client
    */
   @CacheReturn
   String protocolName();
 
   /**
-   * If clean session is requested by the remote MQTT client
-   *
-   * @return
+   * @return true when clean session is requested by the remote MQTT client
    */
   @CacheReturn
   boolean isCleanSession();
 
   /**
-   * Keep alive timeout (in seconds) specified by the remote MQTT client
-   *
-   * @return
+   * @return the keep alive timeout (in seconds) specified by the remote MQTT client
    */
   @CacheReturn
   int keepAliveTimeSeconds();
 
   /**
-   * Message identifier used for last published message
-   *
-   * @return
+   * @return the message identifier used for last published message
    */
   @CacheReturn
   int lastMessageId();
@@ -112,9 +96,7 @@ public interface MqttEndpoint {
   void subscriptionAutoAck(boolean isSubscriptionAutoAck);
 
   /**
-   * Return auto acknowledge status for subscription/unsubscription requests
-   *
-   * @return
+   * @return true when auto acknowledge status for subscription/unsubscription requests
    */
   boolean isSubscriptionAutoAck();
 
@@ -142,9 +124,7 @@ public interface MqttEndpoint {
   MqttEndpoint autoKeepAlive(boolean isAutoKeepAlive);
 
   /**
-   * Return auto keep alive status (sending ping response)
-   *
-   * @return
+   * @return the auto keep alive status (sending ping response)
    */
   boolean isAutoKeepAlive();
 
