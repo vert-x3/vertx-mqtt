@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.logging.LoggingHandler;
@@ -121,38 +122,40 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
     if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
       io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
+      DecoderResult result = mqttMessage.decoderResult();
+      if (result.isSuccess() && result.isFinished()) {
+        switch (mqttMessage.fixedHeader().messageType()) {
 
-      switch (mqttMessage.fixedHeader().messageType()) {
+          case SUBSCRIBE:
 
-        case SUBSCRIBE:
+            io.netty.handler.codec.mqtt.MqttSubscribeMessage subscribe = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
 
-          io.netty.handler.codec.mqtt.MqttSubscribeMessage subscribe = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
+            return MqttSubscribeMessage.create(
+              subscribe.variableHeader().messageId(),
+              subscribe.payload().topicSubscriptions());
 
-          return MqttSubscribeMessage.create(
-            subscribe.variableHeader().messageId(),
-            subscribe.payload().topicSubscriptions());
+          case UNSUBSCRIBE:
 
-        case UNSUBSCRIBE:
+            io.netty.handler.codec.mqtt.MqttUnsubscribeMessage unsubscribe = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
 
-          io.netty.handler.codec.mqtt.MqttUnsubscribeMessage unsubscribe = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
-
-          return MqttUnsubscribeMessage.create(
-            unsubscribe.variableHeader().messageId(),
-            unsubscribe.payload().topics());
+            return MqttUnsubscribeMessage.create(
+              unsubscribe.variableHeader().messageId(),
+              unsubscribe.payload().topics());
 
 
-        case PUBLISH:
+          case PUBLISH:
 
-          io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), allocator);
+            io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
+            ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), allocator);
 
-          return MqttPublishMessage.create(
-            publish.variableHeader().messageId(),
-            publish.fixedHeader().qosLevel(),
-            publish.fixedHeader().isDup(),
-            publish.fixedHeader().isRetain(),
-            publish.variableHeader().topicName(),
-            newBuf);
+            return MqttPublishMessage.create(
+              publish.variableHeader().messageId(),
+              publish.fixedHeader().qosLevel(),
+              publish.fixedHeader().isDup(),
+              publish.fixedHeader().isRetain(),
+              publish.variableHeader().topicName(),
+              newBuf);
+        }
       }
     }
 

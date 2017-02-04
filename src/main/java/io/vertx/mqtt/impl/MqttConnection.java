@@ -17,6 +17,7 @@
 package io.vertx.mqtt.impl;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
@@ -78,6 +79,16 @@ public class MqttConnection extends ConnectionBase {
     if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
       io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
+
+      DecoderResult result = mqttMessage.decoderResult();
+      if (result.isFailure()) {
+        channel.pipeline().fireExceptionCaught(result.cause());
+        return;
+      }
+      if (!result.isFinished()) {
+        channel.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
+        return;
+      }
 
       switch (mqttMessage.fixedHeader().messageType()) {
 
