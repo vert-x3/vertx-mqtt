@@ -64,7 +64,6 @@ to check if the server is started properly or not.
 
 [source,groovy]
 ----
-import io.vertx.mqtt.MqttServer
 
 def mqttServer = MqttServer.create(vertx)
 mqttServer.endpointHandler({ endpoint ->
@@ -129,7 +128,6 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,groovy]
 ----
-import io.vertx.mqtt.MqttServer
 
 def options = [
   port:8883,
@@ -244,7 +242,6 @@ for sending the PUBCOMP message to the client.
 
 [source,groovy]
 ----
-import io.netty.handler.codec.mqtt.MqttQoS
 
 // handling incoming published messages
 endpoint.publishHandler({ message ->
@@ -285,8 +282,6 @@ for specifying the handler called when the final PUBCOMP message is received.
 
 [source,groovy]
 ----
-import io.vertx.core.buffer.Buffer
-import io.netty.handler.codec.mqtt.MqttQoS
 
 // just as example, publish a message with QoS level 2
 endpoint.publish("my_topic", Buffer.buffer("Hello from the Vert.x MQTT server"), MqttQoS.EXACTLY_ONCE, false, false)
@@ -361,7 +356,6 @@ It's possible to do that programmatically:
 
 [source,groovy]
 ----
-import io.vertx.mqtt.MqttServer
 
 (0..<10).each { i ->
 

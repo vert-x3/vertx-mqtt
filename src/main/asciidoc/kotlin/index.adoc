@@ -64,8 +64,6 @@ to check if the server is started properly or not.
 
 [source,kotlin]
 ----
-import io.vertx.mqtt.MqttServer
-
 
 var mqttServer = MqttServer.create(vertx)
 mqttServer.endpointHandler({ endpoint ->
@@ -106,7 +104,6 @@ this handler takes no parameters.
 [source,kotlin]
 ----
 
-
 // handling disconnect message
 endpoint.disconnectHandler({ v ->
 
@@ -131,12 +128,6 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,kotlin]
 ----
-import io.vertx.core.net.PemKeyCertOptions
-import io.vertx.kotlin.core.net.*
-import io.vertx.kotlin.mqtt.*
-import io.vertx.mqtt.MqttServer
-import io.vertx.mqtt.MqttServerOptions
-
 
 var options = MqttServerOptions(
   port = 8883,
@@ -192,7 +183,6 @@ for replying to the client with the related SUBACK message containing the grante
 [source,kotlin]
 ----
 
-
 // handling requests for subscriptions
 endpoint.subscribeHandler({ subscribe ->
 
@@ -216,7 +206,6 @@ for replying to the client with the related UNSUBACK message.
 
 [source,kotlin]
 ----
-
 
 // handling requests for unsubscriptions
 endpoint.unsubscribeHandler({ unsubscribe ->
@@ -251,8 +240,6 @@ for sending the PUBCOMP message to the client.
 
 [source,kotlin]
 ----
-import io.netty.handler.codec.mqtt.MqttQoS
-
 
 // handling incoming published messages
 endpoint.publishHandler({ message ->
@@ -293,9 +280,6 @@ for specifying the handler called when the final PUBCOMP message is received.
 
 [source,kotlin]
 ----
-import io.netty.handler.codec.mqtt.MqttQoS
-import io.vertx.core.buffer.Buffer
-
 
 // just as example, publish a message with QoS level 2
 endpoint.publish("my_topic", Buffer.buffer("Hello from the Vert.x MQTT server"), MqttQoS.EXACTLY_ONCE, false, false)
@@ -331,7 +315,6 @@ by the server internally as described above.
 [source,kotlin]
 ----
 
-
 // handling ping from client
 endpoint.pingHandler({ v ->
 
@@ -349,7 +332,6 @@ that will be called when the server is really closed.
 
 [source,kotlin]
 ----
-
 
 mqttServer.close({ v ->
 
@@ -372,8 +354,6 @@ It's possible to do that programmatically:
 
 [source,kotlin]
 ----
-import io.vertx.mqtt.MqttServer
-
 
 for (i in 0 until 10) {
 
@@ -395,9 +375,6 @@ or using a verticle specifying the number of instances:
 
 [source,kotlin]
 ----
-import io.vertx.core.DeploymentOptions
-import io.vertx.kotlin.core.*
-
 
 var options = DeploymentOptions(
   instances = 10)
