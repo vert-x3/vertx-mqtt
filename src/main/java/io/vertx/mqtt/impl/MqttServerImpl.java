@@ -47,8 +47,11 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   private Handler<MqttEndpoint> endpointHandler;
 
+  private MqttServerOptions mqttServerOptions;
+
   public MqttServerImpl(Vertx vertx, MqttServerOptions options) {
     super((VertxInternal) vertx, options);
+    this.mqttServerOptions = options;
   }
 
   @Override
@@ -111,7 +114,13 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
       pipeline.addLast("logging", new LoggingHandler());
     }
     pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
-    pipeline.addLast("mqttDecoder", new MqttDecoder());
+
+    if (this.mqttServerOptions.getMaxMessageSize() > 0) {
+      pipeline.addLast("mqttDecoder", new MqttDecoder(this.mqttServerOptions.getMaxMessageSize()));
+    } else {
+      // max message size not set, so the default from Netty MQTT codec is used
+      pipeline.addLast("mqttDecoder", new MqttDecoder());
+    }
   }
 
   @Override

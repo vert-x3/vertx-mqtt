@@ -18,6 +18,7 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -36,6 +37,11 @@ public class MqttServerOptions extends NetServerOptions {
   public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
   public static final int DEFAULT_TLS_PORT = 8883; // Default TLS port is 8883 for MQTT
 
+  public static final int DEFAULT_MAX_MESSAGE_SIZE = -1;
+
+  // max message size (variable header + payload) in bytes
+  private int maxMessageSize;
+
   /**
    * Default constructor
    */
@@ -43,6 +49,7 @@ public class MqttServerOptions extends NetServerOptions {
     super();
     // override the default port
     this.setPort(DEFAULT_PORT);
+    this.maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
   }
 
   /**
@@ -54,6 +61,12 @@ public class MqttServerOptions extends NetServerOptions {
     super(json);
     // override the default port
     this.setPort(json.getInteger("port", DEFAULT_PORT));
+    this.maxMessageSize =  json.getInteger("maxMessageSize", DEFAULT_MAX_MESSAGE_SIZE);
+
+    if ((this.maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
+      Arguments.require(this.getReceiveBufferSize() >= this.maxMessageSize,
+        "Receiver buffer size can't be lower than max message size");
+    }
   }
 
   /**
@@ -153,5 +166,38 @@ public class MqttServerOptions extends NetServerOptions {
   public MqttServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     super.addCrlValue(crlValue);
     return this;
+  }
+
+  @Override
+  public MqttServerOptions setReceiveBufferSize(int receiveBufferSize) {
+    if ((this.maxMessageSize > 0) && (receiveBufferSize > 0)) {
+      Arguments.require(receiveBufferSize >= this.maxMessageSize,
+        "Receiver buffer size can't be lower than max message size");
+    }
+    super.setReceiveBufferSize(receiveBufferSize);
+    return this;
+  }
+
+  /**
+   * Set max MQTT message size
+   *
+   * @param maxMessageSize  max MQTT message size (variable header + payload)
+   * @return  MQTT server options instance
+   */
+  public MqttServerOptions setMaxMessageSize(int maxMessageSize) {
+    Arguments.require(maxMessageSize > 0 || maxMessageSize == DEFAULT_MAX_MESSAGE_SIZE, "maxMessageSize must be > 0");
+    if ((maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
+      Arguments.require(this.getReceiveBufferSize() >= maxMessageSize,
+        "Receiver buffer size can't be lower than max message size");
+    }
+    this.maxMessageSize = maxMessageSize;
+    return this;
+  }
+
+  /**
+   * @return  max MQTT message size (variable header + payload)
+   */
+  public int getMaxMessageSize() {
+    return this.maxMessageSize;
   }
 }

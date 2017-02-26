@@ -26,6 +26,7 @@ import io.vertx.core.net.PfxOptions
  * @param jdkSslEngineOptions 
  * @param keyStoreOptions 
  * @param logActivity 
+ * @param maxMessageSize  Set max MQTT message size
  * @param openSslEngineOptions 
  * @param pemKeyCertOptions 
  * @param pemTrustOptions 
@@ -60,6 +61,7 @@ fun MqttServerOptions(
   jdkSslEngineOptions: io.vertx.core.net.JdkSSLEngineOptions? = null,
   keyStoreOptions: io.vertx.core.net.JksOptions? = null,
   logActivity: Boolean? = null,
+  maxMessageSize: Int? = null,
   openSslEngineOptions: io.vertx.core.net.OpenSSLEngineOptions? = null,
   pemKeyCertOptions: io.vertx.core.net.PemKeyCertOptions? = null,
   pemTrustOptions: io.vertx.core.net.PemTrustOptions? = null,
@@ -121,6 +123,9 @@ fun MqttServerOptions(
   }
   if (logActivity != null) {
     this.setLogActivity(logActivity)
+  }
+  if (maxMessageSize != null) {
+    this.setMaxMessageSize(maxMessageSize)
   }
   if (openSslEngineOptions != null) {
     this.setOpenSslEngineOptions(openSslEngineOptions)
