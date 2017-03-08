@@ -75,11 +75,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private Handler<Void> disconnectHandler;
   // handler to call when a pingreq message comes in
   private Handler<Void> pingreqHandler;
-  // handler to call when the endpoint is closed
+  // handler to call when the endpoint is isClosed
   private Handler<Void> closeHandler;
 
-  private boolean connected;
-  private boolean closed;
+  private boolean isConnected;
+  private boolean isClosed;
   // counter for the message identifier
   private int messageIdCounter;
   // if the endpoint handles subscription/unsubscription requests with auto acknowledge
@@ -168,6 +168,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public boolean isAutoKeepAlive() {
     return this.isAutoKeepAlive;
+  }
+
+  public boolean isConnected() {
+    return this.isConnected;
   }
 
   public MqttEndpointImpl disconnectHandler(Handler<Void> handler) {
@@ -275,7 +279,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     if (returnCode != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
       this.close();
     } else {
-      this.connected = true;
+      this.isConnected = true;
     }
 
     return this;
@@ -283,7 +287,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttEndpointImpl accept(boolean sessionPresent) {
 
-    if (this.connected) {
+    if (this.isConnected) {
       throw new IllegalStateException("Connection already accepted");
     }
 
@@ -631,7 +635,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    */
   private void checkClosed() {
 
-    if (this.closed) {
+    if (this.isClosed) {
       throw new IllegalStateException("MQTT endpoint is closed");
     }
   }
@@ -641,7 +645,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    */
   private void checkConnected() {
 
-    if (!this.connected) {
+    if (!this.isConnected) {
       throw new IllegalStateException("Connection not accepted yet");
     }
   }
@@ -650,9 +654,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * Cleanup
    */
   private void cleanup() {
-    if (!this.closed) {
-      this.closed = true;
-      this.connected = false;
+    if (!this.isClosed) {
+      this.isClosed = true;
+      this.isConnected = false;
     }
   }
 

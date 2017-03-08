@@ -129,6 +129,11 @@ public interface MqttEndpoint {
   boolean isAutoKeepAlive();
 
   /**
+   * @return  if the connection between remote client and local endpoint is established/open
+   */
+  boolean isConnected();
+
+  /**
    * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT
    * message is received by the remote MQTT client
    *
