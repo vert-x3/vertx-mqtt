@@ -49,7 +49,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final ConnectionBase conn;
 
   // information about connected remote MQTT client (from CONNECT message)
-  private final String clientIdentifier;
+  private String clientIdentifier;
   private final MqttAuth auth;
   private final MqttWill will;
   private final boolean isCleanSession;
@@ -172,6 +172,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public boolean isConnected() {
     return this.isConnected;
+  }
+
+  public MqttEndpoint setClientIdentifier(String clientIdentifier) {
+
+    this.clientIdentifier = clientIdentifier;
+    return this;
   }
 
   public MqttEndpointImpl disconnectHandler(Handler<Void> handler) {

@@ -29,9 +29,12 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+
+import java.util.UUID;
 
 /**
  * Represents an MQTT connection with a remote client
@@ -43,6 +46,8 @@ public class MqttConnection extends ConnectionBase {
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
   private final TCPMetrics metrics;
+
+  private final MqttServerOptions options;
 
   @Override
   public NetworkMetrics metrics() {
@@ -59,10 +64,14 @@ public class MqttConnection extends ConnectionBase {
    * @param vertx   Vert.x instance
    * @param channel Channel (netty) used for communication with MQTT remote client
    * @param context Vert.x context
+   * @param metrics TCP metrics
+   *
    */
-  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, TCPMetrics metrics) {
+  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context,
+                        TCPMetrics metrics, MqttServerOptions options) {
     super(vertx, channel, context);
     this.metrics = metrics;
+    this.options = options;
   }
 
   @Override
@@ -182,11 +191,24 @@ public class MqttConnection extends ConnectionBase {
         msg.payload().userName(),
         msg.payload().password()) : null;
 
+    // check if remote MQTT client didn't specify a client-id
+    boolean isZeroBytes = (msg.payload().clientIdentifier() == null) ||
+                          msg.payload().clientIdentifier().isEmpty();
+
+    String clientIdentifier = null;
+
+    // client-id got from payload or auto-generated (according to options)
+    if (!isZeroBytes) {
+      clientIdentifier = msg.payload().clientIdentifier();
+    } else if (this.options.isAutoClientId()) {
+      clientIdentifier = UUID.randomUUID().toString();
+    }
+
     // create the MQTT endpoint provided to the application handler
     this.endpoint =
       new MqttEndpointImpl(
         this,
-        msg.payload().clientIdentifier(),
+        clientIdentifier,
         auth,
         will,
         msg.variableHeader().isCleanSession(),
@@ -205,7 +227,12 @@ public class MqttConnection extends ConnectionBase {
       channel.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
     }
 
-    this.endpointHandler.handle(Future.succeededFuture(endpoint));
+    // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
+    if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
+      this.endpointHandler.handle(Future.failedFuture("With zero-length client-id, cleas session MUST be true"));
+    } else {
+      this.endpointHandler.handle(Future.succeededFuture(endpoint));
+    }
   }
 
   /**

@@ -134,6 +134,15 @@ public interface MqttEndpoint {
   boolean isConnected();
 
   /**
+   * Set client identifier if not provided by the remote MQTT client (zero-bytes)
+   *
+   * @param clientIdentifier the client identifier
+   * @return  a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint setClientIdentifier(String clientIdentifier);
+
+  /**
    * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT
    * message is received by the remote MQTT client
    *

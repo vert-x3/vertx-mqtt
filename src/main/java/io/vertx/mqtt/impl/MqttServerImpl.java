@@ -101,7 +101,7 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   protected MqttConnection createConnection(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), metrics);
+    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), metrics, this.mqttServerOptions);
   }
 
   @Override

@@ -13,6 +13,10 @@
 |===
 ^|Name | Type ^| Description
 |[[acceptBacklog]]`acceptBacklog`|`Number (int)`|-
+|[[autoClientId]]`autoClientId`|`Boolean`|
++++
+Set if clientid should be auto-generated when it's "zero-bytes"
++++
 |[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|-
 |[[clientAuthRequired]]`clientAuthRequired`|`Boolean`|-
 |[[crlPaths]]`crlPaths`|`Array of String`|-
