@@ -19,7 +19,10 @@ package io.vertx.mqtt.impl;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -27,9 +30,12 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+
+import java.util.UUID;
 
 /**
  * Represents an MQTT connection with a remote client
@@ -37,17 +43,19 @@ import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 public class MqttConnection extends ConnectionBase {
 
   // handler to call when a remote MQTT client connects and establishes a connection
-  private Handler<MqttEndpoint> endpointHandler;
+  private Handler<AsyncResult<MqttEndpoint>> endpointHandler;
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
   private final TCPMetrics metrics;
+
+  private final MqttServerOptions options;
 
   @Override
   public NetworkMetrics metrics() {
     return metrics;
   }
 
-  void setEndpointHandler(Handler<MqttEndpoint> endpointHandler) {
+  void setEndpointHandler(Handler<AsyncResult<MqttEndpoint>> endpointHandler) {
     this.endpointHandler = endpointHandler;
   }
 
@@ -57,10 +65,14 @@ public class MqttConnection extends ConnectionBase {
    * @param vertx   Vert.x instance
    * @param channel Channel (netty) used for communication with MQTT remote client
    * @param context Vert.x context
+   * @param metrics TCP metrics
+   *
    */
-  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context, TCPMetrics metrics) {
+  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context,
+                        TCPMetrics metrics, MqttServerOptions options) {
     super(vertx, channel, context);
     this.metrics = metrics;
+    this.options = options;
   }
 
   @Override
@@ -180,11 +192,24 @@ public class MqttConnection extends ConnectionBase {
         msg.payload().userName(),
         msg.payload().password()) : null;
 
+    // check if remote MQTT client didn't specify a client-id
+    boolean isZeroBytes = (msg.payload().clientIdentifier() == null) ||
+                          msg.payload().clientIdentifier().isEmpty();
+
+    String clientIdentifier = null;
+
+    // client-id got from payload or auto-generated (according to options)
+    if (!isZeroBytes) {
+      clientIdentifier = msg.payload().clientIdentifier();
+    } else if (this.options.isAutoClientId()) {
+      clientIdentifier = UUID.randomUUID().toString();
+    }
+
     // create the MQTT endpoint provided to the application handler
-    endpoint =
+    this.endpoint =
       new MqttEndpointImpl(
         this,
-        msg.payload().clientIdentifier(),
+        clientIdentifier,
         auth,
         will,
         msg.variableHeader().isCleanSession(),
@@ -203,7 +228,13 @@ public class MqttConnection extends ConnectionBase {
       channel.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
     }
 
-    endpointHandler.handle(endpoint);
+    // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
+    if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
+      this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+      this.endpointHandler.handle(Future.failedFuture("With zero-length client-id, cleas session MUST be true"));
+    } else {
+      this.endpointHandler.handle(Future.succeededFuture(endpoint));
+    }
   }
 
   /**

@@ -15,6 +15,7 @@ import io.vertx.core.net.PfxOptions
  * Represents options used by the MQTT server
  *
  * @param acceptBacklog 
+ * @param autoClientId  Set if clientid should be auto-generated when it's "zero-bytes"
  * @param clientAuth 
  * @param clientAuthRequired 
  * @param crlPaths 
@@ -50,6 +51,7 @@ import io.vertx.core.net.PfxOptions
  */
 fun MqttServerOptions(
   acceptBacklog: Int? = null,
+  autoClientId: Boolean? = null,
   clientAuth: ClientAuth? = null,
   clientAuthRequired: Boolean? = null,
   crlPaths: Iterable<String>? = null,
@@ -82,6 +84,9 @@ fun MqttServerOptions(
 
   if (acceptBacklog != null) {
     this.setAcceptBacklog(acceptBacklog)
+  }
+  if (autoClientId != null) {
+    this.setAutoClientId(autoClientId)
   }
   if (clientAuth != null) {
     this.setClientAuth(clientAuth)

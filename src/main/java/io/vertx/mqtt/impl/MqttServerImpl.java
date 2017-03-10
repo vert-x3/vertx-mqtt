@@ -45,7 +45,7 @@ import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
  */
 public class MqttServerImpl extends NetServerBase<MqttConnection> implements MqttServer {
 
-  private Handler<MqttEndpoint> endpointHandler;
+  private Handler<AsyncResult<MqttEndpoint>> endpointHandler;
 
   private MqttServerOptions mqttServerOptions;
 
@@ -81,14 +81,14 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
-    Handler<MqttEndpoint> handler = endpointHandler;
+    Handler<AsyncResult<MqttEndpoint>> handler = endpointHandler;
     Handler<MqttConnection> mqttConnectionHandler = c -> c.setEndpointHandler(handler);
     listen(mqttConnectionHandler, port, host, ar -> listenHandler.handle(ar.map(this)));
     return this;
   }
 
   @Override
-  public synchronized MqttServer endpointHandler(Handler<MqttEndpoint> handler) {
+  public synchronized MqttServer endpointHandler(Handler<AsyncResult<MqttEndpoint>> handler) {
     endpointHandler = handler;
     return this;
   }
@@ -101,7 +101,7 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   protected MqttConnection createConnection(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), metrics);
+    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), metrics, this.mqttServerOptions);
   }
 
   @Override

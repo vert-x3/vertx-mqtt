@@ -125,7 +125,7 @@ public interface MqttServer {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttServer endpointHandler(Handler<MqttEndpoint> handler);
+  MqttServer endpointHandler(Handler<AsyncResult<MqttEndpoint>> handler);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
