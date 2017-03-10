@@ -19,6 +19,7 @@ package io.vertx.mqtt.impl;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -229,6 +230,7 @@ public class MqttConnection extends ConnectionBase {
 
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
+      this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
       this.endpointHandler.handle(Future.failedFuture("With zero-length client-id, cleas session MUST be true"));
     } else {
       this.endpointHandler.handle(Future.succeededFuture(endpoint));
