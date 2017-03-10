@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -134,38 +135,43 @@ public class MqttSslTest extends MqttBaseTest {
     return context.getSocketFactory();
   }
 
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  @Override
+  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
 
-    endpoint.publishHandler(message -> {
+    if (ar.succeeded()) {
 
-      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      MqttEndpoint endpoint = ar.result();
+      endpoint.publishHandler(message -> {
 
-      switch (message.qosLevel()) {
+        log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
-        case AT_LEAST_ONCE:
+        switch (message.qosLevel()) {
 
-          endpoint.publishAcknowledge(message.messageId());
-          this.async.complete();
-          break;
+          case AT_LEAST_ONCE:
 
-        case EXACTLY_ONCE:
+            endpoint.publishAcknowledge(message.messageId());
+            this.async.complete();
+            break;
 
-          endpoint.publishReceived(message.messageId());
-          break;
+          case EXACTLY_ONCE:
 
-        case AT_MOST_ONCE:
+            endpoint.publishReceived(message.messageId());
+            break;
 
-          this.async.complete();
-          break;
-      }
+          case AT_MOST_ONCE:
 
-    }).publishReleaseHandler(messageId -> {
+            this.async.complete();
+            break;
+        }
 
-      endpoint.publishComplete(messageId);
-      this.async.complete();
-    });
+      }).publishReleaseHandler(messageId -> {
 
-    endpoint.accept(false);
+        endpoint.publishComplete(messageId);
+        this.async.complete();
+      });
+
+      endpoint.accept(false);
+    }
   }
 
 }

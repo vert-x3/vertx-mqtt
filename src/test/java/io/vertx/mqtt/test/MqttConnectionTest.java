@@ -17,6 +17,7 @@
 package io.vertx.mqtt.test;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
@@ -182,37 +183,41 @@ public class MqttConnectionTest extends MqttBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
 
-    MqttConnectReturnCode returnCode = this.expectedReturnCode;
+    if (ar.succeeded()) {
 
-    switch (this.expectedReturnCode) {
+      MqttEndpoint endpoint = ar.result();
+      MqttConnectReturnCode returnCode = this.expectedReturnCode;
 
-      case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
+      switch (this.expectedReturnCode) {
 
-        returnCode =
-          (endpoint.auth().userName().equals(MQTT_USERNAME) &&
-            endpoint.auth().password().equals(MQTT_PASSWORD)) ?
+        case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
+
+          returnCode =
+            (endpoint.auth().userName().equals(MQTT_USERNAME) &&
+              endpoint.auth().password().equals(MQTT_PASSWORD)) ?
+              MqttConnectReturnCode.CONNECTION_ACCEPTED :
+              MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+          break;
+
+        case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
+
+          returnCode = endpoint.protocolVersion() == MqttConnectOptions.MQTT_VERSION_3_1_1 ?
             MqttConnectReturnCode.CONNECTION_ACCEPTED :
-            MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
-        break;
+            MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
+          break;
+      }
 
-      case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
+      log.info("return code = " + returnCode);
 
-        returnCode = endpoint.protocolVersion() == MqttConnectOptions.MQTT_VERSION_3_1_1 ?
-          MqttConnectReturnCode.CONNECTION_ACCEPTED :
-          MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
-        break;
+      if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+        endpoint.accept(false);
+      } else {
+        endpoint.reject(returnCode);
+      }
+
+      this.endpoint = endpoint;
     }
-
-    log.info("return code = " + returnCode);
-
-    if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-      endpoint.accept(false);
-    } else {
-      endpoint.reject(returnCode);
-    }
-
-    this.endpoint = endpoint;
   }
 }

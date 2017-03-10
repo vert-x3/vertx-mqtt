@@ -23,6 +23,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -86,17 +87,22 @@ public class MqttServerTest {
         MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
         servers.add(server);
 
-        server.endpointHandler(endpoint -> {
+        server.endpointHandler(done -> {
 
-          connectedServers.add(server);
+          if (done.succeeded()) {
 
-          Integer cnt = connectCount.get(server);
-          int icnt = cnt == null ? 0 : cnt;
-          icnt++;
-          connectCount.put(server, icnt);
+            MqttEndpoint endpoint = done.result();
 
-          endpoint.accept(false);
-          latchConns.countDown();
+            connectedServers.add(server);
+
+            Integer cnt = connectCount.get(server);
+            int icnt = cnt == null ? 0 : cnt;
+            icnt++;
+            connectCount.put(server, icnt);
+
+            endpoint.accept(false);
+            latchConns.countDown();
+          }
 
         }).listen(ar -> {
 

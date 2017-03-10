@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -92,8 +93,11 @@ public abstract class MqttBaseTest {
     this.vertx.close();
   }
 
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
 
-    endpoint.accept(false);
+    if (ar.succeeded()) {
+      MqttEndpoint endpoint = ar.result();
+      endpoint.accept(false);
+    }
   }
 }

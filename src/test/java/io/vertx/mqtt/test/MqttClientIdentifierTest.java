@@ -15,6 +15,7 @@
  */
 package io.vertx.mqtt.test;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -83,8 +84,11 @@ public class MqttClientIdentifierTest extends MqttBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
 
-    endpoint.accept(false);
+    if (ar.succeeded()) {
+      MqttEndpoint endpoint = ar.result();
+      endpoint.accept(false);
+    }
   }
 }

@@ -67,22 +67,27 @@ to check if the server is started properly or not.
 require 'vertx-mqtt-server/mqtt_server'
 
 mqttServer = VertxMqttServer::MqttServer.create(vertx)
-mqttServer.endpoint_handler() { |endpoint|
+mqttServer.endpoint_handler() { |done_err,done|
 
-  # shows main connect info
-  puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
+  if (done_err == nil)
 
-  if (endpoint.auth() != nil)
-    puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
+    endpoint = done
+
+    # shows main connect info
+    puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
+
+    if (endpoint.auth() != nil)
+      puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
+    end
+    if (endpoint.will() != nil)
+      puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
+    end
+
+    puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
+
+    # accept connection from the remote client
+    endpoint.accept(false)
   end
-  if (endpoint.will() != nil)
-    puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
-  end
-
-  puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
-
-  # accept connection from the remote client
-  endpoint.accept(false)
 
 }.listen() { |ar_err,ar|
 
@@ -141,22 +146,27 @@ options = {
 }
 
 mqttServer = VertxMqttServer::MqttServer.create(vertx, options)
-mqttServer.endpoint_handler() { |endpoint|
+mqttServer.endpoint_handler() { |done_err,done|
 
-  # shows main connect info
-  puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
+  if (done_err == nil)
 
-  if (endpoint.auth() != nil)
-    puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
+    endpoint = done
+
+    # shows main connect info
+    puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
+
+    if (endpoint.auth() != nil)
+      puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
+    end
+    if (endpoint.will() != nil)
+      puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
+    end
+
+    puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
+
+    # accept connection from the remote client
+    endpoint.accept(false)
   end
-  if (endpoint.will() != nil)
-    puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
-  end
-
-  puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
-
-  # accept connection from the remote client
-  endpoint.accept(false)
 
 }.listen() { |ar_err,ar|
 
@@ -364,7 +374,7 @@ require 'vertx-mqtt-server/mqtt_server'
 (0...10).each do |i|
 
   mqttServer = VertxMqttServer::MqttServer.create(vertx)
-  mqttServer.endpoint_handler() { |endpoint|
+  mqttServer.endpoint_handler() { |endpoint_err,endpoint|
     # handling endpoint
   }.listen() { |ar_err,ar|
 

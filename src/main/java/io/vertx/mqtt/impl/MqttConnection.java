@@ -20,6 +20,8 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -37,7 +39,7 @@ import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 public class MqttConnection extends ConnectionBase {
 
   // handler to call when a remote MQTT client connects and establishes a connection
-  private Handler<MqttEndpoint> endpointHandler;
+  private Handler<AsyncResult<MqttEndpoint>> endpointHandler;
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
   private final TCPMetrics metrics;
@@ -47,7 +49,7 @@ public class MqttConnection extends ConnectionBase {
     return metrics;
   }
 
-  void setEndpointHandler(Handler<MqttEndpoint> endpointHandler) {
+  void setEndpointHandler(Handler<AsyncResult<MqttEndpoint>> endpointHandler) {
     this.endpointHandler = endpointHandler;
   }
 
@@ -181,7 +183,7 @@ public class MqttConnection extends ConnectionBase {
         msg.payload().password()) : null;
 
     // create the MQTT endpoint provided to the application handler
-    endpoint =
+    this.endpoint =
       new MqttEndpointImpl(
         this,
         msg.payload().clientIdentifier(),
@@ -203,7 +205,7 @@ public class MqttConnection extends ConnectionBase {
       channel.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
     }
 
-    endpointHandler.handle(endpoint);
+    this.endpointHandler.handle(Future.succeededFuture(endpoint));
   }
 
   /**

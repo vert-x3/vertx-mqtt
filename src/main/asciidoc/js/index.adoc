@@ -67,22 +67,27 @@ to check if the server is started properly or not.
 var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
 
 var mqttServer = MqttServer.create(vertx);
-mqttServer.endpointHandler(function (endpoint) {
+mqttServer.endpointHandler(function (done, done_err) {
 
-  // shows main connect info
-  console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+  if (done_err == null) {
 
-  if ((endpoint.auth() !== null && endpoint.auth() !== undefined)) {
-    console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+    var endpoint = done;
+
+    // shows main connect info
+    console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+    if ((endpoint.auth() !== null && endpoint.auth() !== undefined)) {
+      console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+    }
+    if ((endpoint.will() !== null && endpoint.will() !== undefined)) {
+      console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+    }
+
+    console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+    // accept connection from the remote client
+    endpoint.accept(false);
   }
-  if ((endpoint.will() !== null && endpoint.will() !== undefined)) {
-    console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-  }
-
-  console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
-
-  // accept connection from the remote client
-  endpoint.accept(false);
 
 }).listen(function (ar, ar_err) {
 
@@ -141,22 +146,27 @@ var options = {
 };
 
 var mqttServer = MqttServer.create(vertx, options);
-mqttServer.endpointHandler(function (endpoint) {
+mqttServer.endpointHandler(function (done, done_err) {
 
-  // shows main connect info
-  console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+  if (done_err == null) {
 
-  if ((endpoint.auth() !== null && endpoint.auth() !== undefined)) {
-    console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+    var endpoint = done;
+
+    // shows main connect info
+    console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
+
+    if ((endpoint.auth() !== null && endpoint.auth() !== undefined)) {
+      console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
+    }
+    if ((endpoint.will() !== null && endpoint.will() !== undefined)) {
+      console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+    }
+
+    console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+    // accept connection from the remote client
+    endpoint.accept(false);
   }
-  if ((endpoint.will() !== null && endpoint.will() !== undefined)) {
-    console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-  }
-
-  console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
-
-  // accept connection from the remote client
-  endpoint.accept(false);
 
 }).listen(function (ar, ar_err) {
 
@@ -364,7 +374,7 @@ var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
 for (var i = 0;i < 10;i++) {
 
   var mqttServer = MqttServer.create(vertx);
-  mqttServer.endpointHandler(function (endpoint) {
+  mqttServer.endpointHandler(function (endpoint, endpoint_err) {
     // handling endpoint
   }).listen(function (ar, ar_err) {
 

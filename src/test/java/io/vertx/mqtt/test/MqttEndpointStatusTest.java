@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
@@ -124,16 +125,20 @@ public class MqttEndpointStatusTest extends MqttBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
 
-    this.endpoint = endpoint;
+    if (ar.succeeded()) {
 
-    endpoint.disconnectHandler(v -> {
+      MqttEndpoint endpoint = ar.result();
+      this.endpoint = endpoint;
 
-      log.info("MQTT remote client disconnected");
+      endpoint.disconnectHandler(v -> {
 
-    });
+        log.info("MQTT remote client disconnected");
 
-    endpoint.accept(false);
+      });
+
+      endpoint.accept(false);
+    }
   }
 }

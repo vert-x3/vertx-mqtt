@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -114,30 +115,35 @@ public class MqttServerPublishTest extends MqttBaseTest {
     }
   }
 
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  @Override
+  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
 
-    endpoint.subscribeHandler(subscribe -> {
+    if (ar.succeeded()) {
 
-      endpoint.subscribeAcknowledge(subscribe.messageId(),
-        subscribe.topicSubscriptions()
-          .stream()
-          .map(MqttTopicSubscription::qualityOfService)
-          .collect(Collectors.toList()));
+      MqttEndpoint endpoint = ar.result();
+      endpoint.subscribeHandler(subscribe -> {
 
-      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
-    }).publishAcknowledgeHandler(messageId -> {
+        endpoint.subscribeAcknowledge(subscribe.messageId(),
+          subscribe.topicSubscriptions()
+            .stream()
+            .map(MqttTopicSubscription::qualityOfService)
+            .collect(Collectors.toList()));
 
-      log.info("Message [" + messageId + "] acknowledged");
-      this.async.complete();
-    }).publishReceivedHandler(messageId -> {
+        endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+      }).publishAcknowledgeHandler(messageId -> {
 
-      endpoint.publishRelease(messageId);
-    }).publishCompleteHandler(messageId -> {
+        log.info("Message [" + messageId + "] acknowledged");
+        this.async.complete();
+      }).publishReceivedHandler(messageId -> {
 
-      log.info("Message [" + messageId + "] acknowledged");
-      this.async.complete();
-    });
+        endpoint.publishRelease(messageId);
+      }).publishCompleteHandler(messageId -> {
 
-    endpoint.accept(false);
+        log.info("Message [" + messageId + "] acknowledged");
+        this.async.complete();
+      });
+
+      endpoint.accept(false);
+    }
   }
 }
