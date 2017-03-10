@@ -209,12 +209,12 @@ public class MqttConnectionTest extends MqttBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttConnectOptions options = new MqttConnectOptions();
       options.setCleanSession(false);
+      options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "", persistence);
       client.connect(options);
       context.assertTrue(false);
     } catch (MqttException e) {
-      context.assertTrue((e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID) ||
-                        (e.getReasonCode() == MqttException.REASON_CODE_CONNECTION_LOST));
+      context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID);
       e.printStackTrace();
     }
   }
@@ -256,6 +256,9 @@ public class MqttConnectionTest extends MqttBaseTest {
       }
 
       this.endpoint = endpoint;
+
+    } else {
+      log.info(ar.cause());
     }
   }
 }
