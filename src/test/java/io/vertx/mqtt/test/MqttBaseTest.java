@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -42,6 +41,7 @@ public abstract class MqttBaseTest {
 
   protected Vertx vertx;
   protected MqttServer mqttServer;
+  protected Throwable rejection;
 
   /**
    * Setup the needs for starting the MQTT server
@@ -60,6 +60,10 @@ public abstract class MqttBaseTest {
 
     // be sure that all other tests will start only if the MQTT server starts correctly
     Async async = context.async();
+
+    this.mqttServer.exceptionHandler(err -> {
+      rejection = err;
+    });
 
     this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
 
@@ -93,11 +97,8 @@ public abstract class MqttBaseTest {
     this.vertx.close();
   }
 
-  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-    if (ar.succeeded()) {
-      MqttEndpoint endpoint = ar.result();
-      endpoint.accept(false);
-    }
+    endpoint.accept(false);
   }
 }

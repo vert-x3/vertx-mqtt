@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
@@ -89,27 +88,23 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
   }
 
   @Override
-  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-    if (ar.succeeded()) {
+    endpoint.subscribeHandler(subscribe -> {
 
-      MqttEndpoint endpoint = ar.result();
-      endpoint.subscribeHandler(subscribe -> {
+      List<MqttQoS> qos = new ArrayList<>();
+      qos.add(subscribe.topicSubscriptions().get(0).qualityOfService());
+      endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
-        List<MqttQoS> qos = new ArrayList<>();
-        qos.add(subscribe.topicSubscriptions().get(0).qualityOfService());
-        endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
+      this.async.complete();
 
-        this.async.complete();
+    }).unsubscribeHandler(unsubscribe -> {
 
-      }).unsubscribeHandler(unsubscribe -> {
+      endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
 
-        endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
+      this.async.complete();
+    });
 
-        this.async.complete();
-      });
-
-      endpoint.accept(false);
-    }
+    endpoint.accept(false);
   }
 }

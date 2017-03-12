@@ -21,9 +21,8 @@ import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -43,7 +42,11 @@ import java.util.UUID;
 public class MqttConnection extends ConnectionBase {
 
   // handler to call when a remote MQTT client connects and establishes a connection
-  private Handler<AsyncResult<MqttEndpoint>> endpointHandler;
+  private Handler<MqttEndpoint> endpointHandler;
+
+  // handler to call when an connection is rejected
+  private Handler<Throwable> exceptionHandler;
+
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
   private final TCPMetrics metrics;
@@ -55,8 +58,9 @@ public class MqttConnection extends ConnectionBase {
     return metrics;
   }
 
-  void setEndpointHandler(Handler<AsyncResult<MqttEndpoint>> endpointHandler) {
+  void init(Handler<MqttEndpoint> endpointHandler, Handler<Throwable> rejectHandler) {
     this.endpointHandler = endpointHandler;
+    this.exceptionHandler = rejectHandler;
   }
 
   /**
@@ -231,9 +235,11 @@ public class MqttConnection extends ConnectionBase {
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
       this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
-      this.endpointHandler.handle(Future.failedFuture("With zero-length client-id, cleas session MUST be true"));
+      if (this.exceptionHandler != null) {
+        this.exceptionHandler.handle(new VertxException("With zero-length client-id, cleas session MUST be true"));
+      }
     } else {
-      this.endpointHandler.handle(Future.succeededFuture(endpoint));
+      this.endpointHandler.handle(endpoint);
     }
   }
 

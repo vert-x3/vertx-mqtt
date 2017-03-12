@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -116,34 +115,30 @@ public class MqttServerPublishTest extends MqttBaseTest {
   }
 
   @Override
-  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-    if (ar.succeeded()) {
+    endpoint.subscribeHandler(subscribe -> {
 
-      MqttEndpoint endpoint = ar.result();
-      endpoint.subscribeHandler(subscribe -> {
+      endpoint.subscribeAcknowledge(subscribe.messageId(),
+        subscribe.topicSubscriptions()
+          .stream()
+          .map(MqttTopicSubscription::qualityOfService)
+          .collect(Collectors.toList()));
 
-        endpoint.subscribeAcknowledge(subscribe.messageId(),
-          subscribe.topicSubscriptions()
-            .stream()
-            .map(MqttTopicSubscription::qualityOfService)
-            .collect(Collectors.toList()));
+      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+    }).publishAcknowledgeHandler(messageId -> {
 
-        endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
-      }).publishAcknowledgeHandler(messageId -> {
+      log.info("Message [" + messageId + "] acknowledged");
+      this.async.complete();
+    }).publishReceivedHandler(messageId -> {
 
-        log.info("Message [" + messageId + "] acknowledged");
-        this.async.complete();
-      }).publishReceivedHandler(messageId -> {
+      endpoint.publishRelease(messageId);
+    }).publishCompleteHandler(messageId -> {
 
-        endpoint.publishRelease(messageId);
-      }).publishCompleteHandler(messageId -> {
+      log.info("Message [" + messageId + "] acknowledged");
+      this.async.complete();
+    });
 
-        log.info("Message [" + messageId + "] acknowledged");
-        this.async.complete();
-      });
-
-      endpoint.accept(false);
-    }
+    endpoint.accept(false);
   }
 }

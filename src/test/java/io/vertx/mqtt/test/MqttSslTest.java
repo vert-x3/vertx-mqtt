@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.test;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -26,7 +25,6 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
 import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
@@ -136,42 +134,38 @@ public class MqttSslTest extends MqttBaseTest {
   }
 
   @Override
-  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-    if (ar.succeeded()) {
+    endpoint.publishHandler(message -> {
 
-      MqttEndpoint endpoint = ar.result();
-      endpoint.publishHandler(message -> {
+      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
-        log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      switch (message.qosLevel()) {
 
-        switch (message.qosLevel()) {
+        case AT_LEAST_ONCE:
 
-          case AT_LEAST_ONCE:
+          endpoint.publishAcknowledge(message.messageId());
+          this.async.complete();
+          break;
 
-            endpoint.publishAcknowledge(message.messageId());
-            this.async.complete();
-            break;
+        case EXACTLY_ONCE:
 
-          case EXACTLY_ONCE:
+          endpoint.publishReceived(message.messageId());
+          break;
 
-            endpoint.publishReceived(message.messageId());
-            break;
+        case AT_MOST_ONCE:
 
-          case AT_MOST_ONCE:
+          this.async.complete();
+          break;
+      }
 
-            this.async.complete();
-            break;
-        }
+    }).publishReleaseHandler(messageId -> {
 
-      }).publishReleaseHandler(messageId -> {
+      endpoint.publishComplete(messageId);
+      this.async.complete();
+    });
 
-        endpoint.publishComplete(messageId);
-        this.async.complete();
-      });
-
-      endpoint.accept(false);
-    }
+    endpoint.accept(false);
   }
 
 }

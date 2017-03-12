@@ -125,7 +125,17 @@ public interface MqttServer {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttServer endpointHandler(Handler<AsyncResult<MqttEndpoint>> handler);
+  MqttServer endpointHandler(Handler<MqttEndpoint> handler);
+
+  /**
+   * Set an exception handler for the server, that will be called when an error happens independantly of an
+   * accepted {@link MqttEndpoint}, like a rejected connection
+   *
+   * @param handler the exception handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttServer exceptionHandler(Handler<Throwable> handler);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number

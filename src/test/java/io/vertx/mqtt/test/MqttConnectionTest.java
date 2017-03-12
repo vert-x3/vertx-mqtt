@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
@@ -31,8 +30,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.UUID;
 
 /**
  * MQTT server testing about clients connection
@@ -70,10 +67,8 @@ public class MqttConnectionTest extends MqttBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      context.assertTrue(true);
     } catch (MqttException e) {
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     }
   }
 
@@ -86,10 +81,8 @@ public class MqttConnectionTest extends MqttBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "", persistence);
       client.connect();
-      context.assertTrue(true);
     } catch (MqttException e) {
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     }
   }
 
@@ -102,10 +95,9 @@ public class MqttConnectionTest extends MqttBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID);
-      e.printStackTrace();
     }
   }
 
@@ -118,10 +110,9 @@ public class MqttConnectionTest extends MqttBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_BROKER_UNAVAILABLE);
-      e.printStackTrace();
     }
   }
 
@@ -137,10 +128,9 @@ public class MqttConnectionTest extends MqttBaseTest {
       options.setPassword("wrong_password".toCharArray());
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect(options);
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_FAILED_AUTHENTICATION);
-      e.printStackTrace();
     }
   }
 
@@ -153,10 +143,9 @@ public class MqttConnectionTest extends MqttBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_NOT_AUTHORIZED);
-      e.printStackTrace();
     }
   }
 
@@ -172,31 +161,27 @@ public class MqttConnectionTest extends MqttBaseTest {
       options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1);
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect(options);
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_PROTOCOL_VERSION);
-      e.printStackTrace();
     }
   }
 
   @Test
-  public void connectionAlreadyAccepted(TestContext context) {
+  public void connectionAlreadyAccepted(TestContext context) throws Exception {
 
     this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
 
+    MemoryPersistence persistence = new MemoryPersistence();
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+    client.connect();
+
     try {
-      MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.connect();
       // try to accept a connection already accepted
       this.endpoint.accept(false);
-      context.assertTrue(false);
-    } catch (MqttException e) {
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail();
     } catch (IllegalStateException e) {
-      context.assertTrue(true);
-      e.printStackTrace();
+      // Ok
     }
   }
 
@@ -212,53 +197,46 @@ public class MqttConnectionTest extends MqttBaseTest {
       options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "", persistence);
       client.connect(options);
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID);
-      e.printStackTrace();
+      context.assertNotNull(rejection);
     }
   }
 
   @Override
-  protected void endpointHandler(AsyncResult<MqttEndpoint> ar) {
+  protected void endpointHandler(MqttEndpoint endpoint) {
 
-    if (ar.succeeded()) {
+    MqttConnectReturnCode returnCode = this.expectedReturnCode;
 
-      MqttEndpoint endpoint = ar.result();
-      MqttConnectReturnCode returnCode = this.expectedReturnCode;
+    switch (this.expectedReturnCode) {
 
-      switch (this.expectedReturnCode) {
+      case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
 
-        case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
-
-          returnCode =
-            (endpoint.auth().userName().equals(MQTT_USERNAME) &&
-              endpoint.auth().password().equals(MQTT_PASSWORD)) ?
-              MqttConnectReturnCode.CONNECTION_ACCEPTED :
-              MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
-          break;
-
-        case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
-
-          returnCode = endpoint.protocolVersion() == MqttConnectOptions.MQTT_VERSION_3_1_1 ?
+        returnCode =
+          (endpoint.auth().userName().equals(MQTT_USERNAME) &&
+            endpoint.auth().password().equals(MQTT_PASSWORD)) ?
             MqttConnectReturnCode.CONNECTION_ACCEPTED :
-            MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
-          break;
-      }
+            MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+        break;
 
-      log.info("return code = " + returnCode);
+      case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
 
-      if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-        log.info("client id = " + endpoint.clientIdentifier());
-        endpoint.accept(false);
-      } else {
-        endpoint.reject(returnCode);
-      }
-
-      this.endpoint = endpoint;
-
-    } else {
-      log.info(ar.cause());
+        returnCode = endpoint.protocolVersion() == MqttConnectOptions.MQTT_VERSION_3_1_1 ?
+          MqttConnectReturnCode.CONNECTION_ACCEPTED :
+          MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
+        break;
     }
+
+    log.info("return code = " + returnCode);
+
+    if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+      log.info("client id = " + endpoint.clientIdentifier());
+      endpoint.accept(false);
+    } else {
+      endpoint.reject(returnCode);
+    }
+
+    this.endpoint = endpoint;
   }
 }

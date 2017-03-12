@@ -41,28 +41,23 @@ public class VertxMqttServerExamples {
   public void example1(Vertx vertx) {
 
     MqttServer mqttServer = MqttServer.create(vertx);
-    mqttServer.endpointHandler(done -> {
+    mqttServer.endpointHandler(endpoint -> {
 
-      if (done.succeeded()) {
+      // shows main connect info
+      System.out.println("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
 
-        MqttEndpoint endpoint = done.result();
-
-        // shows main connect info
-        System.out.println("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
-
-        if (endpoint.auth() != null) {
-          System.out.println("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
-        }
-        if (endpoint.will() != null) {
-          System.out.println("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
-            " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-        }
-
-        System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
-
-        // accept connection from the remote client
-        endpoint.accept(false);
+      if (endpoint.auth() != null) {
+        System.out.println("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
       }
+      if (endpoint.will() != null) {
+        System.out.println("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+          " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+      }
+
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+      // accept connection from the remote client
+      endpoint.accept(false);
 
     })
       .listen(ar -> {
@@ -105,28 +100,23 @@ public class VertxMqttServerExamples {
       .setSsl(true);
 
     MqttServer mqttServer = MqttServer.create(vertx, options);
-    mqttServer.endpointHandler(done -> {
+    mqttServer.endpointHandler(endpoint -> {
 
-      if (done.succeeded()) {
+      // shows main connect info
+      System.out.println("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
 
-        MqttEndpoint endpoint = done.result();
-
-        // shows main connect info
-        System.out.println("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
-
-        if (endpoint.auth() != null) {
-          System.out.println("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
-        }
-        if (endpoint.will() != null) {
-          System.out.println("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
-            " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-        }
-
-        System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
-
-        // accept connection from the remote client
-        endpoint.accept(false);
+      if (endpoint.auth() != null) {
+        System.out.println("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
       }
+      if (endpoint.will() != null) {
+        System.out.println("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() +
+          " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
+      }
+
+      System.out.println("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
+
+      // accept connection from the remote client
+      endpoint.accept(false);
 
     })
       .listen(ar -> {

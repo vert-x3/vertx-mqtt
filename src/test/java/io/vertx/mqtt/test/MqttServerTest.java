@@ -87,22 +87,17 @@ public class MqttServerTest {
         MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
         servers.add(server);
 
-        server.endpointHandler(done -> {
+        server.endpointHandler(endpoint -> {
 
-          if (done.succeeded()) {
+          connectedServers.add(server);
 
-            MqttEndpoint endpoint = done.result();
+          Integer cnt = connectCount.get(server);
+          int icnt = cnt == null ? 0 : cnt;
+          icnt++;
+          connectCount.put(server, icnt);
 
-            connectedServers.add(server);
-
-            Integer cnt = connectCount.get(server);
-            int icnt = cnt == null ? 0 : cnt;
-            icnt++;
-            connectCount.put(server, icnt);
-
-            endpoint.accept(false);
-            latchConns.countDown();
-          }
+          endpoint.accept(false);
+          latchConns.countDown();
 
         }).listen(ar -> {
 
