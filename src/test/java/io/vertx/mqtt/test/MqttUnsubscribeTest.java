@@ -42,7 +42,8 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
 
   private static final Logger log = LoggerFactory.getLogger(MqttUnsubscribeTest.class);
 
-  private Async async;
+  private Async subscribeAsync;
+  private Async unsubscribeAsync;
 
   private static final String MQTT_TOPIC = "/my_topic";
 
@@ -61,7 +62,8 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
   @Test
   public void unsubscribe(TestContext context) {
 
-    this.async = context.async();
+    this.subscribeAsync = context.async();
+    this.unsubscribeAsync = context.async();
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
@@ -72,11 +74,11 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
       int[] qos = new int[]{0};
       client.subscribe(topics, qos);
 
-      this.async.await();
+      this.subscribeAsync.await();
 
       client.unsubscribe(topics);
 
-      this.async.await();
+      this.unsubscribeAsync.await();
 
       context.assertTrue(true);
 
@@ -96,13 +98,13 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
       qos.add(subscribe.topicSubscriptions().get(0).qualityOfService());
       endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
-      this.async.complete();
+      this.subscribeAsync.complete();
 
     }).unsubscribeHandler(unsubscribe -> {
 
       endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
 
-      this.async.complete();
+      this.unsubscribeAsync.complete();
     });
 
     endpoint.accept(false);
