@@ -80,12 +80,8 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
 
       this.unsubscribeAsync.await();
 
-      context.assertTrue(true);
-
     } catch (MqttException e) {
-
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     }
   }
 

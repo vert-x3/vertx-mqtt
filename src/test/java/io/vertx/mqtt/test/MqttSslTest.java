@@ -99,11 +99,8 @@ public class MqttSslTest extends MqttBaseTest {
 
       client.disconnect();
 
-      context.assertTrue(true);
-
     } catch (MqttException e) {
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     } catch (Exception e1) {
 
     }

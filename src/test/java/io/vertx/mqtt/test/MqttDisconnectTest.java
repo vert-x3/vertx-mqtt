@@ -57,10 +57,8 @@ public class MqttDisconnectTest extends MqttBaseTest {
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
       client.disconnect();
-      context.assertTrue(true);
     } catch (MqttException e) {
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     }
   }
 
@@ -72,10 +70,9 @@ public class MqttDisconnectTest extends MqttBaseTest {
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
       client.close();
-      context.assertTrue(false);
+      context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_CLIENT_CONNECTED);
-      e.printStackTrace();
     }
   }
 

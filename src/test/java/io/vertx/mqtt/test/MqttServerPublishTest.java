@@ -105,12 +105,8 @@ public class MqttServerPublishTest extends MqttBaseTest {
 
       this.async.await();
 
-      context.assertTrue(true);
-
     } catch (MqttException e) {
-
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     }
   }
 

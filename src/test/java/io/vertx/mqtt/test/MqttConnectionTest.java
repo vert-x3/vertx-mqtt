@@ -200,7 +200,7 @@ public class MqttConnectionTest extends MqttBaseTest {
       context.fail();
     } catch (MqttException e) {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID);
-      context.assertNotNull(rejection);
+      context.assertNotNull(exception);
     }
   }
 

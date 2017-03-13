@@ -57,7 +57,7 @@ public class MqttClientIdentifierTest extends MqttBaseTest {
     try {
 
       client.connect(options);
-      context.assertTrue(false);
+      context.fail();
 
     } catch (MqttException ignore) {
       context.assertTrue(true);
@@ -75,10 +75,9 @@ public class MqttClientIdentifierTest extends MqttBaseTest {
     try {
 
       client.connect(options);
-      context.assertTrue(true);
 
-    } catch (MqttException ignore) {
-      context.assertTrue(false);
+    } catch (MqttException e) {
+      context.fail(e);
     }
   }
 

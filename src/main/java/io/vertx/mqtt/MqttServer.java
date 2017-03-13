@@ -128,7 +128,7 @@ public interface MqttServer {
   MqttServer endpointHandler(Handler<MqttEndpoint> handler);
 
   /**
-   * Set an exception handler for the server, that will be called when an error happens independantly of an
+   * Set an exception handler for the server, that will be called when an error happens independently of an
    * accepted {@link MqttEndpoint}, like a rejected connection
    *
    * @param handler the exception handler
