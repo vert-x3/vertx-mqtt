@@ -41,7 +41,7 @@ public abstract class MqttBaseTest {
 
   protected Vertx vertx;
   protected MqttServer mqttServer;
-  protected Throwable exception;
+  protected Throwable rejection;
 
   /**
    * Setup the needs for starting the MQTT server
@@ -62,7 +62,7 @@ public abstract class MqttBaseTest {
     Async async = context.async();
 
     this.mqttServer.exceptionHandler(err -> {
-      this.exception = err;
+      rejection = err;
     });
 
     this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {

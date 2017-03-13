@@ -58,9 +58,9 @@ public class MqttConnection extends ConnectionBase {
     return metrics;
   }
 
-  void init(Handler<MqttEndpoint> endpointHandler, Handler<Throwable> exceptionHandler) {
+  void init(Handler<MqttEndpoint> endpointHandler, Handler<Throwable> rejectHandler) {
     this.endpointHandler = endpointHandler;
-    this.exceptionHandler = exceptionHandler;
+    this.exceptionHandler = rejectHandler;
   }
 
   /**
@@ -236,10 +236,10 @@ public class MqttConnection extends ConnectionBase {
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
       this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
       if (this.exceptionHandler != null) {
-        this.exceptionHandler.handle(new VertxException("With zero-length client-id, clean session MUST be true"));
+        this.exceptionHandler.handle(new VertxException("With zero-length client-id, cleas session MUST be true"));
       }
     } else {
-      this.endpointHandler.handle(this.endpoint);
+      this.endpointHandler.handle(endpoint);
     }
   }
 

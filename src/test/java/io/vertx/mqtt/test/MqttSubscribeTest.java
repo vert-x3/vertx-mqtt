@@ -102,7 +102,9 @@ public class MqttSubscribeTest extends MqttBaseTest {
       context.assertTrue(qos[0] == expectedQos);
 
     } catch (MqttException e) {
+
       context.assertTrue(!topic.equals(MQTT_TOPIC_FAILURE) ? false : true);
+      e.printStackTrace();
     }
   }
 

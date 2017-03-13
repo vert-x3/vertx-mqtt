@@ -11,6 +11,3 @@
 # IntelliJ IDEA specific
 .idea/
 *.iml
-
-# Vert.x
-.vertx/

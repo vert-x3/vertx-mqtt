@@ -82,22 +82,22 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
   @Override
   public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
-    Handler<MqttEndpoint> endpointHandler = this.endpointHandler;
-    Handler<Throwable> exceptionHandler = this.exceptionHandler;
-    Handler<MqttConnection> mqttConnectionHandler = conn -> conn.init(endpointHandler, exceptionHandler);
+    Handler<MqttEndpoint> h1 = endpointHandler;
+    Handler<Throwable> h2 = exceptionHandler;
+    Handler<MqttConnection> mqttConnectionHandler = c -> c.init(h1, h2);
     listen(mqttConnectionHandler, port, host, ar -> listenHandler.handle(ar.map(this)));
     return this;
   }
 
   @Override
   public synchronized MqttServer endpointHandler(Handler<MqttEndpoint> handler) {
-    this.endpointHandler = handler;
+    endpointHandler = handler;
     return this;
   }
 
   @Override
   public synchronized MqttServer exceptionHandler(Handler<Throwable> handler) {
-    this.exceptionHandler = handler;
+    exceptionHandler = handler;
     return this;
   }
 

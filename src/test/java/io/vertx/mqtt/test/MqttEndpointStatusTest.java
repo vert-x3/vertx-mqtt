@@ -61,7 +61,8 @@ public class MqttEndpointStatusTest extends MqttBaseTest {
       client.connect();
       context.assertTrue(client.isConnected() && this.endpoint.isConnected());
     } catch (MqttException e) {
-      context.fail(e);
+      context.assertTrue(false);
+      e.printStackTrace();
     }
   }
 
@@ -86,7 +87,8 @@ public class MqttEndpointStatusTest extends MqttBaseTest {
       context.assertTrue(!client.isConnected() && !this.endpoint.isConnected());
 
     } catch (MqttException e) {
-      context.fail(e);
+      context.assertTrue(false);
+      e.printStackTrace();
     }
   }
 
@@ -116,7 +118,8 @@ public class MqttEndpointStatusTest extends MqttBaseTest {
       context.assertTrue(!client.isConnected() && !this.endpoint.isConnected());
 
     } catch (MqttException e) {
-      context.fail(e);
+      context.assertTrue(false);
+      e.printStackTrace();
     }
   }
 
