@@ -239,7 +239,13 @@ public class MqttConnection extends ConnectionBase {
         this.exceptionHandler.handle(new VertxException("With zero-length client-id, cleas session MUST be true"));
       }
     } else {
-      this.endpointHandler.handle(endpoint);
+
+      // an exception at connection level is propagated to the endpoint
+      this.exceptionHandler(t -> {
+        this.endpoint.handleException(t);
+      });
+
+      this.endpointHandler.handle(this.endpoint);
     }
   }
 
