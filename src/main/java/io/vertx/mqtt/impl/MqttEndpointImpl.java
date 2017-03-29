@@ -77,6 +77,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private Handler<Void> pingreqHandler;
   // handler to call when the endpoint is isClosed
   private Handler<Void> closeHandler;
+  // handler to call when a problem at protocol level happens
+  private Handler<Throwable> exceptionHandler;
 
   private boolean isConnected;
   private boolean isClosed;
@@ -266,6 +268,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
     synchronized (this.conn) {
       this.checkClosed();
       this.closeHandler = handler;
+      return this;
+    }
+  }
+
+  public MqttEndpointImpl exceptionHandler(Handler<Throwable> handler) {
+
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.exceptionHandler = handler;
       return this;
     }
   }
@@ -614,6 +625,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
       if (this.closeHandler != null) {
         this.closeHandler.handle(null);
+      }
+    }
+  }
+
+  /**
+   * Used for calling the exception handler when an error at protocol level happens
+   *
+   * @param t exception raised
+   */
+  void handleException(Throwable t) {
+
+    synchronized (this.conn) {
+      if (this.exceptionHandler != null) {
+        this.exceptionHandler.handle(t);
       }
     }
   }

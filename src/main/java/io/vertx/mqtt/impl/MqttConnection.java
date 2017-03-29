@@ -239,7 +239,13 @@ public class MqttConnection extends ConnectionBase {
         this.exceptionHandler.handle(new VertxException("With zero-length client-id, cleas session MUST be true"));
       }
     } else {
-      this.endpointHandler.handle(endpoint);
+
+      // an exception at connection level is propagated to the endpoint
+      this.exceptionHandler(t -> {
+        this.endpoint.handleException(t);
+      });
+
+      this.endpointHandler.handle(this.endpoint);
     }
   }
 
@@ -250,7 +256,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handleSubscribe(MqttSubscribeMessage msg) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handleSubscribe(msg);
     }
   }
@@ -262,7 +268,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handleUnsubscribe(MqttUnsubscribeMessage msg) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handleUnsubscribe(msg);
     }
   }
@@ -274,7 +280,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handlePublish(MqttPublishMessage msg) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handlePublish(msg);
     }
   }
@@ -286,7 +292,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handlePuback(int pubackMessageId) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handlePuback(pubackMessageId);
     }
   }
@@ -298,7 +304,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handlePubrec(int pubrecMessageId) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handlePubrec(pubrecMessageId);
     }
   }
@@ -310,7 +316,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handlePubrel(int pubrelMessageId) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handlePubrel(pubrelMessageId);
     }
   }
@@ -322,7 +328,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handlePubcomp(int pubcompMessageId) {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handlePubcomp(pubcompMessageId);
     }
   }
@@ -332,7 +338,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handlePingreq() {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handlePingreq();
     }
   }
@@ -342,7 +348,7 @@ public class MqttConnection extends ConnectionBase {
    */
   synchronized void handleDisconnect() {
 
-    if (this.endpoint != null) {
+    if (this.checkConnected()) {
       this.endpoint.handleDisconnect();
     }
   }
@@ -355,6 +361,21 @@ public class MqttConnection extends ConnectionBase {
     super.handleClosed();
     if (this.endpoint != null) {
       this.endpoint.handleClosed();
+    }
+  }
+
+  /**
+   * Check if the endpoint was created and is connected
+   *
+   * @return  status of the endpoint (connected or not)
+   */
+  private boolean checkConnected() {
+
+    if ((this.endpoint != null) && (this.endpoint.isConnected())) {
+      return true;
+    } else {
+      this.close();
+      throw new IllegalStateException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
     }
   }
 }

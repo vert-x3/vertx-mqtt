@@ -243,6 +243,15 @@ public interface MqttEndpoint {
   MqttEndpoint closeHandler(Handler<Void> handler);
 
   /**
+   * Set an exception handler. This will be called when an error at protocol level happens
+   *
+   * @param handler the handler
+   * @return  a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint exceptionHandler(Handler<Throwable> handler);
+
+  /**
    * Sends the CONNACK message to the remote MQTT client with "connection accepted"
    * return code. See {@link #reject(MqttConnectReturnCode)} for refusing connection
    *
