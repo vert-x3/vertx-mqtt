@@ -381,7 +381,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.checkConnected();
 
     MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_MOST_ONCE, false, 0);
+      new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(publishMessageId);
 
