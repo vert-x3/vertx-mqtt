@@ -38,6 +38,9 @@ import io.vertx.mqtt.MqttWill;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
  */
@@ -124,6 +127,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttWill will() {
     return this.will;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
   }
 
   public boolean isCleanSession() {

@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -28,6 +29,9 @@ import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
 import java.util.List;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 
 /**
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
@@ -69,6 +73,14 @@ public interface MqttEndpoint {
    */
   @CacheReturn
   String protocolName();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is
+   *         not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  @GenIgnore
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**
    * @return true when clean session is requested by the remote MQTT client

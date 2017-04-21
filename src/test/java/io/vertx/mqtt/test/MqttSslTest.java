@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
@@ -164,6 +165,12 @@ public class MqttSslTest extends MqttBaseTest {
       endpoint.publishComplete(messageId);
       this.async.complete();
     });
+
+    try {
+      log.info("Accepted connection with certificates " + endpoint.peerCertificateChain());
+    } catch (SSLPeerUnverifiedException e) {
+      e.printStackTrace();
+    }
 
     endpoint.accept(false);
   }
