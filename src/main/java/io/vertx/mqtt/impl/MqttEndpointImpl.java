@@ -101,7 +101,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param clientIdentifier     client identifier of the remote
    * @param auth                 instance with the authentication information
    * @param will                 instance with the will information
-   * @param isCleanSession       if the sessione should be cleaned or not
+   * @param isCleanSession       if the session should be cleaned or not
    * @param protocolVersion      protocol version required by the client
    * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
