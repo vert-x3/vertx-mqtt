@@ -115,9 +115,6 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
   @Override
   protected void initChannel(ChannelPipeline pipeline) {
 
-    if (sslHelper.isSSL()) {
-      pipeline.addLast("ssl", sslHelper.createSslHandler(vertx));
-    }
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
     }

@@ -41,6 +41,7 @@ Set max MQTT message size
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|-
 |[[reuseAddress]]`reuseAddress`|`Boolean`|-
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|-
+|[[sni]]`sni`|`Boolean`|-
 |[[soLinger]]`soLinger`|`Number (int)`|-
 |[[ssl]]`ssl`|`Boolean`|-
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|-
