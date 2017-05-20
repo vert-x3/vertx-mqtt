@@ -27,7 +27,7 @@
  *
  * == Using Vert.x MQTT server
  *
- * THis component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
+ * This component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
  * of your build descriptor:
  *
  * * Maven (in your `pom.xml`):
