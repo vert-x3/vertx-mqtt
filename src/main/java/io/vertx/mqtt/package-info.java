@@ -27,26 +27,17 @@
  *
  * == Using Vert.x MQTT server
  *
- * As component not yet officially released in the Vert.x stack, to use the Vert.x MQTT server current snapshot version,
- * add the following repository under the _repositories_ section and the following dependency to the _dependencies_ section
+ * THis component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
  * of your build descriptor:
  *
  * * Maven (in your `pom.xml`):
  *
  * [source,xml,subs="+attributes"]
  * ----
- * <repository>
- *     <id>oss.sonatype.org-snapshot</id>
- *     <url>https://oss.sonatype.org/content/repositories/snapshots</url>
- * </repository>
- * ----
- *
- * [source,xml,subs="+attributes"]
- * ----
  * <dependency>
  *     <groupId>io.vertx</groupId>
  *     <artifactId>vertx-mqtt-server</artifactId>
- *     <version>3.4.0-SNAPSHOT</version>
+ *     <version>${maven.version}</version>
  * </dependency>
  * ----
  *
@@ -54,12 +45,7 @@
  *
  * [source,groovy,subs="+attributes"]
  * ----
- * maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
- * ----
- *
- * [source,groovy,subs="+attributes"]
- * ----
- * compile io.vertx:vertx-mqtt-server:3.4.0-SNAPSHOT
+ * compile io.vertx:vertx-mqtt-server:${maven.version}
  * ----
  *
  * == Getting Started
