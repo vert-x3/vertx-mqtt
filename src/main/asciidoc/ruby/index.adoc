@@ -31,7 +31,7 @@ of your build descriptor:
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-mqtt-server</artifactId>
-    <version>3.4.0-SNAPSHOT</version>
+    <version>3.4.1-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -44,7 +44,7 @@ maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt-server:3.4.0-SNAPSHOT
+compile io.vertx:vertx-mqtt-server:3.4.1-SNAPSHOT
 ----
 
 == Getting Started
