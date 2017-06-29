@@ -19,6 +19,7 @@ package io.vertx.mqtt.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttDecoder;
@@ -108,8 +109,8 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
   }
 
   @Override
-  protected MqttConnection createConnection(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new MqttConnection(vertx, channel, vertx.getOrCreateContext(), metrics, this.mqttServerOptions);
+  protected MqttConnection createConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
+    return new MqttConnection(vertx, chctx, vertx.getOrCreateContext(), metrics, this.mqttServerOptions);
   }
 
   @Override

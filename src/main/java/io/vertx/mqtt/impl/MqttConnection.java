@@ -16,7 +16,7 @@
 
 package io.vertx.mqtt.impl;
 
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
@@ -67,14 +67,14 @@ public class MqttConnection extends ConnectionBase {
    * Constructor
    *
    * @param vertx   Vert.x instance
-   * @param channel Channel (netty) used for communication with MQTT remote client
+   * @param chctx ChannelHandlerContext (netty) used for communication with MQTT remote client
    * @param context Vert.x context
    * @param metrics TCP metrics
    *
    */
-  public MqttConnection(VertxInternal vertx, Channel channel, ContextImpl context,
+  public MqttConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context,
                         TCPMetrics metrics, MqttServerOptions options) {
-    super(vertx, channel, context);
+    super(vertx, chctx, context);
     this.metrics = metrics;
     this.options = options;
   }
@@ -98,11 +98,11 @@ public class MqttConnection extends ConnectionBase {
 
       DecoderResult result = mqttMessage.decoderResult();
       if (result.isFailure()) {
-        channel.pipeline().fireExceptionCaught(result.cause());
+        chctx.pipeline().fireExceptionCaught(result.cause());
         return;
       }
       if (!result.isFinished()) {
-        channel.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
+        chctx.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
         return;
       }
 
@@ -148,7 +148,7 @@ public class MqttConnection extends ConnectionBase {
 
         default:
 
-          this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
+          this.chctx.fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
           break;
 
       }
@@ -171,7 +171,7 @@ public class MqttConnection extends ConnectionBase {
 
       } else {
 
-        this.channel.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
+        this.chctx.fireExceptionCaught(new Exception("Wrong message type"));
       }
     }
   }
@@ -229,7 +229,7 @@ public class MqttConnection extends ConnectionBase {
         msg.variableHeader().keepAliveTimeSeconds() / 2;
 
       // modifying the channel pipeline for adding the idle state handler with previous timeout
-      channel.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
+      chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
     }
 
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
