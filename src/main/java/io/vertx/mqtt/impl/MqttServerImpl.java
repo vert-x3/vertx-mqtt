@@ -18,22 +18,16 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.logging.LoggingHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.NetServerBase;
-import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.impl.VertxHandler;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
@@ -44,16 +38,17 @@ import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 /**
  * An MQTT server implementation
  */
-public class MqttServerImpl extends NetServerBase<MqttConnection> implements MqttServer {
+public class MqttServerImpl implements MqttServer {
 
+  private final NetServer server;
   private Handler<MqttEndpoint> endpointHandler;
   private Handler<Throwable> exceptionHandler;
 
-  private MqttServerOptions mqttServerOptions;
+  private MqttServerOptions options;
 
   public MqttServerImpl(Vertx vertx, MqttServerOptions options) {
-    super((VertxInternal) vertx, options);
-    this.mqttServerOptions = options;
+    this.server = vertx.createNetServer(options);
+    this.options = options;
   }
 
   @Override
@@ -85,8 +80,34 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
   public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
     Handler<MqttEndpoint> h1 = endpointHandler;
     Handler<Throwable> h2 = exceptionHandler;
-    Handler<MqttConnection> mqttConnectionHandler = c -> c.init(h1, h2);
-    listen(mqttConnectionHandler, port, host, ar -> listenHandler.handle(ar.map(this)));
+    server.connectHandler(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.messageHandler(o -> {});
+      ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+
+/*
+      if (logEnabled) {
+        pipeline.addLast("logging", new LoggingHandler());
+      }
+*/
+      pipeline.addFirst("mqttEncoder", MqttEncoder.INSTANCE);
+      if (this.options.getMaxMessageSize() > 0) {
+        pipeline.addFirst("mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
+      } else {
+        // max message size not set, so the default from Netty MQTT codec is used
+        pipeline.addFirst("mqttDecoder", new MqttDecoder());
+      }
+
+      MqttConnection conn = new MqttConnection(soi, options);
+
+      soi.messageHandler(msg -> {
+        conn.handleMessage(safeObject(msg, soi.channelHandlerContext().alloc()));
+      });
+
+      conn.init(h1, h2);
+
+    });
+    server.listen(port, host, ar -> listenHandler.handle(ar.map(this)));
     return this;
   }
 
@@ -102,35 +123,7 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
     return this;
   }
 
-  @Override
-  protected void handleMsgReceived(MqttConnection conn, Object msg) {
-    // handling a Netty native MQTT message directly
-    conn.handleMessage(msg);
-  }
-
-  @Override
-  protected MqttConnection createConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context, SSLHelper helper, TCPMetrics metrics) {
-    return new MqttConnection(vertx, chctx, vertx.getOrCreateContext(), metrics, this.mqttServerOptions);
-  }
-
-  @Override
-  protected void initChannel(ChannelPipeline pipeline) {
-
-    if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler());
-    }
-    pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
-
-    if (this.mqttServerOptions.getMaxMessageSize() > 0) {
-      pipeline.addLast("mqttDecoder", new MqttDecoder(this.mqttServerOptions.getMaxMessageSize()));
-    } else {
-      // max message size not set, so the default from Netty MQTT codec is used
-      pipeline.addLast("mqttDecoder", new MqttDecoder());
-    }
-  }
-
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) {
+  private Object safeObject(Object msg, ByteBufAllocator allocator) {
 
     // some Netty native MQTT messages need a mapping to Vert.x ones (available for polyglotization)
     // and different byte buffer resources are allocated
@@ -176,5 +169,20 @@ public class MqttServerImpl extends NetServerBase<MqttConnection> implements Mqt
 
     // otherwise the original Netty message is returned
     return msg;
+  }
+
+  @Override
+  public int actualPort() {
+    return server.actualPort();
+  }
+
+  @Override
+  public void close() {
+    server.close();
+  }
+
+  @Override
+  public void close(Handler<AsyncResult<Void>> completionHandler) {
+    server.close(completionHandler);
   }
 }

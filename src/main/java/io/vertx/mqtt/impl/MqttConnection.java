@@ -23,11 +23,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.NetworkMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
@@ -39,7 +35,7 @@ import java.util.UUID;
 /**
  * Represents an MQTT connection with a remote client
  */
-public class MqttConnection extends ConnectionBase {
+public class MqttConnection {
 
   // handler to call when a remote MQTT client connects and establishes a connection
   private Handler<MqttEndpoint> endpointHandler;
@@ -47,40 +43,22 @@ public class MqttConnection extends ConnectionBase {
   // handler to call when an connection is rejected
   private Handler<Throwable> exceptionHandler;
 
+  private final NetSocketInternal so;
+
   // endpoint for handling point-to-point communication with the remote MQTT client
   private MqttEndpointImpl endpoint;
-  private final TCPMetrics metrics;
-
+  private final ChannelHandlerContext chctx;
   private final MqttServerOptions options;
-
-  @Override
-  public NetworkMetrics metrics() {
-    return metrics;
-  }
 
   void init(Handler<MqttEndpoint> endpointHandler, Handler<Throwable> rejectHandler) {
     this.endpointHandler = endpointHandler;
     this.exceptionHandler = rejectHandler;
   }
 
-  /**
-   * Constructor
-   *
-   * @param vertx   Vert.x instance
-   * @param chctx ChannelHandlerContext (netty) used for communication with MQTT remote client
-   * @param context Vert.x context
-   * @param metrics TCP metrics
-   *
-   */
-  public MqttConnection(VertxInternal vertx, ChannelHandlerContext chctx, ContextImpl context,
-                        TCPMetrics metrics, MqttServerOptions options) {
-    super(vertx, chctx, context);
-    this.metrics = metrics;
+  public MqttConnection(NetSocketInternal so, MqttServerOptions options) {
+    this.so = so;
+    this.chctx = so.channelHandlerContext();
     this.options = options;
-  }
-
-  @Override
-  protected void handleInterestedOpsChanged() {
   }
 
   /**
@@ -212,7 +190,7 @@ public class MqttConnection extends ConnectionBase {
     // create the MQTT endpoint provided to the application handler
     this.endpoint =
       new MqttEndpointImpl(
-        this,
+        so,
         clientIdentifier,
         auth,
         will,
@@ -241,9 +219,12 @@ public class MqttConnection extends ConnectionBase {
     } else {
 
       // an exception at connection level is propagated to the endpoint
-      this.exceptionHandler(t -> {
+      this.so.exceptionHandler(t -> {
         this.endpoint.handleException(t);
       });
+
+      // Used for calling the close handler when the remote MQTT client closes the connection
+      this.so.closeHandler(v -> this.endpoint.handleClosed());
 
       this.endpointHandler.handle(this.endpoint);
     }
@@ -354,17 +335,6 @@ public class MqttConnection extends ConnectionBase {
   }
 
   /**
-   * Used for calling the close handler when the remote MQTT client closes the connection
-   */
-  synchronized protected void handleClosed() {
-
-    super.handleClosed();
-    if (this.endpoint != null) {
-      this.endpoint.handleClosed();
-    }
-  }
-
-  /**
    * Check if the endpoint was created and is connected
    *
    * @return  status of the endpoint (connected or not)
@@ -374,7 +344,7 @@ public class MqttConnection extends ConnectionBase {
     if ((this.endpoint != null) && (this.endpoint.isConnected())) {
       return true;
     } else {
-      this.close();
+      so.close();
       throw new IllegalStateException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
     }
   }

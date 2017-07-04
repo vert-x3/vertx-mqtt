@@ -22,7 +22,7 @@ of your build descriptor:
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-mqtt-server</artifactId>
-    <version>3.4.2</version>
+    <version>3.5.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -30,7 +30,7 @@ of your build descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt-server:3.4.2
+compile io.vertx:vertx-mqtt-server:3.5.0-SNAPSHOT
 ----
 
 == Getting Started
