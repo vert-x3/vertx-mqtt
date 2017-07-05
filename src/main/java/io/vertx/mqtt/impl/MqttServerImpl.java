@@ -90,12 +90,12 @@ public class MqttServerImpl implements MqttServer {
         pipeline.addLast("logging", new LoggingHandler());
       }
 */
-      pipeline.addFirst("mqttEncoder", MqttEncoder.INSTANCE);
+      pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
       if (this.options.getMaxMessageSize() > 0) {
-        pipeline.addFirst("mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
+        pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
       } else {
         // max message size not set, so the default from Netty MQTT codec is used
-        pipeline.addFirst("mqttDecoder", new MqttDecoder());
+        pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
       }
 
       MqttConnection conn = new MqttConnection(soi, options);
