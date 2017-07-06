@@ -16,10 +16,13 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
@@ -229,7 +232,20 @@ public class MqttConnection extends ConnectionBase {
         msg.variableHeader().keepAliveTimeSeconds() / 2;
 
       // modifying the channel pipeline for adding the idle state handler with previous timeout
-      chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(0, 0, timeout));
+      chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(timeout, 0, 0));
+      chctx.pipeline().addLast("keepAliveHandler", new ChannelDuplexHandler() {
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+
+          if (evt instanceof IdleStateEvent) {
+            IdleStateEvent e = (IdleStateEvent) evt;
+            if (e.state() == IdleState.READER_IDLE) {
+              endpoint.close();
+            }
+          }
+        }
+      });
     }
 
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
