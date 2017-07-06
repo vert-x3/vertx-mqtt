@@ -85,7 +85,11 @@ public class MqttDisconnectTest extends MqttBaseTest {
     endpoint.disconnectHandler(v -> {
 
       log.info("MQTT remote client disconnected");
+    });
 
+    endpoint.closeHandler(v -> {
+
+      log.info("MQTT remote client connection closed");
     });
 
     endpoint.accept(false);
