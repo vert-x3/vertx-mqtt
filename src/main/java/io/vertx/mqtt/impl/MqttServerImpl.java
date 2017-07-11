@@ -82,14 +82,7 @@ public class MqttServerImpl implements MqttServer {
     Handler<Throwable> h2 = exceptionHandler;
     server.connectHandler(so -> {
       NetSocketInternal soi = (NetSocketInternal) so;
-      soi.messageHandler(o -> {});
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
-
-/*
-      if (logEnabled) {
-        pipeline.addLast("logging", new LoggingHandler());
-      }
-*/
       pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
       if (this.options.getMaxMessageSize() > 0) {
         pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
