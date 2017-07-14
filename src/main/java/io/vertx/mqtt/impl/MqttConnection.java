@@ -231,7 +231,7 @@ public class MqttConnection {
 
       // modifying the channel pipeline for adding the idle state handler with previous timeout
       chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(timeout, 0, 0));
-      chctx.pipeline().addLast("keepAliveHandler", new ChannelDuplexHandler() {
+      chctx.pipeline().addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
 
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {

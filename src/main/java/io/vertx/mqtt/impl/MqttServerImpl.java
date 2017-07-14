@@ -76,14 +76,8 @@ public class MqttServerImpl implements MqttServer {
     server.connectHandler(so -> {
       NetSocketInternal soi = (NetSocketInternal) so;
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
-      pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
-      if (this.options.getMaxMessageSize() > 0) {
-        pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
-      } else {
-        // max message size not set, so the default from Netty MQTT codec is used
-        pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
-      }
 
+      initChannel(pipeline);
       MqttConnection conn = new MqttConnection(soi, options);
 
       soi.messageHandler(msg -> {
@@ -122,5 +116,16 @@ public class MqttServerImpl implements MqttServer {
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
     server.close(completionHandler);
+  }
+
+  private void initChannel(ChannelPipeline pipeline) {
+
+    pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
+    if (this.options.getMaxMessageSize() > 0) {
+      pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
+    } else {
+      // max message size not set, so the default from Netty MQTT codec is used
+      pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
+    }
   }
 }
