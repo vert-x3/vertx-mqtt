@@ -29,7 +29,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
@@ -46,7 +46,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private static final int MAX_MESSAGE_ID = 65535;
 
   // connection to the remote MQTT client
-  private final ConnectionBase conn;
+  private final NetSocketInternal conn;
 
   // information about connected remote MQTT client (from CONNECT message)
   private String clientIdentifier;
@@ -103,7 +103,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
    */
-  public MqttEndpointImpl(ConnectionBase conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds) {
+  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuthImpl auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds) {
     this.conn = conn;
     this.clientIdentifier = clientIdentifier;
     this.auth = auth;
@@ -656,7 +656,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public MqttEndpointImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
       this.checkClosed();
-      this.conn.writeToChannel(mqttMessage);
+      this.conn.writeMessage(mqttMessage);
       return this;
     }
   }
