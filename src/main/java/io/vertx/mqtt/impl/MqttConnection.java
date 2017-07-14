@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
@@ -27,6 +28,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
@@ -71,8 +73,8 @@ public class MqttConnection {
    */
   synchronized void handleMessage(Object msg) {
 
-    // handling directly native Netty MQTT messages because we don't need to
-    // expose them at higher level (so no need for polyglotization)
+    // handling directly native Netty MQTT messages, some of them are translated
+    // to the related Vert.x ones for polyglotization
     if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
 
       io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
@@ -91,6 +93,41 @@ public class MqttConnection {
 
         case CONNECT:
           handleConnect((MqttConnectMessage) msg);
+          break;
+
+        case SUBSCRIBE:
+
+          io.netty.handler.codec.mqtt.MqttSubscribeMessage subscribe = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
+
+          MqttSubscribeMessage mqttSubscribeMessage = MqttSubscribeMessage.create(
+            subscribe.variableHeader().messageId(),
+            subscribe.payload().topicSubscriptions());
+          this.handleSubscribe(mqttSubscribeMessage);
+          break;
+
+        case UNSUBSCRIBE:
+
+          io.netty.handler.codec.mqtt.MqttUnsubscribeMessage unsubscribe = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
+
+          MqttUnsubscribeMessage mqttUnsubscribeMessage = MqttUnsubscribeMessage.create(
+            unsubscribe.variableHeader().messageId(),
+            unsubscribe.payload().topics());
+          this.handleUnsubscribe(mqttUnsubscribeMessage);
+          break;
+
+        case PUBLISH:
+
+          io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
+          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), this.chctx.alloc());
+
+          MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
+            publish.variableHeader().messageId(),
+            publish.fixedHeader().qosLevel(),
+            publish.fixedHeader().isDup(),
+            publish.fixedHeader().isRetain(),
+            publish.variableHeader().topicName(),
+            newBuf);
+          this.handlePublish(mqttPublishMessage);
           break;
 
         case PUBACK:
@@ -134,26 +171,9 @@ public class MqttConnection {
 
       }
 
-      // handling mapped Vert.x MQTT messages (from Netty ones) because they'll be provided
-      // to the higher layer (so need for ployglotization)
     } else {
 
-      if (msg instanceof MqttSubscribeMessage) {
-
-        this.handleSubscribe((MqttSubscribeMessage) msg);
-
-      } else if (msg instanceof MqttUnsubscribeMessage) {
-
-        this.handleUnsubscribe((MqttUnsubscribeMessage) msg);
-
-      } else if (msg instanceof MqttPublishMessage) {
-
-        this.handlePublish((MqttPublishMessage) msg);
-
-      } else {
-
-        this.chctx.fireExceptionCaught(new Exception("Wrong message type"));
-      }
+      this.chctx.fireExceptionCaught(new Exception("Wrong message type"));
     }
   }
 

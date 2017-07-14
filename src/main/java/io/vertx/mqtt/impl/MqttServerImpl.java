@@ -16,10 +16,7 @@
 
 package io.vertx.mqtt.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.vertx.core.AsyncResult;
@@ -27,13 +24,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.net.NetServer;
-import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
-import io.vertx.mqtt.messages.MqttPublishMessage;
-import io.vertx.mqtt.messages.MqttSubscribeMessage;
-import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
 /**
  * An MQTT server implementation
@@ -94,7 +87,7 @@ public class MqttServerImpl implements MqttServer {
       MqttConnection conn = new MqttConnection(soi, options);
 
       soi.messageHandler(msg -> {
-        conn.handleMessage(safeObject(msg, soi.channelHandlerContext().alloc()));
+        conn.handleMessage(msg);
       });
 
       conn.init(h1, h2);
@@ -114,54 +107,6 @@ public class MqttServerImpl implements MqttServer {
   public synchronized MqttServer exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
-  }
-
-  private Object safeObject(Object msg, ByteBufAllocator allocator) {
-
-    // some Netty native MQTT messages need a mapping to Vert.x ones (available for polyglotization)
-    // and different byte buffer resources are allocated
-    if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
-
-      io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
-      DecoderResult result = mqttMessage.decoderResult();
-      if (result.isSuccess() && result.isFinished()) {
-        switch (mqttMessage.fixedHeader().messageType()) {
-
-          case SUBSCRIBE:
-
-            io.netty.handler.codec.mqtt.MqttSubscribeMessage subscribe = (io.netty.handler.codec.mqtt.MqttSubscribeMessage) mqttMessage;
-
-            return MqttSubscribeMessage.create(
-              subscribe.variableHeader().messageId(),
-              subscribe.payload().topicSubscriptions());
-
-          case UNSUBSCRIBE:
-
-            io.netty.handler.codec.mqtt.MqttUnsubscribeMessage unsubscribe = (io.netty.handler.codec.mqtt.MqttUnsubscribeMessage) mqttMessage;
-
-            return MqttUnsubscribeMessage.create(
-              unsubscribe.variableHeader().messageId(),
-              unsubscribe.payload().topics());
-
-
-          case PUBLISH:
-
-            io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-            ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), allocator);
-
-            return MqttPublishMessage.create(
-              publish.variableHeader().messageId(),
-              publish.fixedHeader().qosLevel(),
-              publish.fixedHeader().isDup(),
-              publish.fixedHeader().isRetain(),
-              publish.variableHeader().topicName(),
-              newBuf);
-        }
-      }
-    }
-
-    // otherwise the original Netty message is returned
-    return msg;
   }
 
   @Override
