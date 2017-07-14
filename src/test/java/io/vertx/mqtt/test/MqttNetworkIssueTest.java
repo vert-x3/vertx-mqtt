@@ -53,14 +53,14 @@ public class MqttNetworkIssueTest extends MqttBaseTest {
     this.setUp(context);
 
     this.proxy = new Proxy(this.vertx, MQTT_SERVER_HOST, MQTT_SERVER_PORT);
-    this.proxy.start();
+    this.proxy.start(context.asyncAssertSuccess());
   }
 
   @After
   public void after(TestContext context) {
 
     this.tearDown(context);
-    this.proxy.stop();
+    this.proxy.stop(context.asyncAssertSuccess());
   }
 
   @Test

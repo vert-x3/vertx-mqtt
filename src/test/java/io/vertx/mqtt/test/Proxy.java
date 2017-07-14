@@ -16,6 +16,10 @@
 
 package io.vertx.mqtt.test;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -63,8 +67,10 @@ public class Proxy {
 
   /**
    * Start the proxy
+   *
+   * @param startHandler  handler to call when starting is completed
    */
-  public void start() {
+  public void start(Handler<AsyncResult<Void>> startHandler) {
 
     this.server = this.vertx.createNetServer();
     this.client = this.vertx.createNetClient();
@@ -95,20 +101,20 @@ public class Proxy {
       });
     });
 
-    this.server.listen(SERVER_PORT, SERVER_HOST, done -> {
-      if (done.succeeded()) {
-        log.info(String.format("Proxy server started on port %d", done.result().actualPort()));
-      } else {
-        log.info("Error starting proxy server", done.cause());
-      }
-    });
+    Future<NetServer> serverFuture = Future.future();
+    this.server.listen(SERVER_PORT, SERVER_HOST, serverFuture.completer());
 
-    // connect to the MQTT server
-    this.client.connect(this.mqttServerPort, this.mqttServerHost, done -> {
+    Future<NetSocket> clientFuture = Future.future();
+    this.client.connect(this.mqttServerPort, this.mqttServerHost, clientFuture.completer());
 
-      if (done.succeeded()) {
+    CompositeFuture.all(serverFuture, clientFuture).setHandler(ar -> {
 
-        this.clientSocket = done.result();
+      // server started and client connected successfully
+      if (ar.succeeded()) {
+
+        log.info(String.format("Proxy server started on port %d", serverFuture.result().actualPort()));
+
+        this.clientSocket = clientFuture.result();
 
         log.info(String.format("Proxy client connected to %s:%d",
           this.clientSocket.remoteAddress().host(),
@@ -131,22 +137,40 @@ public class Proxy {
           this.serverSocket.close();
         });
 
-      } else {
-        log.info("Error connecting proxy client", done.cause());
-      }
+        startHandler.handle(Future.succeededFuture());
 
+      } else {
+
+        if (!serverFuture.succeeded())
+          log.info("Error starting proxy server", serverFuture.cause());
+
+        if (!clientFuture.succeeded())
+          log.info("Error connecting proxy client", clientFuture.cause());
+
+        startHandler.handle(Future.failedFuture(ar.cause()));
+      }
     });
 
   }
 
   /**
    * Stop the proxy
+   *
+   * @param stopHandler handler to call when stopping is completed
    */
-  public void stop() {
+  public void stop(Handler<AsyncResult<Void>> stopHandler) {
 
-    this.server.close();
     this.client.close();
-    log.info("Proxy server stopped");
+    this.server.close(done -> {
+      if (done.succeeded()) {
+
+        stopHandler.handle(Future.succeededFuture());
+        log.info("Proxy server stopped");
+
+      } else {
+        stopHandler.handle(Future.failedFuture(done.cause()));
+      }
+    });
   }
 
   /**
