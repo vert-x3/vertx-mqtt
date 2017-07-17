@@ -222,6 +222,10 @@ public class MqttConnection {
         msg.variableHeader().name(),
         msg.variableHeader().keepAliveTimeSeconds());
 
+    // remove the idle state handler for timeout on CONNECT
+    chctx.pipeline().remove("idle");
+    chctx.pipeline().remove("timeoutOnConnect");
+
     // keep alive == 0 means NO keep alive, no timeout to handle
     if (msg.variableHeader().keepAliveTimeSeconds() != 0) {
 

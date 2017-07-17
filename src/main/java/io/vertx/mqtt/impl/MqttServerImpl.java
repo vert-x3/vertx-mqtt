@@ -16,9 +16,14 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -127,5 +132,23 @@ public class MqttServerImpl implements MqttServer {
       // max message size not set, so the default from Netty MQTT codec is used
       pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
     }
+
+    // adding the idle state handler for timeout on CONNECT packet
+    pipeline.addBefore("handler", "idle", new IdleStateHandler(this.options.timeoutOnConnect(), 0, 0));
+    pipeline.addBefore("handler", "timeoutOnConnect", new ChannelDuplexHandler() {
+
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+
+        if (evt instanceof IdleStateEvent) {
+          IdleStateEvent e = (IdleStateEvent) evt;
+          if (e.state() == IdleState.READER_IDLE) {
+            // as MQTT 3.1.1 describes, if no packet is sent after a "reasonable" time (here CONNECT timeout)
+            // the connection is closed
+            ctx.channel().close();
+          }
+        }
+      }
+    });
   }
 }

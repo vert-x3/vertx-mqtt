@@ -42,6 +42,7 @@ import io.vertx.core.net.PfxOptions
  * @param ssl 
  * @param tcpKeepAlive 
  * @param tcpNoDelay 
+ * @param timeoutOnConnect  Set the timeout on CONNECT packet
  * @param trafficClass 
  * @param trustStoreOptions 
  * @param useAlpn 
@@ -79,6 +80,7 @@ fun MqttServerOptions(
   ssl: Boolean? = null,
   tcpKeepAlive: Boolean? = null,
   tcpNoDelay: Boolean? = null,
+  timeoutOnConnect: Int? = null,
   trafficClass: Int? = null,
   trustStoreOptions: io.vertx.core.net.JksOptions? = null,
   useAlpn: Boolean? = null,
@@ -175,6 +177,9 @@ fun MqttServerOptions(
   }
   if (tcpNoDelay != null) {
     this.setTcpNoDelay(tcpNoDelay)
+  }
+  if (timeoutOnConnect != null) {
+    this.setTimeoutOnConnect(timeoutOnConnect)
   }
   if (trafficClass != null) {
     this.setTrafficClass(trafficClass)

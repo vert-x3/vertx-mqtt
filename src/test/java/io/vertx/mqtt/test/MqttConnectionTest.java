@@ -19,9 +19,12 @@ package io.vertx.mqtt.test;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetClient;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttServerOptions;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -43,13 +46,17 @@ public class MqttConnectionTest extends MqttBaseTest {
 
   private static final String MQTT_USERNAME = "username";
   private static final String MQTT_PASSWORD = "password";
+  private static final int MQTT_TIMEOUT_ON_CONNECT = 5;
 
   private MqttEndpoint endpoint;
 
   @Before
   public void before(TestContext context) {
 
-    this.setUp(context);
+    MqttServerOptions options = new MqttServerOptions();
+    options.setTimeoutOnConnect(MQTT_TIMEOUT_ON_CONNECT);
+
+    this.setUp(context, options);
   }
 
   @After
@@ -202,6 +209,33 @@ public class MqttConnectionTest extends MqttBaseTest {
       context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_INVALID_CLIENT_ID);
       context.assertNotNull(rejection);
     }
+  }
+
+  @Test
+  public void noConnectSent(TestContext context) {
+
+    NetClient client = this.vertx.createNetClient();
+    Async async = context.async();
+
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
+
+      if (done.succeeded()) {
+
+        done.result().closeHandler(v -> {
+          log.info("No CONNECT sent in " + MQTT_TIMEOUT_ON_CONNECT + " secs. Closing connection.");
+          async.complete();
+        });
+
+      } else {
+        context.fail();
+      }
+    });
+
+    // check that the async is completed (so connection was closed by server) in
+    // the specified timeout (+500 ms just for being sure)
+    async.await(500 + MQTT_TIMEOUT_ON_CONNECT * 1000);
+    if (!async.isCompleted())
+      context.fail();
   }
 
   @Override

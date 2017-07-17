@@ -46,6 +46,10 @@ Set max MQTT message size
 |[[ssl]]`ssl`|`Boolean`|-
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|-
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|-
+|[[timeoutOnConnect]]`timeoutOnConnect`|`Number (int)`|
++++
+Set the timeout on CONNECT packet
++++
 |[[trafficClass]]`trafficClass`|`Number (int)`|-
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[useAlpn]]`useAlpn`|`Boolean`|-
