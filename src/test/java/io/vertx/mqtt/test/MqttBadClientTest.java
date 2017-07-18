@@ -35,15 +35,19 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.CharsetUtil;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetClient;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Created by ppatiern on 28/03/17.
+ * MQTT server testing about bad clients not MQTT exchange compliant
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttBadClientTest extends MqttBaseTest {
@@ -94,6 +98,33 @@ public class MqttBadClientTest extends MqttBaseTest {
       // Shut down the event loop to terminate all threads.
       group.shutdownGracefully();
     }
+  }
+
+  @Test
+  @Ignore
+  public void unknownMessageType(TestContext context) {
+
+    NetClient client = this.vertx.createNetClient();
+    Async async = context.async();
+
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
+
+      if (done.succeeded()) {
+
+        byte[] packet = new byte[] { (byte)0xF0, (byte)0x00};
+
+        done.result().write(Buffer.buffer(packet));
+
+        done.result().closeHandler(v -> {
+          async.complete();
+        });
+
+      } else {
+        context.fail();
+      }
+    });
+
+    async.await();
   }
 
   private final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);

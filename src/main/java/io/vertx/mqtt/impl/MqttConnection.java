@@ -254,7 +254,7 @@ public class MqttConnection {
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
       this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
       if (this.exceptionHandler != null) {
-        this.exceptionHandler.handle(new VertxException("With zero-length client-id, cleas session MUST be true"));
+        this.exceptionHandler.handle(new VertxException("With zero-length client-id, clean session MUST be true"));
       }
     } else {
 
