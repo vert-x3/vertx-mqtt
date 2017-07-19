@@ -38,6 +38,9 @@ import io.vertx.mqtt.MqttWill;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  * Represents an MQTT endpoint for point-to-point communication with the remote MQTT client
  */
@@ -98,7 +101,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param clientIdentifier     client identifier of the remote
    * @param auth                 instance with the authentication information
    * @param will                 instance with the will information
-   * @param isCleanSession       if the sessione should be cleaned or not
+   * @param isCleanSession       if the session should be cleaned or not
    * @param protocolVersion      protocol version required by the client
    * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
@@ -124,6 +127,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttWill will() {
     return this.will;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
   }
 
   public boolean isCleanSession() {
