@@ -24,6 +24,9 @@
     <stack.version>3.5.0-SNAPSHOT</stack.version>
     <junit.version>4.12</junit.version>
     <paho.version>1.1.0</paho.version>
+    
+    <!-- Profile for testing on CI server using broker provided by Eclipse-->
+    <SERVER>iot.eclipse.org</SERVER>
   </properties>
 
   <dependencyManagement>
@@ -301,17 +304,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-
-    <!-- Profile for testing on CI server using broker provided by Eclipse-->
-    <profile>
-      <id>ci_test</id>
-      <properties>
-        <SERVER>iot.eclipse.org</SERVER>
-      </properties>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
     </profile>
   </profiles>
 
