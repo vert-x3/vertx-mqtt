@@ -8,7 +8,7 @@
     <version>26</version>
   </parent>
 
-  <artifactId>vertx-mqtt-server</artifactId>
+  <artifactId>vertx-mqtt</artifactId>
   <version>3.5.0-SNAPSHOT</version>
 
   <developers>
@@ -24,7 +24,7 @@
     <stack.version>3.5.0-SNAPSHOT</stack.version>
     <junit.version>4.12</junit.version>
     <paho.version>1.1.0</paho.version>
-    
+
     <!-- Profile for testing on CI server using broker provided by Eclipse-->
     <SERVER>iot.eclipse.org</SERVER>
   </properties>
@@ -41,8 +41,8 @@
     </dependencies>
   </dependencyManagement>
 
-  <name>Vert.x MQTT server</name>
-  <description>Vert.x MQTT server</description>
+  <name>Vert.x MQTT</name>
+  <description>Vert.x MQTT reactive client and server</description>
 
   <dependencies>
     <dependency>
