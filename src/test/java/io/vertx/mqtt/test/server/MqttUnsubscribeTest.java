@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -29,13 +31,21 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * MQTT server testing about clients disconnections
+ * MQTT server testing about clients unsubscription
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttDisconnectTest extends MqttBaseTest {
+public class MqttUnsubscribeTest extends MqttBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttDisconnectTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttUnsubscribeTest.class);
+
+  private Async subscribeAsync;
+  private Async unsubscribeAsync;
+
+  private static final String MQTT_TOPIC = "/my_topic";
 
   @Before
   public void before(TestContext context) {
@@ -50,31 +60,31 @@ public class MqttDisconnectTest extends MqttBaseTest {
   }
 
   @Test
-  public void disconnect(TestContext context) {
+  public void unsubscribe(TestContext context) {
+
+    this.subscribeAsync = context.async();
+    this.unsubscribeAsync = context.async();
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      client.disconnect();
+
+      String[] topics = new String[]{MQTT_TOPIC};
+      int[] qos = new int[]{0};
+      client.subscribe(topics, qos);
+
+      this.subscribeAsync.await();
+
+      client.unsubscribe(topics);
+
+      this.unsubscribeAsync.await();
+
       context.assertTrue(true);
-    } catch (MqttException e) {
-      context.assertTrue(false);
-      e.printStackTrace();
-    }
-  }
 
-  @Test
-  public void bruteDisconnect(TestContext context) {
-
-    try {
-      MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.connect();
-      client.close();
-      context.assertTrue(false);
     } catch (MqttException e) {
-      context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_CLIENT_CONNECTED);
+
+      context.assertTrue(false);
       e.printStackTrace();
     }
   }
@@ -82,14 +92,19 @@ public class MqttDisconnectTest extends MqttBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
 
-    endpoint.disconnectHandler(v -> {
+    endpoint.subscribeHandler(subscribe -> {
 
-      log.info("MQTT remote client disconnected");
-    });
+      List<MqttQoS> qos = new ArrayList<>();
+      qos.add(subscribe.topicSubscriptions().get(0).qualityOfService());
+      endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
-    endpoint.closeHandler(v -> {
+      this.subscribeAsync.complete();
 
-      log.info("MQTT remote client connection closed");
+    }).unsubscribeHandler(unsubscribe -> {
+
+      endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
+
+      this.unsubscribeAsync.complete();
     });
 
     endpoint.accept(false);

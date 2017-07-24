@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.logging.Logger;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
