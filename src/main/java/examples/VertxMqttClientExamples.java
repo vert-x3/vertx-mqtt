@@ -37,7 +37,9 @@ public class VertxMqttClientExamples {
 
     MqttClient client = MqttClient.create(vertx, options);
 
-    client.connect(s -> client.disconnect());
+    client.connect(s -> {
+      client.disconnect();
+    });
   }
 
   /**
@@ -61,7 +63,7 @@ public class VertxMqttClientExamples {
    */
   public void example3(MqttClient client) {
     client.publish("temperature",
-      Buffer.buffer("hello".getBytes()),
+      Buffer.buffer("hello"),
       MqttQoS.AT_LEAST_ONCE,
       false,
       false);
@@ -86,11 +88,11 @@ public class VertxMqttClientExamples {
       System.out.println("Id of just received PUBACK or PUBCOMP packet is " + id);
     })
       // The line of code below will trigger publishCompleteHandler (QoS 2)
-      .publish("hello", Buffer.buffer("hello".getBytes()), MqttQoS.EXACTLY_ONCE, false, false)
+      .publish("hello", Buffer.buffer("hello"), MqttQoS.EXACTLY_ONCE, false, false)
       // The line of code below will trigger publishCompleteHandler (QoS is 1)
-      .publish("hello", Buffer.buffer("hello".getBytes()), MqttQoS.AT_LEAST_ONCE, false, false)
+      .publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false)
       // The line of code below does not trigger because QoS value is 0
-      .publish("hello", Buffer.buffer("hello".getBytes()), MqttQoS.AT_LEAST_ONCE, false, false);
+      .publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false);
 
   }
 
@@ -102,13 +104,13 @@ public class VertxMqttClientExamples {
   public void example6(MqttClient client) {
     client.subscribeCompleteHandler(mqttSubAckMessage -> {
       System.out.println("Id of just received SUBACK packet is " + mqttSubAckMessage.messageId());
-      mqttSubAckMessage.grantedQoSLevels().stream().forEach(s -> {
-        if (s.byteValue() == 0x80) {
+      for (int s : mqttSubAckMessage.grantedQoSLevels()) {
+        if (s == 0x80) {
           System.out.println("Failure");
         } else {
-          System.out.println("Success. Maximum QoS is " + s.byteValue());
+          System.out.println("Success. Maximum QoS is " + s);
         }
-      });
+      }
     })
       .subscribe("temp", 1)
       .subscribe("temp2", 2);
@@ -121,7 +123,9 @@ public class VertxMqttClientExamples {
    */
   public void example7(MqttClient client) {
     client
-      .unsubscribeCompleteHandler(id -> System.out.println("Id of just received UNSUBACK packet is " + id))
+      .unsubscribeCompleteHandler(id -> {
+        System.out.println("Id of just received UNSUBACK packet is " + id);
+      })
       .subscribe("temp", 1)
       .unsubscribe("temp");
   }
@@ -134,7 +138,9 @@ public class VertxMqttClientExamples {
   public void example8(MqttClient client) {
     client
       .subscribe("temp", 1)
-      .unsubscribe("temp", id -> System.out.println("Id of just sent UNSUBSCRIBE packet is " + id));
+      .unsubscribe("temp", id -> {
+        System.out.println("Id of just sent UNSUBSCRIBE packet is " + id);
+      });
   }
 
   /**

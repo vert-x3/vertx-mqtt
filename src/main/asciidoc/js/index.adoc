@@ -389,7 +389,18 @@ to connect to passing instance of `link:../dataobjects.html#MqttClientOptions[Mq
 This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#connect[connect]` and `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#disconnect[disconnect]` methods.
 [source,js]
 ----
-Code not translatable
+var MqttClient = require("vertx-mqtt-server-js/mqtt_client");
+var options = {
+  "host" : "iot.eclipse.org",
+  "port" : 1883
+};
+
+var client = MqttClient.create(vertx, options);
+
+client.connect(function (s, s_err) {
+  client.disconnect();
+});
+
 ----
 NOTE: default address of server provided by `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
 
@@ -417,7 +428,9 @@ If you would like to publish some message into topic then `link:../../jsdoc/modu
 Let's take a look at the example:
 [source,js]
 ----
-Code not translatable
+var Buffer = require("vertx-js/buffer");
+client.publish("temperature", Buffer.buffer("hello"), 'AT_LEAST_ONCE', false, false);
+
 ----
 In the example we send message to topic with name "temperature".
 
@@ -442,7 +455,12 @@ You could provide handler by calling `link:../../jsdoc/module-vertx-mqtt-server-
 This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
 [source,js]
 ----
-Code not translatable
+var Buffer = require("vertx-js/buffer");
+client.publishCompleteHandler(function (id) {
+  console.log("Id of just received PUBACK or PUBCOMP packet is " + id);
+}).publish("hello", Buffer.buffer("hello"), 'EXACTLY_ONCE', false, false).publish("hello", Buffer.buffer("hello"), 'AT_LEAST_ONCE', false, false).publish("hello", Buffer.buffer("hello"), 'AT_LEAST_ONCE', false, false);
+
+
 ----
 WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 
@@ -450,7 +468,17 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 +
 [source,js]
 ----
-Code not translatable
+client.subscribeCompleteHandler(function (mqttSubAckMessage) {
+  console.log("Id of just received SUBACK packet is " + mqttSubAckMessage.messageId());
+  Array.prototype.forEach.call(mqttSubAckMessage.grantedQoSLevels(), function(s) {
+    if (s === 128) {
+      console.log("Failure");
+    } else {
+      console.log("Success. Maximum QoS is " + s);
+    }
+  });
+}).subscribe("temp", 1).subscribe("temp2", 2);
+
 ----
 
 * unsubscribe completed
