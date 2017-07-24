@@ -370,3 +370,107 @@ vertx.deployVerticle("com.mycompany.MyVerticle", options)
 
 What's really happen is that even only MQTT server is deployed but as incoming connections arrive, Vert.x distributes
 them in a round-robin fashion to any of the connect handlers executed on different cores.
+
+= Vert.x MQTT client
+
+== Using Vert.x MQTT client
+== Getting started
+
+=== Connect/Disconnect
+The client gives you opportunity to connect to a server and disconnect from it.
+Also, you could specify things like the host and port of a server you would like
+to connect to passing instance of `link:../../apidocs/io/vertx/mqtt/MqttClientOptions.html[MqttClientOptions]` as a param through constructor.
+
+This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling `link:../../apidocs/io/vertx/mqtt/MqttClient.html#connect--[connect]` and `link:../../apidocs/io/vertx/mqtt/MqttClient.html#disconnect--[disconnect]` methods.
+[source,kotlin]
+----
+Code not translatable
+----
+NOTE: default address of server provided by `link:../../apidocs/io/vertx/mqtt/MqttClientOptions.html[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
+
+=== Subscribe to a topic
+
+Now, lest go deeper and take look at this example:
+
+[source,kotlin]
+----
+client.publishHandler({ s ->
+  println("There are new message in topic: ${s.topicName()}")
+  println("Content(as string) of the message: ${s.payload().toString()}")
+  println("QoS: ${s.qosLevel()}")
+}).subscribe("rpi2/temp", 2)
+
+----
+
+Here we have the example of usage of `link:../../apidocs/io/vertx/mqtt/MqttClient.html#subscribe-java.lang.String-int-[subscribe]` method. In order to receive messages from rpi2/temp topic we call `link:../../apidocs/io/vertx/mqtt/MqttClient.html#subscribe-java.lang.String-int-[subscribe]` method.
+Although, to handle received messages from server you need to provide a handler, which will be called each time you have a new messages in the topics you subscribe on.
+As this example shows, handler could be provided via `link:../../apidocs/io/vertx/mqtt/MqttClient.html#publishHandler-io.vertx.core.Handler-[publishHandler]` method.
+
+=== Publishing message to a topic
+
+If you would like to publish some message into topic then `link:../../apidocs/io/vertx/mqtt/MqttClient.html#publish-java.lang.String-io.vertx.core.buffer.Buffer-io.netty.handler.codec.mqtt.MqttQoS-boolean-boolean-[publish]` should be called.
+Let's take a look at the example:
+[source,kotlin]
+----
+Code not translatable
+----
+In the example we send message to topic with name "temperature".
+
+=== Keep connection with server alive
+In order to keep connection with server you should time to time send something to server otherwise server will close the connection.
+The right way to keep connection alive is a `link:../../apidocs/io/vertx/mqtt/MqttClient.html#ping--[ping]` method.
+
+IMPORTANT: by default you client keep connections with server automatically. That means that you don't need to call `link:../../apidocs/io/vertx/mqtt/MqttClient.html#ping--[ping]` in order to keep connections with server.
+The `link:../../apidocs/io/vertx/mqtt/MqttClient.html[MqttClient]` will do it for you.
+
+If you want to disable this feature then you should call `link:../../apidocs/io/vertx/mqtt/MqttClientOptions.html#setAutoKeepAlive-boolean-[setAutoKeepAlive]` with `false` as argument:
+[source,kotlin]
+----
+options.autoKeepAlive = false
+
+----
+
+=== Be notified when
+* publish is completed
++
+You could provide handler by calling `link:../../apidocs/io/vertx/mqtt/MqttClient.html#publishCompleteHandler-io.vertx.core.Handler-[publishCompleteHandler]`. The handler will be called each time publish is completed.
+This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
+[source,kotlin]
+----
+Code not translatable
+----
+WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
+
+* subscribe completed
++
+[source,kotlin]
+----
+Code not translatable
+----
+
+* unsubscribe completed
++
+[source,kotlin]
+----
+client.unsubscribeCompleteHandler({ id ->
+  println("Id of just received UNSUBACK packet is ${id}")
+}).subscribe("temp", 1).unsubscribe("temp")
+
+----
+* unsubscribe sent
++
+[source,kotlin]
+----
+Code not translatable
+----
+
+* PINGRESP received
++
+[source,kotlin]
+----
+client.pingResponseHandler({ s ->
+  //The handler will be called time to time by default
+  println("We have just received PINGRESP packet")
+})
+
+----

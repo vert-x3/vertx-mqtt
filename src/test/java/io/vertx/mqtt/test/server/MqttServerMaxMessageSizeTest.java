@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
+import io.netty.handler.codec.DecoderException;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttServerOptions;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -30,63 +32,43 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.nio.charset.Charset;
-
 /**
- * MQTT server testing about clients publish
+ * MQTT server testing about the maximum message size
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientPublishTest extends MqttBaseTest {
+public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttClientPublishTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerMaxMessageSizeTest.class);
 
   private Async async;
 
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Server";
+  private static final int MQTT_MAX_MESSAGE_SIZE = 50;
+  private static final int MQTT_BIG_MESSAGE_SIZE = MQTT_MAX_MESSAGE_SIZE + 1;
 
   @Before
   public void before(TestContext context) {
 
-    this.setUp(context);
-  }
+    MqttServerOptions options = new MqttServerOptions();
+    options.setMaxMessageSize(MQTT_MAX_MESSAGE_SIZE);
 
-  @After
-  public void after(TestContext context) {
-
-    this.tearDown(context);
+    this.setUp(context, options);
   }
 
   @Test
-  public void publishQos0(TestContext context) {
-
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0);
-  }
-
-  @Test
-  public void publishQos1(TestContext context) {
-
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
-  }
-
-  @Test
-  public void publishQos2(TestContext context) {
-
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
-  }
-
-  private void publish(TestContext context, String topic, String message, int qos) {
+  public void publishBigMessage(TestContext context) {
 
     this.async = context.async();
 
     try {
+
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      client.publish(topic, message.getBytes(), qos, false);
+      byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
-      this.async.await();
+      client.publish(MQTT_TOPIC, message, 0, false);
 
       context.assertTrue(true);
 
@@ -97,36 +79,22 @@ public class MqttClientPublishTest extends MqttBaseTest {
     }
   }
 
+  @After
+  public void after(TestContext context) {
+
+    this.tearDown(context);
+  }
+
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
 
-    endpoint.publishHandler(message -> {
+    endpoint.exceptionHandler(t -> {
+      log.error("Exception raised", t);
 
-      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
-
-      switch (message.qosLevel()) {
-
-        case AT_LEAST_ONCE:
-
-          endpoint.publishAcknowledge(message.messageId());
-          this.async.complete();
-          break;
-
-        case EXACTLY_ONCE:
-
-          endpoint.publishReceived(message.messageId());
-          break;
-
-        case AT_MOST_ONCE:
-
-          this.async.complete();
-          break;
+      if (t instanceof DecoderException) {
+        this.async.complete();
       }
 
-    }).publishReleaseHandler(messageId -> {
-
-      endpoint.publishComplete(messageId);
-      this.async.complete();
     });
 
     endpoint.accept(false);

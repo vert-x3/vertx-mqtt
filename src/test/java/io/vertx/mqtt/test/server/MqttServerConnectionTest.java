@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.logging.Logger;
@@ -38,9 +38,9 @@ import org.junit.runner.RunWith;
  * MQTT server testing about clients connection
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttConnectionTest extends MqttBaseTest {
+public class MqttServerConnectionTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttConnectionTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerConnectionTest.class);
 
   private MqttConnectReturnCode expectedReturnCode;
 

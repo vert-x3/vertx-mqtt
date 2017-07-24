@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -44,9 +44,9 @@ import java.security.KeyStore;
  * MQTT server testing about using SSL/TLS
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttSslTest extends MqttBaseTest {
+public class MqttServerSslTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttSslTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerSslTest.class);
 
   private Async async;
 

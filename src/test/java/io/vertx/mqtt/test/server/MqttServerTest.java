@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test;
+package io.vertx.mqtt.test.server;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import org.eclipse.paho.client.mqttv3.MqttClient;

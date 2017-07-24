@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.vertx.mqtt.test;
 
+package io.vertx.mqtt.test.server;
+
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
@@ -27,63 +29,69 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.eclipse.paho.client.mqttv3.MqttConnectOptions.MQTT_VERSION_3_1;
-
 /**
- * MQTT server testing about invalid client identifier with 3.1 spec
- * (less then 24 characters)
+ * MQTT server testing about clients disconnections
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientIdentifierTest extends MqttBaseTest {
+public class MqttServerDisconnectTest extends MqttServerBaseTest {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttServerDisconnectTest.class);
 
   @Before
   public void before(TestContext context) {
+
     this.setUp(context);
   }
 
   @After
   public void after(TestContext context) {
+
     this.tearDown(context);
   }
 
   @Test
-  public void testInvalidClientIdentifier(TestContext context) throws Exception {
-
-    MemoryPersistence persistence = new MemoryPersistence();
-    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "invalid-id-with-24-chars", persistence);
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setMqttVersion(MQTT_VERSION_3_1);
+  public void disconnect(TestContext context) {
 
     try {
-
-      client.connect(options);
-      context.assertTrue(false);
-
-    } catch (MqttException ignore) {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+      client.disconnect();
       context.assertTrue(true);
+    } catch (MqttException e) {
+      context.assertTrue(false);
+      e.printStackTrace();
     }
   }
 
   @Test
-  public void testValidClientIdentifier(TestContext context) throws Exception {
-
-    MemoryPersistence persistence = new MemoryPersistence();
-    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "id-madeof-23-characters", persistence);
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setMqttVersion(MQTT_VERSION_3_1);
+  public void bruteDisconnect(TestContext context) {
 
     try {
-
-      client.connect(options);
-      context.assertTrue(true);
-
-    } catch (MqttException ignore) {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+      client.close();
       context.assertTrue(false);
+    } catch (MqttException e) {
+      context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_CLIENT_CONNECTED);
+      e.printStackTrace();
     }
   }
 
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
+
+    endpoint.disconnectHandler(v -> {
+
+      log.info("MQTT remote client disconnected");
+    });
+
+    endpoint.closeHandler(v -> {
+
+      log.info("MQTT remote client connection closed");
+    });
+
     endpoint.accept(false);
   }
 }

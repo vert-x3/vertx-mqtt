@@ -375,3 +375,107 @@ vertx.deploy_verticle("com.mycompany.MyVerticle", options)
 
 What's really happen is that even only MQTT server is deployed but as incoming connections arrive, Vert.x distributes
 them in a round-robin fashion to any of the connect handlers executed on different cores.
+
+= Vert.x MQTT client
+
+== Using Vert.x MQTT client
+== Getting started
+
+=== Connect/Disconnect
+The client gives you opportunity to connect to a server and disconnect from it.
+Also, you could specify things like the host and port of a server you would like
+to connect to passing instance of `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` as a param through constructor.
+
+This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling `link:../../yardoc/VertxMqttServer/MqttClient.html#connect-instance_method[connect]` and `link:../../yardoc/VertxMqttServer/MqttClient.html#disconnect-instance_method[disconnect]` methods.
+[source,ruby]
+----
+Code not translatable
+----
+NOTE: default address of server provided by `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
+
+=== Subscribe to a topic
+
+Now, lest go deeper and take look at this example:
+
+[source,ruby]
+----
+client.publish_handler() { |s|
+  puts "There are new message in topic: #{s.topic_name()}"
+  puts "Content(as string) of the message: #{s.payload().to_string()}"
+  puts "QoS: #{s.qos_level()}"
+}.subscribe("rpi2/temp", 2)
+
+----
+
+Here we have the example of usage of `link:../../yardoc/VertxMqttServer/MqttClient.html#subscribe-instance_method[subscribe]` method. In order to receive messages from rpi2/temp topic we call `link:../../yardoc/VertxMqttServer/MqttClient.html#subscribe-instance_method[subscribe]` method.
+Although, to handle received messages from server you need to provide a handler, which will be called each time you have a new messages in the topics you subscribe on.
+As this example shows, handler could be provided via `link:../../yardoc/VertxMqttServer/MqttClient.html#publish_handler-instance_method[publishHandler]` method.
+
+=== Publishing message to a topic
+
+If you would like to publish some message into topic then `link:../../yardoc/VertxMqttServer/MqttClient.html#publish-instance_method[publish]` should be called.
+Let's take a look at the example:
+[source,ruby]
+----
+Code not translatable
+----
+In the example we send message to topic with name "temperature".
+
+=== Keep connection with server alive
+In order to keep connection with server you should time to time send something to server otherwise server will close the connection.
+The right way to keep connection alive is a `link:../../yardoc/VertxMqttServer/MqttClient.html#ping-instance_method[ping]` method.
+
+IMPORTANT: by default you client keep connections with server automatically. That means that you don't need to call `link:../../yardoc/VertxMqttServer/MqttClient.html#ping-instance_method[ping]` in order to keep connections with server.
+The `link:../../yardoc/VertxMqttServer/MqttClient.html[MqttClient]` will do it for you.
+
+If you want to disable this feature then you should call `link:../dataobjects.html#MqttClientOptions#set_auto_keep_alive-instance_method[autoKeepAlive]` with `false` as argument:
+[source,ruby]
+----
+options['autoKeepAlive'] = false
+
+----
+
+=== Be notified when
+* publish is completed
++
+You could provide handler by calling `link:../../yardoc/VertxMqttServer/MqttClient.html#publish_complete_handler-instance_method[publishCompleteHandler]`. The handler will be called each time publish is completed.
+This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
+[source,ruby]
+----
+Code not translatable
+----
+WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
+
+* subscribe completed
++
+[source,ruby]
+----
+Code not translatable
+----
+
+* unsubscribe completed
++
+[source,ruby]
+----
+client.unsubscribe_complete_handler() { |id|
+  puts "Id of just received UNSUBACK packet is #{id}"
+}.subscribe("temp", 1).unsubscribe("temp")
+
+----
+* unsubscribe sent
++
+[source,ruby]
+----
+Code not translatable
+----
+
+* PINGRESP received
++
+[source,ruby]
+----
+client.ping_response_handler() { |s|
+  #The handler will be called time to time by default
+  puts "We have just received PINGRESP packet"
+}
+
+----
