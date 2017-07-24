@@ -31,9 +31,9 @@ import org.junit.runner.RunWith;
  * Base class for MQTT server unit tests
  */
 @RunWith(VertxUnitRunner.class)
-public abstract class MqttBaseTest {
+public abstract class MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttBaseTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerBaseTest.class);
 
   protected static final String MQTT_SERVER_HOST = "localhost";
   protected static final int MQTT_SERVER_PORT = 1883;

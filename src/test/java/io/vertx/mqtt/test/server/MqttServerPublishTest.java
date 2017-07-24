@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 /**
  * MQTT server testing about server publish
  */
-public class MqttServerPublishTest extends MqttBaseTest {
+public class MqttServerPublishTest extends MqttServerBaseTest {
 
   private static final Logger log = LoggerFactory.getLogger(MqttServerPublishTest.class);
 

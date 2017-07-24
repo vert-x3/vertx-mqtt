@@ -49,7 +49,7 @@ import org.junit.runner.RunWith;
  * MQTT server testing about bad clients not MQTT exchange compliant
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttBadClientTest extends MqttBaseTest {
+public class MqttServerBadClientTest extends MqttServerBaseTest {
 
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "I'm a bad client";

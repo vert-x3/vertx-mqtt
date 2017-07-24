@@ -18,7 +18,6 @@ package io.vertx.mqtt.test.server;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -30,20 +29,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.nio.charset.Charset;
-
 /**
- * MQTT server testing about clients publish
+ * MQTT server testing about clients disconnections
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientPublishTest extends MqttBaseTest {
+public class MqttServerDisconnectTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttClientPublishTest.class);
-
-  private Async async;
-
-  private static final String MQTT_TOPIC = "/my_topic";
-  private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Server";
+  private static final Logger log = LoggerFactory.getLogger(MqttServerDisconnectTest.class);
 
   @Before
   public void before(TestContext context) {
@@ -58,41 +50,31 @@ public class MqttClientPublishTest extends MqttBaseTest {
   }
 
   @Test
-  public void publishQos0(TestContext context) {
-
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0);
-  }
-
-  @Test
-  public void publishQos1(TestContext context) {
-
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
-  }
-
-  @Test
-  public void publishQos2(TestContext context) {
-
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
-  }
-
-  private void publish(TestContext context, String topic, String message, int qos) {
-
-    this.async = context.async();
+  public void disconnect(TestContext context) {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-
-      client.publish(topic, message.getBytes(), qos, false);
-
-      this.async.await();
-
+      client.disconnect();
       context.assertTrue(true);
-
     } catch (MqttException e) {
-
       context.assertTrue(false);
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void bruteDisconnect(TestContext context) {
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+      client.close();
+      context.assertTrue(false);
+    } catch (MqttException e) {
+      context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_CLIENT_CONNECTED);
       e.printStackTrace();
     }
   }
@@ -100,33 +82,14 @@ public class MqttClientPublishTest extends MqttBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
 
-    endpoint.publishHandler(message -> {
+    endpoint.disconnectHandler(v -> {
 
-      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      log.info("MQTT remote client disconnected");
+    });
 
-      switch (message.qosLevel()) {
+    endpoint.closeHandler(v -> {
 
-        case AT_LEAST_ONCE:
-
-          endpoint.publishAcknowledge(message.messageId());
-          this.async.complete();
-          break;
-
-        case EXACTLY_ONCE:
-
-          endpoint.publishReceived(message.messageId());
-          break;
-
-        case AT_MOST_ONCE:
-
-          this.async.complete();
-          break;
-      }
-
-    }).publishReleaseHandler(messageId -> {
-
-      endpoint.publishComplete(messageId);
-      this.async.complete();
+      log.info("MQTT remote client connection closed");
     });
 
     endpoint.accept(false);

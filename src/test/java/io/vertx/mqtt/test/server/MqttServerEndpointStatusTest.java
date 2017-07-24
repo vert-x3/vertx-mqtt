@@ -18,6 +18,7 @@ package io.vertx.mqtt.test.server;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
@@ -30,12 +31,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * MQTT server testing about clients disconnections
+ * MQTT server testing about endpoint status
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttDisconnectTest extends MqttBaseTest {
+public class MqttServerEndpointStatusTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttDisconnectTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerEndpointStatusTest.class);
+
+  private MqttEndpoint endpoint;
 
   @Before
   public void before(TestContext context) {
@@ -50,14 +53,13 @@ public class MqttDisconnectTest extends MqttBaseTest {
   }
 
   @Test
-  public void disconnect(TestContext context) {
+  public void connected(TestContext context) {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      client.disconnect();
-      context.assertTrue(true);
+      context.assertTrue(client.isConnected() && this.endpoint.isConnected());
     } catch (MqttException e) {
       context.assertTrue(false);
       e.printStackTrace();
@@ -65,16 +67,58 @@ public class MqttDisconnectTest extends MqttBaseTest {
   }
 
   @Test
-  public void bruteDisconnect(TestContext context) {
+  public void disconnectedByClient(TestContext context) {
+
+    Async async = context.async();
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
-      client.close();
-      context.assertTrue(false);
+      client.disconnect();
+
+      // give more time to the MqttClient to update its connection state
+      this.vertx.setTimer(1000, t1 -> {
+        async.complete();
+      });
+
+      async.await();
+
+      context.assertTrue(!client.isConnected() && !this.endpoint.isConnected());
+
     } catch (MqttException e) {
-      context.assertTrue(e.getReasonCode() == MqttException.REASON_CODE_CLIENT_CONNECTED);
+      context.assertTrue(false);
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void disconnectedByServer(TestContext context) {
+
+    Async async = context.async();
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect();
+
+      // the local endpoint closes connection after a few seconds
+      this.vertx.setTimer(1000, t -> {
+
+        this.endpoint.close();
+
+        // give more time to the MqttClient to update its connection state
+        this.vertx.setTimer(1000, t1 -> {
+          async.complete();
+        });
+      });
+
+      async.await();
+
+      context.assertTrue(!client.isConnected() && !this.endpoint.isConnected());
+
+    } catch (MqttException e) {
+      context.assertTrue(false);
       e.printStackTrace();
     }
   }
@@ -82,14 +126,12 @@ public class MqttDisconnectTest extends MqttBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
 
+    this.endpoint = endpoint;
+
     endpoint.disconnectHandler(v -> {
 
       log.info("MQTT remote client disconnected");
-    });
 
-    endpoint.closeHandler(v -> {
-
-      log.info("MQTT remote client connection closed");
     });
 
     endpoint.accept(false);

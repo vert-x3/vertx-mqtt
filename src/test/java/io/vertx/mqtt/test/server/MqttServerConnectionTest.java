@@ -38,9 +38,9 @@ import org.junit.runner.RunWith;
  * MQTT server testing about clients connection
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttConnectionTest extends MqttBaseTest {
+public class MqttServerConnectionTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttConnectionTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerConnectionTest.class);
 
   private MqttConnectReturnCode expectedReturnCode;
 

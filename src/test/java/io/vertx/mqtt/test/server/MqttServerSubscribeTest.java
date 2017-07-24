@@ -35,17 +35,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MQTT server testing about clients unsubscription
+ * MQTT server testing about clients subscription
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttUnsubscribeTest extends MqttBaseTest {
+public class MqttServerSubscribeTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttUnsubscribeTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerSubscribeTest.class);
 
-  private Async subscribeAsync;
-  private Async unsubscribeAsync;
+  private Async async;
 
   private static final String MQTT_TOPIC = "/my_topic";
+  private static final String MQTT_TOPIC_FAILURE = "/my_topic/failure";
 
   @Before
   public void before(TestContext context) {
@@ -60,31 +60,50 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
   }
 
   @Test
-  public void unsubscribe(TestContext context) {
+  public void subscribeQos0(TestContext context) {
 
-    this.subscribeAsync = context.async();
-    this.unsubscribeAsync = context.async();
+    this.subscribe(context, MQTT_TOPIC, 0);
+  }
+
+  @Test
+  public void subscribeQos1(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC, 1);
+  }
+
+  @Test
+  public void subscribeQos2(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC, 2);
+  }
+
+  @Test
+  public void subscribeFailure(TestContext context) {
+
+    this.subscribe(context, MQTT_TOPIC_FAILURE, 0);
+  }
+
+  private void subscribe(TestContext context, String topic, int expectedQos) {
+
+    this.async = context.async();
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      String[] topics = new String[]{MQTT_TOPIC};
-      int[] qos = new int[]{0};
+      String[] topics = new String[]{topic};
+      int[] qos = new int[]{expectedQos};
+      // after calling subscribe, the qos is replaced with granted QoS that should be the same
       client.subscribe(topics, qos);
 
-      this.subscribeAsync.await();
+      this.async.await();
 
-      client.unsubscribe(topics);
-
-      this.unsubscribeAsync.await();
-
-      context.assertTrue(true);
+      context.assertTrue(qos[0] == expectedQos);
 
     } catch (MqttException e) {
 
-      context.assertTrue(false);
+      context.assertTrue(!topic.equals(MQTT_TOPIC_FAILURE) ? false : true);
       e.printStackTrace();
     }
   }
@@ -95,16 +114,16 @@ public class MqttUnsubscribeTest extends MqttBaseTest {
     endpoint.subscribeHandler(subscribe -> {
 
       List<MqttQoS> qos = new ArrayList<>();
-      qos.add(subscribe.topicSubscriptions().get(0).qualityOfService());
+
+      MqttQoS grantedQos =
+        subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
+          MqttQoS.FAILURE :
+          subscribe.topicSubscriptions().get(0).qualityOfService();
+
+      qos.add(grantedQos);
       endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
-      this.subscribeAsync.complete();
-
-    }).unsubscribeHandler(unsubscribe -> {
-
-      endpoint.unsubscribeAcknowledge(unsubscribe.messageId());
-
-      this.unsubscribeAsync.complete();
+      this.async.complete();
     });
 
     endpoint.accept(false);

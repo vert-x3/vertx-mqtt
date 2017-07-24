@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.test.server;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
@@ -31,21 +30,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.Charset;
 
 /**
- * MQTT server testing about clients subscription
+ * MQTT server testing about clients publish
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttSubscribeTest extends MqttBaseTest {
+public class MqttServerClientPublishTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttSubscribeTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerClientPublishTest.class);
 
   private Async async;
 
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final String MQTT_TOPIC_FAILURE = "/my_topic/failure";
+  private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Server";
 
   @Before
   public void before(TestContext context) {
@@ -60,30 +58,24 @@ public class MqttSubscribeTest extends MqttBaseTest {
   }
 
   @Test
-  public void subscribeQos0(TestContext context) {
+  public void publishQos0(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC, 0);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0);
   }
 
   @Test
-  public void subscribeQos1(TestContext context) {
+  public void publishQos1(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC, 1);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
   }
 
   @Test
-  public void subscribeQos2(TestContext context) {
+  public void publishQos2(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC, 2);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
   }
 
-  @Test
-  public void subscribeFailure(TestContext context) {
-
-    this.subscribe(context, MQTT_TOPIC_FAILURE, 0);
-  }
-
-  private void subscribe(TestContext context, String topic, int expectedQos) {
+  private void publish(TestContext context, String topic, String message, int qos) {
 
     this.async = context.async();
 
@@ -92,18 +84,15 @@ public class MqttSubscribeTest extends MqttBaseTest {
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      String[] topics = new String[]{topic};
-      int[] qos = new int[]{expectedQos};
-      // after calling subscribe, the qos is replaced with granted QoS that should be the same
-      client.subscribe(topics, qos);
+      client.publish(topic, message.getBytes(), qos, false);
 
       this.async.await();
 
-      context.assertTrue(qos[0] == expectedQos);
+      context.assertTrue(true);
 
     } catch (MqttException e) {
 
-      context.assertTrue(!topic.equals(MQTT_TOPIC_FAILURE) ? false : true);
+      context.assertTrue(false);
       e.printStackTrace();
     }
   }
@@ -111,18 +100,32 @@ public class MqttSubscribeTest extends MqttBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint) {
 
-    endpoint.subscribeHandler(subscribe -> {
+    endpoint.publishHandler(message -> {
 
-      List<MqttQoS> qos = new ArrayList<>();
+      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
 
-      MqttQoS grantedQos =
-        subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
-          MqttQoS.FAILURE :
-          subscribe.topicSubscriptions().get(0).qualityOfService();
+      switch (message.qosLevel()) {
 
-      qos.add(grantedQos);
-      endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
+        case AT_LEAST_ONCE:
 
+          endpoint.publishAcknowledge(message.messageId());
+          this.async.complete();
+          break;
+
+        case EXACTLY_ONCE:
+
+          endpoint.publishReceived(message.messageId());
+          break;
+
+        case AT_MOST_ONCE:
+
+          this.async.complete();
+          break;
+      }
+
+    }).publishReleaseHandler(messageId -> {
+
+      endpoint.publishComplete(messageId);
       this.async.complete();
     });
 

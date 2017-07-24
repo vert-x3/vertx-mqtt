@@ -34,7 +34,7 @@ import static org.eclipse.paho.client.mqttv3.MqttConnectOptions.MQTT_VERSION_3_1
  * (less then 24 characters)
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientIdentifierTest extends MqttBaseTest {
+public class MqttServerClientIdentifierTest extends MqttServerBaseTest {
 
   @Before
   public void before(TestContext context) {

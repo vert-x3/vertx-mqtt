@@ -38,9 +38,9 @@ import org.junit.runner.RunWith;
  * MQTT server testing about network issues
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttNetworkIssueTest extends MqttBaseTest {
+public class MqttServerNetworkIssueTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttNetworkIssueTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttServerNetworkIssueTest.class);
 
   private Proxy proxy;
 
