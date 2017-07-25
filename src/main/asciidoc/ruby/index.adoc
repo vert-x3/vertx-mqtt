@@ -380,7 +380,7 @@ them in a round-robin fashion to any of the connect handlers executed on differe
 
 = Vert.x MQTT client
 
-This component provides an [MQTT](http://mqtt.org/) client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
+This component provides an link:http://mqtt.org/[MQTT] client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
 for connecting/disconnecting to a broker, publishing messages (with all three different levels of QoS) and subscribing to topics.
 
 WARNING: this module has the tech preview status, this means the API can change between versions.
