@@ -16,7 +16,7 @@
 
 /**
  * = Vert.x MQTT
- * 
+ *
  * == Using Vert.x MQTT
  *
  * This component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
@@ -231,6 +231,11 @@
  * them in a round-robin fashion to any of the connect handlers executed on different cores.
  *
  * = Vert.x MQTT client
+ *
+ * This component provides an [MQTT](http://mqtt.org/) client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
+ * for connecting/disconnecting to a broker, publishing messages (with all three different levels of QoS) and subscribing to topics.
+ *
+ * WARNING: this module has the tech preview status, this means the API can change between versions.
  *
  * == Getting started
  *

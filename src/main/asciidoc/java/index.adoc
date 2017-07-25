@@ -1,3 +1,28 @@
+= Vert.x MQTT
+
+== Using Vert.x MQTT
+
+This component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
+of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-mqtt</artifactId>
+    <version>3.5.0-SNAPSHOT</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile io.vertx:vertx-mqtt:3.5.0-SNAPSHOT
+----
+
 = Vert.x MQTT server
 
 This component provides a server which is able to handle connections, communication and messages exchange with remote
@@ -9,29 +34,6 @@ clients and exposes some features in order to send messages to them.
 It's not a fully featured MQTT broker but can be used for building something like that or for protocol translation.
 
 WARNING: this module has the tech preview status, this means the API can change between versions.
-
-== Using Vert.x MQTT server
-
-This component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
-of your build descriptor:
-
-* Maven (in your `pom.xml`):
-
-[source,xml,subs="+attributes"]
-----
-<dependency>
-    <groupId>io.vertx</groupId>
-    <artifactId>vertx-mqtt-server</artifactId>
-    <version>3.5.0-SNAPSHOT</version>
-</dependency>
-----
-
-* Gradle (in your `build.gradle` file):
-
-[source,groovy,subs="+attributes"]
-----
-compile io.vertx:vertx-mqtt-server:3.5.0-SNAPSHOT
-----
 
 == Getting Started
 
@@ -351,7 +353,11 @@ them in a round-robin fashion to any of the connect handlers executed on differe
 
 = Vert.x MQTT client
 
-== Using Vert.x MQTT client
+This component provides an [MQTT](http://mqtt.org/) client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
+for connecting/disconnecting to a broker, publishing messages (with all three different levels of QoS) and subscribing to topics.
+
+WARNING: this module has the tech preview status, this means the API can change between versions.
+
 == Getting started
 
 === Connect/Disconnect
