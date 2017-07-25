@@ -15,17 +15,9 @@
  */
 
 /**
- * = Vert.x MQTT server
- *
- * This component provides a server which is able to handle connections, communication and messages exchange with remote
- * link:http://mqtt.org/[MQTT] clients. Its API provides a bunch of events related to raw protocol messages received by
- * clients and exposes some features in order to send messages to them.
- *
- * It's not a fully featured MQTT broker but can be used for building something like that or for protocol translation.
- *
- * WARNING: this module has the tech preview status, this means the API can change between versions.
- *
- * == Using Vert.x MQTT server
+ * = Vert.x MQTT
+ * 
+ * == Using Vert.x MQTT
  *
  * This component had officially released in the Vert.x stack, just following dependency to the _dependencies_ section
  * of your build descriptor:
@@ -36,7 +28,7 @@
  * ----
  * <dependency>
  *     <groupId>io.vertx</groupId>
- *     <artifactId>vertx-mqtt-server</artifactId>
+ *     <artifactId>vertx-mqtt</artifactId>
  *     <version>${maven.version}</version>
  * </dependency>
  * ----
@@ -45,8 +37,18 @@
  *
  * [source,groovy,subs="+attributes"]
  * ----
- * compile io.vertx:vertx-mqtt-server:${maven.version}
+ * compile io.vertx:vertx-mqtt:${maven.version}
  * ----
+ *
+ * = Vert.x MQTT server
+ *
+ * This component provides a server which is able to handle connections, communication and messages exchange with remote
+ * link:http://mqtt.org/[MQTT] clients. Its API provides a bunch of events related to raw protocol messages received by
+ * clients and exposes some features in order to send messages to them.
+ *
+ * It's not a fully featured MQTT broker but can be used for building something like that or for protocol translation.
+ *
+ * WARNING: this module has the tech preview status, this means the API can change between versions.
  *
  * == Getting Started
  *
@@ -230,7 +232,6 @@
  *
  * = Vert.x MQTT client
  *
- * == Using Vert.x MQTT client
  * == Getting started
  *
  * === Connect/Disconnect
