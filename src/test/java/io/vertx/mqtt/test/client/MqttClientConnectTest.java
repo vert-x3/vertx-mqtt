@@ -54,4 +54,25 @@ public class MqttClientConnectTest {
 
     async.await();
   }
+
+  @Test
+  public void closeHandler(TestContext context) throws InterruptedException {
+    Async async = context.async();
+    MqttClient client = MqttClient.create(Vertx.vertx(),
+      new MqttClientOptions()
+        .setHost(TestUtil.BROKER_ADDRESS)
+        .setKeepAliveTimeSeconds(5)
+        .setAutoKeepAlive(false)
+    );
+
+    client.closeHandler((v) -> {
+      async.countDown();
+    });
+
+    client.connect(c -> {
+      assertTrue(c.succeeded());
+    });
+
+    async.await();
+  }
 }

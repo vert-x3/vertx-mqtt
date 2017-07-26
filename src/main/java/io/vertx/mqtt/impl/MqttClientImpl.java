@@ -95,6 +95,8 @@ public class MqttClientImpl implements MqttClient {
   Handler<AsyncResult<MqttConnAckMessage>> connectHandler;
   // handler to call when a pingresp is received
   Handler<Void> pingrespHandler;
+  //handler to call when the remote MQTT server closes the connection
+  Handler<Void> closeHandler;
 
   // counter for the message identifier
   private int messageIdCounter;
@@ -152,6 +154,7 @@ public class MqttClientImpl implements MqttClient {
         this.connection = new MqttClientConnection(this, soi, options);
 
         soi.messageHandler(msg -> connection.handleMessage(msg));
+        soi.closeHandler(v -> handleClosed());
 
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
           false,
@@ -423,6 +426,15 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
+   * See {@link MqttClient#closeHandler(Handler)} for more details
+   */
+  @Override
+  public MqttClient closeHandler(Handler<Void> closeHandler) {
+    this.closeHandler = closeHandler;
+    return this;
+  }
+
+  /**
    * See {@link MqttClient#ping()} for more details
    */
   @Override
@@ -560,6 +572,17 @@ public class MqttClientImpl implements MqttClient {
       log.debug(String.format("Sending packet %s", mqttMessage));
       this.connection.writeMessage(mqttMessage);
       return this;
+    }
+  }
+
+  /**
+   * Used for calling the close handler when the remote MQTT server closes the connection
+   */
+  void handleClosed() {
+    synchronized (this.connection) {
+      if (this.closeHandler != null) {
+        this.closeHandler.handle(null);
+      }
     }
   }
 

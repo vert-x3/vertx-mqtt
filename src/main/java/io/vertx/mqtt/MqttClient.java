@@ -225,6 +225,15 @@ public interface MqttClient {
   MqttClient pingResponseHandler(Handler<Void> pingResponseHandler);
 
   /**
+   * Set a handler that will be called when the connection with server is closed
+   *
+   * @param closeHandler handler to call
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient closeHandler(Handler<Void> closeHandler);
+
+  /**
    * This method is needed by the client in order to avoid server closes the
    * connection due to the keep alive timeout if client has no messages to send
    *
