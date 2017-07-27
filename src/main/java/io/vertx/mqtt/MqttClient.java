@@ -225,6 +225,18 @@ public interface MqttClient {
   MqttClient pingResponseHandler(Handler<Void> pingResponseHandler);
 
   /**
+   * Set an exception handler for the client, that will be called when an error happens
+   * in internal netty structures.
+   *
+   * {@code io.netty.handler.codec.DecoderException} can be one of the cause
+   *
+   * @param handler the exception handler
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient exceptionHandler(Handler<Throwable> handler);
+
+  /**
    * Set a handler that will be called when the connection with server is closed
    *
    * @param closeHandler handler to call
