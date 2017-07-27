@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -29,6 +30,7 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
+import javax.net.ssl.SSLSession;
 import java.util.List;
 
 /**
@@ -58,6 +60,14 @@ public interface MqttEndpoint {
    * @return true if this {@link io.vertx.mqtt.MqttEndpoint} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+
+  /**
+   * @return SSLSession associated with the underlying socket. Returns null if connection is
+   *         not SSL.
+   * @see javax.net.ssl.SSLSession
+   */
+  @GenIgnore
+  SSLSession sslSession();
 
   /**
    * @return the client identifier as provided by the remote MQTT client
