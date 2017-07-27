@@ -55,6 +55,11 @@ public interface MqttEndpoint {
   SocketAddress localAddress();
 
   /**
+   * @return true if this {@link io.vertx.mqtt.MqttEndpoint} is encrypted via SSL/TLS.
+   */
+  boolean isSsl();
+
+  /**
    * @return the client identifier as provided by the remote MQTT client
    */
   @CacheReturn
