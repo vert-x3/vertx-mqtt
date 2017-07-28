@@ -545,7 +545,13 @@ public class MqttClientImpl implements MqttClient {
 
     // add into pipeline netty's (en/de)coder
     pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
-    pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
+
+    if (this.options.getMaxMessageSize() > 0) {
+      pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
+    } else {
+      // max message size not set, so the default from Netty MQTT codec is used
+      pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
+    }
 
     if (this.options.isAutoKeepAlive() &&
       this.options.getKeepAliveTimeSeconds() != 0) {
