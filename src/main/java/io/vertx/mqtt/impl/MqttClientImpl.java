@@ -95,6 +95,8 @@ public class MqttClientImpl implements MqttClient {
   Handler<AsyncResult<MqttConnAckMessage>> connectHandler;
   // handler to call when a pingresp is received
   Handler<Void> pingrespHandler;
+  // handler to call when a problem at protocol level happens
+  Handler<Throwable> exceptionHandler;
   //handler to call when the remote MQTT server closes the connection
   Handler<Void> closeHandler;
 
@@ -155,6 +157,9 @@ public class MqttClientImpl implements MqttClient {
 
         soi.messageHandler(msg -> connection.handleMessage(msg));
         soi.closeHandler(v -> handleClosed());
+
+        // an exception at connection level
+        soi.exceptionHandler(this::handleException);
 
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
           false,
@@ -422,6 +427,15 @@ public class MqttClientImpl implements MqttClient {
   public MqttClient pingResponseHandler(Handler<Void> pingResponseHandler) {
 
     this.pingrespHandler = pingResponseHandler;
+    return this;
+  }
+
+  /**
+   * See {@link MqttClient#exceptionHandler(Handler)} for more details
+   */
+  @Override
+  public MqttClient exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
     return this;
   }
 
@@ -732,6 +746,20 @@ public class MqttClientImpl implements MqttClient {
           log.error(exception.getMessage());
           this.connectHandler.handle(Future.failedFuture(exception));
         }
+      }
+    }
+  }
+
+  /**
+   * Used for calling the exception handler when an error at connection level
+   *
+   * @param t exception raised
+   */
+  void handleException(Throwable t) {
+
+    synchronized (this.connection) {
+      if (this.exceptionHandler != null) {
+        this.exceptionHandler.handle(t);
       }
     }
   }
