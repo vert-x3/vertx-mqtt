@@ -37,6 +37,10 @@ Set if the MQTT client must handle PINGREQ automatically
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[localAddress]]`localAddress`|`String`|-
 |[[logActivity]]`logActivity`|`Boolean`|-
+|[[maxMessageSize]]`maxMessageSize`|`Number (int)`|
++++
+Set max MQTT message size
++++
 |[[metricsName]]`metricsName`|`String`|-
 |[[openSslEngineOptions]]`openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
 |[[password]]`password`|`String`|-

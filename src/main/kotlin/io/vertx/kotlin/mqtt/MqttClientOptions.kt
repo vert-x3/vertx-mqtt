@@ -31,6 +31,7 @@ import io.vertx.core.net.ProxyOptions
  * @param keyStoreOptions 
  * @param localAddress 
  * @param logActivity 
+ * @param maxMessageSize  Set max MQTT message size
  * @param metricsName 
  * @param openSslEngineOptions 
  * @param password 
@@ -82,6 +83,7 @@ fun MqttClientOptions(
   keyStoreOptions: io.vertx.core.net.JksOptions? = null,
   localAddress: String? = null,
   logActivity: Boolean? = null,
+  maxMessageSize: Int? = null,
   metricsName: String? = null,
   openSslEngineOptions: io.vertx.core.net.OpenSSLEngineOptions? = null,
   password: String? = null,
@@ -170,6 +172,9 @@ fun MqttClientOptions(
   }
   if (logActivity != null) {
     this.setLogActivity(logActivity)
+  }
+  if (maxMessageSize != null) {
+    this.setMaxMessageSize(maxMessageSize)
   }
   if (metricsName != null) {
     this.setMetricsName(metricsName)
