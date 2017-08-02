@@ -27,8 +27,12 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.mqtt.MqttConnectPayload;
+import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
@@ -39,6 +43,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.mqtt.MqttClientOptions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -51,6 +56,8 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class MqttServerBadClientTest extends MqttServerBaseTest {
 
+  private static final String PROTOCOL_NAME = "MQTT";
+  private static final int PROTOCOL_VERSION = 4;
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "I'm a bad client";
 
@@ -62,6 +69,52 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
   @After
   public void after(TestContext context) {
     this.tearDown(context);
+  }
+
+  @Test
+  public void multipleConnect(TestContext context) throws InterruptedException {
+
+    // There are should not be any exceptions during the test
+    mqttServer.exceptionHandler(t -> {
+      context.assertTrue(false);
+    });
+
+    EventLoopGroup group = new NioEventLoopGroup();
+    try {
+
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap
+        .group(group)
+        .channel(NioSocketChannel.class)
+        .handler(new ChannelInitializer<SocketChannel>() {
+          @Override
+          protected void initChannel(SocketChannel ch) throws Exception {
+
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
+          }
+        });
+
+      // Start the client.
+      ChannelFuture f = bootstrap.connect(MQTT_SERVER_HOST, MQTT_SERVER_PORT).sync();
+      long tick = System.currentTimeMillis();
+
+      MqttClientOptions options = new MqttClientOptions();
+      f.channel().writeAndFlush(createConnectPacket(options)).sync();
+      f.channel().writeAndFlush(createConnectPacket(options)).sync();
+
+      // Wait until the connection is closed.
+      f.channel().closeFuture().sync();
+      long tock = System.currentTimeMillis();
+
+      // Default timeout is 90 seconds
+      // If connection was closed earlier that means that it was a server
+      context.assertTrue((tock - tick) / 1000 < 90);
+
+    } finally {
+      // Shut down the event loop to terminate all threads.
+      group.shutdownGracefully();
+    }
   }
 
   @Test
@@ -139,5 +192,35 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
     payload.writeBytes(MQTT_MESSAGE.getBytes(CharsetUtil.UTF_8));
 
     return new MqttPublishMessage(mqttFixedHeader, mqttPublishVariableHeader, payload);
+  }
+
+  private MqttMessage createConnectPacket(MqttClientOptions options) {
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
+      false,
+      MqttQoS.AT_MOST_ONCE,
+      false,
+      0);
+
+    MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
+      PROTOCOL_NAME,
+      PROTOCOL_VERSION,
+      options.hasUsername(),
+      options.hasPassword(),
+      options.isWillRetain(),
+      options.getWillQoS(),
+      options.isWillFlag(),
+      options.isCleanSession(),
+      options.getKeepAliveTimeSeconds()
+    );
+
+    MqttConnectPayload payload = new MqttConnectPayload(
+      options.getClientId() == null ? "" : options.getClientId(),
+      options.getWillTopic(),
+      options.getWillMessage(),
+      options.hasUsername() ? options.getUsername() : null,
+      options.hasPassword() ? options.getPassword() : null
+    );
+
+    return MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
   }
 }

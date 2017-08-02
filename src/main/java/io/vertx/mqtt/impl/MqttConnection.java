@@ -181,6 +181,13 @@ public class MqttConnection {
    * Used for calling the endpoint handler when a connection is established with a remote MQTT client
    */
   private void handleConnect(MqttConnectMessage msg) {
+    
+    // if client sent one more CONNECT packet
+    if (endpoint != null) {
+      //we should treat it as a protocol violation and disconnect the client
+      endpoint.close();
+      return;
+    }
 
     // retrieve will information from CONNECT message
     MqttWillImpl will =
