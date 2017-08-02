@@ -153,7 +153,6 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
   }
 
   @Test
-  @Ignore
   public void unknownMessageType(TestContext context) {
 
     NetClient client = this.vertx.createNetClient();
