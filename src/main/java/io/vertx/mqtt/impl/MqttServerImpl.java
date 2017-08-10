@@ -83,7 +83,7 @@ public class MqttServerImpl implements MqttServer {
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
 
       initChannel(pipeline);
-      MqttConnection conn = new MqttConnection(soi, options);
+      MqttServerConnection conn = new MqttServerConnection(soi, options);
 
       soi.messageHandler(msg -> {
         conn.handleMessage(msg);

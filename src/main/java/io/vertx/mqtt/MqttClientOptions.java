@@ -17,9 +17,16 @@
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TrustOptions;
 
 /**
  * Represents options used by the MQTT client
@@ -272,6 +279,83 @@ public class MqttClientOptions extends NetClientOptions {
     return this;
   }
 
+  @Override
+  public MqttClientOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
+    return this;
+  }
+
+  @Override
+  public MqttClientOptions setTrustAll(boolean trustAll) {
+    super.setTrustAll(trustAll);
+    return this;
+  }
+
+  @Override
+  public MqttClientOptions setKeyCertOptions(KeyCertOptions options) {
+     super.setKeyCertOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions setKeyStoreOptions(JksOptions options) {
+     super.setKeyStoreOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions setPfxKeyCertOptions(PfxOptions options) {
+     super.setPfxKeyCertOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+     super.setPemKeyCertOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions setTrustOptions(TrustOptions options) {
+     super.setTrustOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions setPemTrustOptions(PemTrustOptions options) {
+     super.setPemTrustOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions setPfxTrustOptions(PfxOptions options) {
+     super.setPfxTrustOptions(options);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions addEnabledCipherSuite(String suite) {
+     super.addEnabledCipherSuite(suite);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions addEnabledSecureTransportProtocol(String protocol) {
+     super.addEnabledSecureTransportProtocol(protocol);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions addCrlPath(String crlPath) throws NullPointerException {
+     super.addCrlPath(crlPath);
+     return this;
+  }
+
+  @Override
+  public MqttClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+     super.addCrlValue(crlValue);
+     return this;
+  }
 
   @Override
   public String toString() {

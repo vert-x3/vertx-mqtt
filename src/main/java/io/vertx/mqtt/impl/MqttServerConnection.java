@@ -40,7 +40,7 @@ import java.util.UUID;
 /**
  * Represents an MQTT connection with a remote client
  */
-public class MqttConnection {
+public class MqttServerConnection {
 
   // handler to call when a remote MQTT client connects and establishes a connection
   private Handler<MqttEndpoint> endpointHandler;
@@ -60,7 +60,7 @@ public class MqttConnection {
     this.exceptionHandler = rejectHandler;
   }
 
-  public MqttConnection(NetSocketInternal so, MqttServerOptions options) {
+  public MqttServerConnection(NetSocketInternal so, MqttServerOptions options) {
     this.so = so;
     this.chctx = so.channelHandlerContext();
     this.options = options;
