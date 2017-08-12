@@ -1,0 +1,45 @@
+[ ca ]
+default_ca      = CA_server
+
+[ CA_server ]
+new_certs_dir    = server-root-ca
+database         = server-root-ca/index.txt
+default_md       = sha256
+policy           = policy_match
+serial           = server-root-ca/serial
+default_days     = 36500
+crlnumber        = server-root-ca/crlnumber
+default_crl_days = 36500
+
+[ CA_client_trusted ]
+new_certs_dir    = client-trusted-root-ca
+database         = client-trusted-root-ca/index.txt
+default_md       = sha256
+policy           = policy_match
+serial           = client-trusted-root-ca/serial
+default_days     = 36500
+crlnumber        = client-trusted-root-ca/crlnumber
+default_crl_days = 36500
+
+[ CA_client_untrusted ]
+new_certs_dir    = client-untrusted-root-ca
+database         = client-untrusted-root-ca/index.txt
+default_md       = sha256
+policy           = policy_match
+serial           = client-untrusted-root-ca/serial
+default_days     = 36500
+crlnumber        = client-untrusted-root-ca/crlnumber
+default_crl_days = 36500
+
+[ policy_match ]
+countryName             = optional
+stateOrProvinceName     = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = optional
+emailAddress            = optional
+
+[ req_ext ]
+subjectAltName    = @alt_names
+[ alt_names ]
+DNS.1    = localhost
