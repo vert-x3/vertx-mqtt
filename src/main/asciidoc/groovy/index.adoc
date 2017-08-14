@@ -12,7 +12,7 @@ of your build descriptor:
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-mqtt</artifactId>
-    <version>3.5.0.Beta1</version>
+    <version>3.5.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -20,7 +20,7 @@ of your build descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt:3.5.0.Beta1
+compile io.vertx:vertx-mqtt:3.5.0-SNAPSHOT
 ----
 
 = Vert.x MQTT server
@@ -451,11 +451,11 @@ options.autoKeepAlive = false
 === Be notified when
 * publish is completed
 +
-You could provide handler by calling `link:../../apidocs/io/vertx/mqtt/MqttClient.html#publishCompleteHandler-io.vertx.core.Handler-[publishCompleteHandler]`. The handler will be called each time publish is completed.
+You could provide handler by calling `link:../../apidocs/io/vertx/mqtt/MqttClient.html#publishCompletionHandler-io.vertx.core.Handler-[publishCompletionHandler]`. The handler will be called each time publish is completed.
 This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
 [source,groovy]
 ----
-client.publishCompleteHandler({ id ->
+client.publishCompletionHandler({ id ->
   println("Id of just received PUBACK or PUBCOMP packet is ${id}")
 }).publish("hello", Buffer.buffer("hello"), MqttQoS.EXACTLY_ONCE, false, false).publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false).publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false)
 
@@ -467,7 +467,7 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 +
 [source,groovy]
 ----
-client.subscribeCompleteHandler({ mqttSubAckMessage ->
+client.subscribeCompletionHandler({ mqttSubAckMessage ->
   println("Id of just received SUBACK packet is ${mqttSubAckMessage.messageId()}")
   mqttSubAckMessage.grantedQoSLevels().each { s ->
     if (s == 128) {
@@ -484,7 +484,7 @@ client.subscribeCompleteHandler({ mqttSubAckMessage ->
 +
 [source,groovy]
 ----
-client.unsubscribeCompleteHandler({ id ->
+client.unsubscribeCompletionHandler({ id ->
   println("Id of just received UNSUBACK packet is ${id}")
 }).subscribe("temp", 1).unsubscribe("temp")
 

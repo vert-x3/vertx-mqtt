@@ -121,11 +121,11 @@ public interface MqttClient {
   /**
    * Sets handler which will be called each time publish is completed
    *
-   * @param publishCompleteHandler handler called with the packetId
+   * @param publishCompletionHandler handler called with the packetId
    * @return current MQTT client instance
    */
   @Fluent
-  MqttClient publishCompleteHandler(Handler<Integer> publishCompleteHandler);
+  MqttClient publishCompletionHandler(Handler<Integer> publishCompletionHandler);
 
   /**
    * Sets handler which will be called each time server publish something to client
@@ -139,11 +139,11 @@ public interface MqttClient {
   /**
    * Sets handler which will be called after SUBACK packet receiving
    *
-   * @param subscribeCompleteHandler handler to call. List inside is a granted QoS array
+   * @param subscribeCompletionHandler handler to call. List inside is a granted QoS array
    * @return current MQTT client instance
    */
   @Fluent
-  MqttClient subscribeCompleteHandler(Handler<MqttSubAckMessage> subscribeCompleteHandler);
+  MqttClient subscribeCompletionHandler(Handler<MqttSubAckMessage> subscribeCompletionHandler);
 
   /**
    * Subscribes to the topic with a specified QoS level
@@ -190,11 +190,11 @@ public interface MqttClient {
   /**
    * Sets handler which will be called after UNSUBACK packet receiving
    *
-   * @param unsubscribeCompleteHandler handler to call with the packetid
+   * @param unsubscribeCompletionHandler handler to call with the packetid
    * @return current MQTT client instance
    */
   @Fluent
-  MqttClient unsubscribeCompleteHandler(Handler<Integer> unsubscribeCompleteHandler);
+  MqttClient unsubscribeCompletionHandler(Handler<Integer> unsubscribeCompletionHandler);
 
   /**
    * Unsubscribe from receiving messages on given topic

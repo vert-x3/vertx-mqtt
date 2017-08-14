@@ -66,14 +66,14 @@ public class MqttClientUnsubscribeTest {
       new MqttClientOptions()
         .setHost(TestUtil.BROKER_ADDRESS));
 
-    client.unsubscribeCompleteHandler(unsubackid -> {
+    client.unsubscribeCompletionHandler(unsubackid -> {
       assertTrue(unsubackid == messageId);
       log.info("unsubscribing complete for message id = " + unsubackid);
       client.disconnect();
       async.countDown();
     });
 
-    client.subscribeCompleteHandler(suback -> {
+    client.subscribeCompletionHandler(suback -> {
       assertTrue(suback.messageId() == messageId);
       assertTrue(suback.grantedQoSLevels().contains(qos.value()));
       log.info("subscribing complete for message id = " + suback.messageId() + " with QoS " + suback.grantedQoSLevels());

@@ -79,17 +79,17 @@ public class VertxMqttClientExamples {
   }
 
   /**
-   * Example for publishCompleteHandler method demonstration
+   * Example for publishCompletionHandler method demonstration
    *
    * @param client
    */
   public void example5(MqttClient client) {
-    client.publishCompleteHandler(id -> {
+    client.publishCompletionHandler(id -> {
       System.out.println("Id of just received PUBACK or PUBCOMP packet is " + id);
     })
-      // The line of code below will trigger publishCompleteHandler (QoS 2)
+      // The line of code below will trigger publishCompletionHandler (QoS 2)
       .publish("hello", Buffer.buffer("hello"), MqttQoS.EXACTLY_ONCE, false, false)
-      // The line of code below will trigger publishCompleteHandler (QoS is 1)
+      // The line of code below will trigger publishCompletionHandler (QoS is 1)
       .publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false)
       // The line of code below does not trigger because QoS value is 0
       .publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false);
@@ -97,12 +97,12 @@ public class VertxMqttClientExamples {
   }
 
   /**
-   * Example for subscribeCompleteHandler method demonstration
+   * Example for subscribeCompletionHandler method demonstration
    *
    * @param client
    */
   public void example6(MqttClient client) {
-    client.subscribeCompleteHandler(mqttSubAckMessage -> {
+    client.subscribeCompletionHandler(mqttSubAckMessage -> {
       System.out.println("Id of just received SUBACK packet is " + mqttSubAckMessage.messageId());
       for (int s : mqttSubAckMessage.grantedQoSLevels()) {
         if (s == 0x80) {
@@ -117,13 +117,13 @@ public class VertxMqttClientExamples {
   }
 
   /**
-   * Example for unsubscribeCompleteHandler method demonstration
+   * Example for unsubscribeCompletionHandler method demonstration
    *
    * @param client
    */
   public void example7(MqttClient client) {
     client
-      .unsubscribeCompleteHandler(id -> {
+      .unsubscribeCompletionHandler(id -> {
         System.out.println("Id of just received UNSUBACK packet is " + id);
       })
       .subscribe("temp", 1)

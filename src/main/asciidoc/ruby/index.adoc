@@ -12,7 +12,7 @@ of your build descriptor:
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-mqtt</artifactId>
-    <version>3.5.0.Beta1</version>
+    <version>3.5.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -20,7 +20,7 @@ of your build descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt:3.5.0.Beta1
+compile io.vertx:vertx-mqtt:3.5.0-SNAPSHOT
 ----
 
 = Vert.x MQTT server
@@ -457,12 +457,12 @@ options['autoKeepAlive'] = false
 === Be notified when
 * publish is completed
 +
-You could provide handler by calling `link:../../yardoc/VertxMqttServer/MqttClient.html#publish_complete_handler-instance_method[publishCompleteHandler]`. The handler will be called each time publish is completed.
+You could provide handler by calling `link:../../yardoc/VertxMqttServer/MqttClient.html#publish_completion_handler-instance_method[publishCompletionHandler]`. The handler will be called each time publish is completed.
 This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
 [source,ruby]
 ----
 require 'vertx/buffer'
-client.publish_complete_handler() { |id|
+client.publish_completion_handler() { |id|
   puts "Id of just received PUBACK or PUBCOMP packet is #{id}"
 }.publish("hello", Vertx::Buffer.buffer("hello"), :EXACTLY_ONCE, false, false).publish("hello", Vertx::Buffer.buffer("hello"), :AT_LEAST_ONCE, false, false).publish("hello", Vertx::Buffer.buffer("hello"), :AT_LEAST_ONCE, false, false)
 
@@ -474,7 +474,7 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 +
 [source,ruby]
 ----
-client.subscribe_complete_handler() { |mqttSubAckMessage|
+client.subscribe_completion_handler() { |mqttSubAckMessage|
   puts "Id of just received SUBACK packet is #{mqttSubAckMessage.message_id()}"
   mqttSubAckMessage.granted_qo_s_levels().each do |s|
     if (s == 128)
@@ -491,7 +491,7 @@ client.subscribe_complete_handler() { |mqttSubAckMessage|
 +
 [source,ruby]
 ----
-client.unsubscribe_complete_handler() { |id|
+client.unsubscribe_completion_handler() { |id|
   puts "Id of just received UNSUBACK packet is #{id}"
 }.subscribe("temp", 1).unsubscribe("temp")
 

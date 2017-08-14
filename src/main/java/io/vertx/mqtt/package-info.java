@@ -290,7 +290,7 @@
  * === Be notified when
  * * publish is completed
  * +
- * You could provide handler by calling {@link io.vertx.mqtt.MqttClient#publishCompleteHandler(io.vertx.core.Handler)}. The handler will be called each time publish is completed.
+ * You could provide handler by calling {@link io.vertx.mqtt.MqttClient#publishCompletionHandler(io.vertx.core.Handler)}. The handler will be called each time publish is completed.
  * This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
  * [source,$lang]
  * ----

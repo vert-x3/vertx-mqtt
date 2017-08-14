@@ -117,7 +117,7 @@ public class MqttClientSubscribeTest {
       new MqttClientOptions()
         .setHost(TestUtil.BROKER_ADDRESS));
 
-    client.subscribeCompleteHandler(suback -> {
+    client.subscribeCompletionHandler(suback -> {
       assertTrue(suback.messageId() == messageId);
       assertTrue(suback.grantedQoSLevels().contains(qos.value()));
       log.info("subscribing complete for message id = " + suback.messageId() + " with QoS " + suback.grantedQoSLevels());

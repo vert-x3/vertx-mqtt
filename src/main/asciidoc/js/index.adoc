@@ -12,7 +12,7 @@ of your build descriptor:
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-mqtt</artifactId>
-    <version>3.5.0.Beta1</version>
+    <version>3.5.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -20,7 +20,7 @@ of your build descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt:3.5.0.Beta1
+compile io.vertx:vertx-mqtt:3.5.0-SNAPSHOT
 ----
 
 = Vert.x MQTT server
@@ -457,12 +457,12 @@ options.autoKeepAlive = false;
 === Be notified when
 * publish is completed
 +
-You could provide handler by calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#publishCompleteHandler[publishCompleteHandler]`. The handler will be called each time publish is completed.
+You could provide handler by calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#publishCompletionHandler[publishCompletionHandler]`. The handler will be called each time publish is completed.
 This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
 [source,js]
 ----
 var Buffer = require("vertx-js/buffer");
-client.publishCompleteHandler(function (id) {
+client.publishCompletionHandler(function (id) {
   console.log("Id of just received PUBACK or PUBCOMP packet is " + id);
 }).publish("hello", Buffer.buffer("hello"), 'EXACTLY_ONCE', false, false).publish("hello", Buffer.buffer("hello"), 'AT_LEAST_ONCE', false, false).publish("hello", Buffer.buffer("hello"), 'AT_LEAST_ONCE', false, false);
 
@@ -474,7 +474,7 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 +
 [source,js]
 ----
-client.subscribeCompleteHandler(function (mqttSubAckMessage) {
+client.subscribeCompletionHandler(function (mqttSubAckMessage) {
   console.log("Id of just received SUBACK packet is " + mqttSubAckMessage.messageId());
   Array.prototype.forEach.call(mqttSubAckMessage.grantedQoSLevels(), function(s) {
     if (s === 128) {
@@ -491,7 +491,7 @@ client.subscribeCompleteHandler(function (mqttSubAckMessage) {
 +
 [source,js]
 ----
-client.unsubscribeCompleteHandler(function (id) {
+client.unsubscribeCompletionHandler(function (id) {
   console.log("Id of just received UNSUBACK packet is " + id);
 }).subscribe("temp", 1).unsubscribe("temp");
 

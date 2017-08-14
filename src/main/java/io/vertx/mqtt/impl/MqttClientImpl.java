@@ -84,13 +84,13 @@ public class MqttClientImpl implements MqttClient {
   private final NetClient client;
 
   // handler to call when a publish is complete
-  Handler<Integer> publishCompleteHandler;
+  Handler<Integer> publishCompletionHandler;
   // handler to call when a unsubscribe request is completed
-  Handler<Integer> unsubscribeCompleteHandler;
+  Handler<Integer> unsubscribeCompletionHandler;
   // handler to call when a publish message comes in
   Handler<MqttPublishMessage> publishHandler;
   // handler to call when a subscribe request is completed
-  Handler<MqttSubAckMessage> subscribeCompleteHandler;
+  Handler<MqttSubAckMessage> subscribeCompletionHandler;
   // handler to call when a connection request is completed
   Handler<AsyncResult<MqttConnAckMessage>> connectHandler;
   // handler to call when a pingresp is received
@@ -277,12 +277,12 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#publishCompleteHandler(Handler)} for more details
+   * See {@link MqttClient#publishCompletionHandler(Handler)} for more details
    */
   @Override
-  public MqttClient publishCompleteHandler(Handler<Integer> publishCompleteHandler) {
+  public MqttClient publishCompletionHandler(Handler<Integer> publishCompletionHandler) {
 
-    this.publishCompleteHandler = publishCompleteHandler;
+    this.publishCompletionHandler = publishCompletionHandler;
     return this;
   }
 
@@ -297,12 +297,12 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#subscribeCompleteHandler(Handler)} for more details
+   * See {@link MqttClient#subscribeCompletionHandler(Handler)} for more details
    */
   @Override
-  public MqttClient subscribeCompleteHandler(Handler<MqttSubAckMessage> subscribeCompleteHandler) {
+  public MqttClient subscribeCompletionHandler(Handler<MqttSubAckMessage> subscribeCompletionHandler) {
 
-    this.subscribeCompleteHandler = subscribeCompleteHandler;
+    this.subscribeCompletionHandler = subscribeCompletionHandler;
     return this;
   }
 
@@ -376,12 +376,12 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#unsubscribeCompleteHandler(Handler)} for more details
+   * See {@link MqttClient#unsubscribeCompletionHandler(Handler)} for more details
    */
   @Override
-  public MqttClient unsubscribeCompleteHandler(Handler<Integer> unsubscribeCompleteHandler) {
+  public MqttClient unsubscribeCompletionHandler(Handler<Integer> unsubscribeCompletionHandler) {
 
-    this.unsubscribeCompleteHandler = unsubscribeCompleteHandler;
+    this.unsubscribeCompletionHandler = unsubscribeCompletionHandler;
     return this;
   }
 
@@ -626,8 +626,8 @@ public class MqttClientImpl implements MqttClient {
   void handleUnsuback(int unsubackMessageId) {
 
     synchronized (this.connection) {
-      if (this.unsubscribeCompleteHandler != null) {
-        this.unsubscribeCompleteHandler.handle(unsubackMessageId);
+      if (this.unsubscribeCompletionHandler != null) {
+        this.unsubscribeCompletionHandler.handle(unsubackMessageId);
       }
     }
   }
@@ -640,8 +640,8 @@ public class MqttClientImpl implements MqttClient {
   void handlePuback(int pubackMessageId) {
 
     synchronized (this.connection) {
-      if (this.publishCompleteHandler != null) {
-        this.publishCompleteHandler.handle(pubackMessageId);
+      if (this.publishCompletionHandler != null) {
+        this.publishCompletionHandler.handle(pubackMessageId);
       }
     }
   }
@@ -654,8 +654,8 @@ public class MqttClientImpl implements MqttClient {
   void handlePubcomp(int pubcompMessageId) {
 
     synchronized (this.connection) {
-      if (this.publishCompleteHandler != null) {
-        this.publishCompleteHandler.handle(pubcompMessageId);
+      if (this.publishCompletionHandler != null) {
+        this.publishCompletionHandler.handle(pubcompMessageId);
       }
     }
   }
@@ -680,8 +680,8 @@ public class MqttClientImpl implements MqttClient {
   void handleSuback(MqttSubAckMessage msg) {
 
     synchronized (this.connection) {
-      if (this.subscribeCompleteHandler != null) {
-        this.subscribeCompleteHandler.handle(msg);
+      if (this.subscribeCompletionHandler != null) {
+        this.subscribeCompletionHandler.handle(msg);
       }
     }
   }

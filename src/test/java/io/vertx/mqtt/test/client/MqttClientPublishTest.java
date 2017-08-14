@@ -65,7 +65,7 @@ public class MqttClientPublishTest {
       new MqttClientOptions()
         .setHost(TestUtil.BROKER_ADDRESS));
 
-    client.publishCompleteHandler(pubid -> {
+    client.publishCompletionHandler(pubid -> {
       assertTrue(pubid == messageId);
       log.info("publishing complete for message id = " + pubid);
       client.disconnect();

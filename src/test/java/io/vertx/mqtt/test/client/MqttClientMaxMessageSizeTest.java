@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test.client;
 
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
@@ -27,7 +26,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,7 +54,7 @@ public class MqttClientMaxMessageSizeTest {
         .setMaxMessageSize(MQTT_MAX_MESSAGE_SIZE)
     );
 
-    client.subscribeCompleteHandler(sc -> {
+    client.subscribeCompletionHandler(sc -> {
       log.info("SUBACK <---");
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
       client.publish(MQTT_TOPIC, Buffer.buffer(message), AT_MOST_ONCE, false, false);
