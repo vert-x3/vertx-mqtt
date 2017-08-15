@@ -197,6 +197,19 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
+   * See {@link MqttClient#connect(int, String, Handler)} for more details
+   */
+  @Override
+  public MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
+
+    this.options
+      .setPort(port)
+      .setHost(host);
+
+    return this.connect(connectHandler);
+  }
+
+  /**
    * See {@link MqttClient#disconnect()} for more details
    */
   @Override

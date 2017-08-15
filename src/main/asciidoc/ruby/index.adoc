@@ -410,6 +410,9 @@ client.connect() { |s_err,s|
 ----
 NOTE: default address of server provided by `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
 
+Another simple way to connect without using the `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is to use the
+`link:../../yardoc/VertxMqttServer/MqttClient.html#connect-instance_method[connect]` passing the port and the host directly.
+
 === Subscribe to a topic
 
 Now, lest go deeper and take look at this example:

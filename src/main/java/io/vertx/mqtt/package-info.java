@@ -251,6 +251,9 @@
  * ----
  * NOTE: default address of server provided by {@link io.vertx.mqtt.MqttClientOptions} is localhost:1883 and localhost:8883 if you are using SSL/TSL.
  *
+ * Another simple way to connect without using the {@link io.vertx.mqtt.MqttClientOptions} is to use the
+ * {@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String, io.vertx.core.Handler)} passing the port and the host directly.
+ *
  * === Subscribe to a topic
  *
  * Now, lest go deeper and take look at this example:

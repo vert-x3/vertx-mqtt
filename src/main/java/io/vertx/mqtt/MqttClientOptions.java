@@ -34,14 +34,14 @@ import io.vertx.core.net.TrustOptions;
 @DataObject
 public class MqttClientOptions extends NetClientOptions {
 
-  private static final int DEFAULT_PORT = 1883;
-  private static final int DEFAULT_TSL_PORT = 8883;
-  private static final String DEFAULT_HOST = "localhost";
-  private static final int DEFAULT_WILL_QOS = 0;
-  private static final int DEFAULT_KEEP_ALIVE_TIME_SECONDS = 30;
-  private static final boolean DEFAULT_CLEAN_SESSION = true;
-  private static final boolean DEFAULT_WILL_FLAG = false;
-  private static final boolean DEFAULT_WILL_RETAIN = false;
+  public static final int DEFAULT_PORT = 1883;
+  public static final int DEFAULT_TSL_PORT = 8883;
+  public static final String DEFAULT_HOST = "localhost";
+  public static final int DEFAULT_WILL_QOS = 0;
+  public static final int DEFAULT_KEEP_ALIVE_TIME_SECONDS = 30;
+  public static final boolean DEFAULT_CLEAN_SESSION = true;
+  public static final boolean DEFAULT_WILL_FLAG = false;
+  public static final boolean DEFAULT_WILL_RETAIN = false;
   public static final int DEFAULT_MAX_MESSAGE_SIZE = -1;
 
   private int port = DEFAULT_PORT;
