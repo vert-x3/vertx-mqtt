@@ -166,7 +166,7 @@
  * The {@link io.vertx.mqtt.MqttEndpoint#publishReceivedHandler(io.vertx.core.Handler)} method allows to specify
  * the handler for that. Inside that handler, the endpoint can use the {@link io.vertx.mqtt.MqttEndpoint#publishRelease(int)} method
  * for replying to the client with the PUBREL message. The last step is to handle the PUBCOMP message received from the client
- * as final acknowledge for the published message; it's possible using the {@link io.vertx.mqtt.MqttEndpoint#publishCompleteHandler(io.vertx.core.Handler)}
+ * as final acknowledge for the published message; it's possible using the {@link io.vertx.mqtt.MqttEndpoint#publishCompletionHandler(io.vertx.core.Handler)}
  * for specifying the handler called when the final PUBCOMP message is received.
  *
  * [source,$lang]

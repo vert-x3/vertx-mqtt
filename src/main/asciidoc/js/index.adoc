@@ -267,7 +267,7 @@ If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to handle the PUBREC me
 The `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishReceivedHandler[publishReceivedHandler]` method allows to specify
 the handler for that. Inside that handler, the endpoint can use the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishRelease[publishRelease]` method
 for replying to the client with the PUBREL message. The last step is to handle the PUBCOMP message received from the client
-as final acknowledge for the published message; it's possible using the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishCompleteHandler[publishCompleteHandler]`
+as final acknowledge for the published message; it's possible using the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishCompletionHandler[publishCompletionHandler]`
 for specifying the handler called when the final PUBCOMP message is received.
 
 [source,js]
@@ -286,7 +286,7 @@ endpoint.publishAcknowledgeHandler(function (messageId) {
 
   endpoint.publishRelease(messageId);
 
-}).publishCompleteHandler(function (messageId) {
+}).publishCompletionHandler(function (messageId) {
 
   console.log("Received ack for message = " + messageId);
 });

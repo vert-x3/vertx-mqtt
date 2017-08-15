@@ -245,7 +245,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl publishCompleteHandler(Handler<Integer> handler) {
+  public MqttEndpointImpl publishCompletionHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
       this.checkClosed();

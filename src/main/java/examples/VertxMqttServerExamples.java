@@ -214,7 +214,7 @@ public class VertxMqttServerExamples {
 
       endpoint.publishRelease(messageId);
 
-    }).publishCompleteHandler(messageId -> {
+    }).publishCompletionHandler(messageId -> {
 
       System.out.println("Received ack for message = " +  messageId);
     });

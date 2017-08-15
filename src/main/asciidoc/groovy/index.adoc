@@ -265,7 +265,7 @@ If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to handle the PUBREC me
 The `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishReceivedHandler-io.vertx.core.Handler-[publishReceivedHandler]` method allows to specify
 the handler for that. Inside that handler, the endpoint can use the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishRelease-int-[publishRelease]` method
 for replying to the client with the PUBREL message. The last step is to handle the PUBCOMP message received from the client
-as final acknowledge for the published message; it's possible using the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishCompleteHandler-io.vertx.core.Handler-[publishCompleteHandler]`
+as final acknowledge for the published message; it's possible using the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#publishCompletionHandler-io.vertx.core.Handler-[publishCompletionHandler]`
 for specifying the handler called when the final PUBCOMP message is received.
 
 [source,groovy]
@@ -283,7 +283,7 @@ endpoint.publishAcknowledgeHandler({ messageId ->
 
   endpoint.publishRelease(messageId)
 
-}).publishCompleteHandler({ messageId ->
+}).publishCompletionHandler({ messageId ->
 
   println("Received ack for message = ${messageId}")
 })

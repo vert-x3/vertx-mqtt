@@ -220,7 +220,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint publishCompleteHandler(Handler<Integer> handler);
+  MqttEndpoint publishCompletionHandler(Handler<Integer> handler);
 
   /**
    * Set the pingreq handler on the MQTT endpoint. This handler is called when a PINGREQ

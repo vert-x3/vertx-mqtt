@@ -133,7 +133,7 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
     }).publishReceivedHandler(messageId -> {
 
       endpoint.publishRelease(messageId);
-    }).publishCompleteHandler(messageId -> {
+    }).publishCompletionHandler(messageId -> {
 
       log.info("Message [" + messageId + "] acknowledged");
       this.async.complete();
