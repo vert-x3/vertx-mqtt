@@ -187,6 +187,12 @@ public class MqttServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Override
+  public MqttServerOptions setSni(boolean sni) {
+    super.setSni(sni);
+    return this;
+  }
+
   /**
    * Set max MQTT message size
    *
