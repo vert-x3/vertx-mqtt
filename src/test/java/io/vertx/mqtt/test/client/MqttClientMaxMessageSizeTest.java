@@ -29,7 +29,7 @@ import io.vertx.mqtt.MqttClientOptions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static io.netty.handler.codec.mqtt.MqttQoS.*;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -50,7 +50,6 @@ public class MqttClientMaxMessageSizeTest {
     Async async = context.async();
     MqttClient client = MqttClient.create(Vertx.vertx(),
       new MqttClientOptions()
-        .setHost(TestUtil.BROKER_ADDRESS)
         .setMaxMessageSize(MQTT_MAX_MESSAGE_SIZE)
     );
 
@@ -71,7 +70,7 @@ public class MqttClientMaxMessageSizeTest {
     });
 
     log.info("CONNECT --->");
-    client.connect(c -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
       log.info("CONNACK <---");
       client.subscribe(MQTT_TOPIC, 0);

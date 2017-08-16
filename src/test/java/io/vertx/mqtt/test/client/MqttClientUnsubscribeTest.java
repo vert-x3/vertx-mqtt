@@ -62,9 +62,7 @@ public class MqttClientUnsubscribeTest {
     this.messageId = 0;
 
     Async async = context.async();
-    MqttClient client = MqttClient.create(Vertx.vertx(),
-      new MqttClientOptions()
-        .setHost(TestUtil.BROKER_ADDRESS));
+    MqttClient client = MqttClient.create(Vertx.vertx());
 
     client.unsubscribeCompletionHandler(unsubackid -> {
       assertTrue(unsubackid == messageId);
@@ -85,7 +83,7 @@ public class MqttClientUnsubscribeTest {
       });
     });
 
-    client.connect(ar -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
       assertTrue(ar.succeeded());
 
       client.subscribe(MQTT_TOPIC, qos.value(), ar1 -> {

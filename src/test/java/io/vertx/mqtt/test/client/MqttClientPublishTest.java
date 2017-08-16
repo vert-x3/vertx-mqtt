@@ -61,9 +61,7 @@ public class MqttClientPublishTest {
     this.messageId = 0;
 
     Async async = context.async();
-    MqttClient client = MqttClient.create(Vertx.vertx(),
-      new MqttClientOptions()
-        .setHost(TestUtil.BROKER_ADDRESS));
+    MqttClient client = MqttClient.create(Vertx.vertx());
 
     client.publishCompletionHandler(pubid -> {
       assertTrue(pubid == messageId);
@@ -72,7 +70,7 @@ public class MqttClientPublishTest {
       async.countDown();
     });
 
-    client.connect(ar -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
 
       assertTrue(ar.succeeded());
 

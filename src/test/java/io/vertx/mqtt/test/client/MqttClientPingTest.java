@@ -51,13 +51,12 @@ public class MqttClientPingTest  {
     Async async = context.async();
     MqttClientOptions options = new MqttClientOptions();
     options.setAutoKeepAlive(false);
-    options.setHost(TestUtil.BROKER_ADDRESS);
 
     log.info("Manual ping ... " + PING_NUMBER + " times timeout " + KEEPALIVE_TIMEOUT);
 
     count = 0;
     MqttClient client = MqttClient.create(vertx, options);
-    client.connect(c -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT,  TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v ->{
 
@@ -87,13 +86,12 @@ public class MqttClientPingTest  {
     Async async = context.async();
     MqttClientOptions options = new MqttClientOptions();
     options.setKeepAliveTimeSeconds(KEEPALIVE_TIMEOUT);
-    options.setHost(TestUtil.BROKER_ADDRESS);
 
     log.info("Auto ping ... " + PING_NUMBER + " times timeout " + KEEPALIVE_TIMEOUT);
 
     count = 0;
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
-    client.connect(c -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT,  TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v -> {
 

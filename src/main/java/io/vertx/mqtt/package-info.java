@@ -244,15 +244,13 @@
  * Also, you could specify things like the host and port of a server you would like
  * to connect to passing instance of {@link io.vertx.mqtt.MqttClientOptions} as a param through constructor.
  *
- * This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling {@link io.vertx.mqtt.MqttClient#connect()} and {@link io.vertx.mqtt.MqttClient#disconnect()} methods.
+ * This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client
+ * and calling {@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String, io.vertx.core.Handler)} and {@link io.vertx.mqtt.MqttClient#disconnect()} methods.
  * [source,$lang]
  * ----
  * {@link examples.VertxMqttClientExamples#example1}
  * ----
  * NOTE: default address of server provided by {@link io.vertx.mqtt.MqttClientOptions} is localhost:1883 and localhost:8883 if you are using SSL/TSL.
- *
- * Another simple way to connect without using the {@link io.vertx.mqtt.MqttClientOptions} is to use the
- * {@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String, io.vertx.core.Handler)} passing the port and the host directly.
  *
  * === Subscribe to a topic
  *
