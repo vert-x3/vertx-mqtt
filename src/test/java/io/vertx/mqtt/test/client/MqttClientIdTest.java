@@ -45,13 +45,12 @@ public class MqttClientIdTest {
 
     Async async = context.async();
 
-    MqttClientOptions options = new MqttClientOptions()
-      .setHost(TestUtil.BROKER_ADDRESS);
+    MqttClientOptions options = new MqttClientOptions();
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
 
     assertThat(options.getClientId(), nullValue());
 
-    client.connect(c -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
       assertTrue(c.succeeded());
       assertTrue(client.clientId().length() == 36);
@@ -72,10 +71,9 @@ public class MqttClientIdTest {
 
     MqttClientOptions options = new MqttClientOptions();
     options.setClientId("myClient");
-    options.setHost(TestUtil.BROKER_ADDRESS);
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
 
-    client.connect(c -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
       assertTrue(c.succeeded());
       assertThat(client.clientId(), notNullValue());

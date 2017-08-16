@@ -365,23 +365,17 @@ The client gives you opportunity to connect to a server and disconnect from it.
 Also, you could specify things like the host and port of a server you would like
 to connect to passing instance of `link:../../apidocs/io/vertx/mqtt/MqttClientOptions.html[MqttClientOptions]` as a param through constructor.
 
-This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling `link:../../apidocs/io/vertx/mqtt/MqttClient.html#connect--[connect]` and `link:../../apidocs/io/vertx/mqtt/MqttClient.html#disconnect--[disconnect]` methods.
+This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client
+and calling `link:../../apidocs/io/vertx/mqtt/MqttClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]` and `link:../../apidocs/io/vertx/mqtt/MqttClient.html#disconnect--[disconnect]` methods.
 [source,java]
 ----
-MqttClientOptions options = new MqttClientOptions()
-  .setHost("iot.eclipse.org")
-  .setPort(1883);
+MqttClient client = MqttClient.create(vertx);
 
-MqttClient client = MqttClient.create(vertx, options);
-
-client.connect(s -> {
+client.connect(1883, "iot.eclipse.org", s -> {
   client.disconnect();
 });
 ----
 NOTE: default address of server provided by `link:../../apidocs/io/vertx/mqtt/MqttClientOptions.html[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
-
-Another simple way to connect without using the `link:../../apidocs/io/vertx/mqtt/MqttClientOptions.html[MqttClientOptions]` is to use the
-`link:../../apidocs/io/vertx/mqtt/MqttClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]` passing the port and the host directly.
 
 === Subscribe to a topic
 

@@ -49,10 +49,10 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
-import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.MqttConnectionException;
-import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
+import io.vertx.mqtt.messages.MqttSubAckMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
@@ -119,33 +119,13 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#connect()} for more details
-   */
-  @Override
-  public MqttClient connect() {
-    return connect(null);
-  }
-
-  /**
-   * See {@link MqttClient#connect(Handler)} for more details
-   */
-  @Override
-  public MqttClient connect(Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
-    this.doConnect(options.getPort(), options.getHost(), options.getServerName(), connectHandler);
-    return this;
-  }
-
-  /**
    * See {@link MqttClient#connect(int, String, Handler)} for more details
    */
   @Override
   public MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
 
-    this.options
-      .setPort(port)
-      .setHost(host);
-
-    return this.connect(connectHandler);
+    this.doConnect(port, host, null, connectHandler);
+    return this;
   }
 
   /**
@@ -154,12 +134,8 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
 
-    this.options
-      .setPort(port)
-      .setHost(host)
-      .setServerName(serverName);
-
-    return this.connect(connectHandler);
+    this.doConnect(port, host, serverName, connectHandler);
+    return this;
   }
 
   private void doConnect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {

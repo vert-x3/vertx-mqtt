@@ -58,23 +58,6 @@ public interface MqttClient {
   }
 
   /**
-   * Connects to an MQTT server
-   *
-   * @return current MQTT client instance
-   */
-  @Fluent
-  MqttClient connect();
-
-  /**
-   * Connects to an MQTT server calling connectHandler after connection
-   *
-   * @param connectHandler handler called when the asynchronous connect call ends
-   * @return current MQTT client instance
-   */
-  @Fluent
-  MqttClient connect(Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
-
-  /**
    * Connects to an MQTT server calling connectHandler after connection
    *
    * @param port  port of the MQTT server

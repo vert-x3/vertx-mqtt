@@ -23,7 +23,6 @@ import io.vertx.core.net.ProxyOptions
  * @param crlValues 
  * @param enabledCipherSuites 
  * @param enabledSecureTransportProtocols 
- * @param host 
  * @param hostnameVerificationAlgorithm 
  * @param idleTimeout 
  * @param jdkSslEngineOptions 
@@ -39,14 +38,12 @@ import io.vertx.core.net.ProxyOptions
  * @param pemTrustOptions 
  * @param pfxKeyCertOptions 
  * @param pfxTrustOptions 
- * @param port 
  * @param proxyOptions 
  * @param receiveBufferSize 
  * @param reconnectAttempts 
  * @param reconnectInterval 
  * @param reuseAddress 
  * @param sendBufferSize 
- * @param serverName 
  * @param soLinger 
  * @param ssl 
  * @param tcpKeepAlive 
@@ -76,7 +73,6 @@ fun MqttClientOptions(
   crlValues: Iterable<io.vertx.core.buffer.Buffer>? = null,
   enabledCipherSuites: Iterable<String>? = null,
   enabledSecureTransportProtocols: Iterable<String>? = null,
-  host: String? = null,
   hostnameVerificationAlgorithm: String? = null,
   idleTimeout: Int? = null,
   jdkSslEngineOptions: io.vertx.core.net.JdkSSLEngineOptions? = null,
@@ -92,14 +88,12 @@ fun MqttClientOptions(
   pemTrustOptions: io.vertx.core.net.PemTrustOptions? = null,
   pfxKeyCertOptions: io.vertx.core.net.PfxOptions? = null,
   pfxTrustOptions: io.vertx.core.net.PfxOptions? = null,
-  port: Int? = null,
   proxyOptions: io.vertx.core.net.ProxyOptions? = null,
   receiveBufferSize: Int? = null,
   reconnectAttempts: Int? = null,
   reconnectInterval: Long? = null,
   reuseAddress: Boolean? = null,
   sendBufferSize: Int? = null,
-  serverName: String? = null,
   soLinger: Int? = null,
   ssl: Boolean? = null,
   tcpKeepAlive: Boolean? = null,
@@ -151,9 +145,6 @@ fun MqttClientOptions(
       this.addEnabledSecureTransportProtocol(item)
     }
   }
-  if (host != null) {
-    this.setHost(host)
-  }
   if (hostnameVerificationAlgorithm != null) {
     this.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm)
   }
@@ -199,9 +190,6 @@ fun MqttClientOptions(
   if (pfxTrustOptions != null) {
     this.setPfxTrustOptions(pfxTrustOptions)
   }
-  if (port != null) {
-    this.setPort(port)
-  }
   if (proxyOptions != null) {
     this.setProxyOptions(proxyOptions)
   }
@@ -219,9 +207,6 @@ fun MqttClientOptions(
   }
   if (sendBufferSize != null) {
     this.setSendBufferSize(sendBufferSize)
-  }
-  if (serverName != null) {
-    this.setServerName(serverName)
   }
   if (soLinger != null) {
     this.setSoLinger(soLinger)

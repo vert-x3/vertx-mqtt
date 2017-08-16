@@ -392,26 +392,19 @@ The client gives you opportunity to connect to a server and disconnect from it.
 Also, you could specify things like the host and port of a server you would like
 to connect to passing instance of `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` as a param through constructor.
 
-This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling `link:../../yardoc/VertxMqttServer/MqttClient.html#connect-instance_method[connect]` and `link:../../yardoc/VertxMqttServer/MqttClient.html#disconnect-instance_method[disconnect]` methods.
+This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client
+and calling `link:../../yardoc/VertxMqttServer/MqttClient.html#connect-instance_method[connect]` and `link:../../yardoc/VertxMqttServer/MqttClient.html#disconnect-instance_method[disconnect]` methods.
 [source,ruby]
 ----
 require 'vertx-mqtt-server/mqtt_client'
-options = {
-  'host' => "iot.eclipse.org",
-  'port' => 1883
-}
+client = VertxMqttServer::MqttClient.create(vertx)
 
-client = VertxMqttServer::MqttClient.create(vertx, options)
-
-client.connect() { |s_err,s|
+client.connect(1883, "iot.eclipse.org") { |s_err,s|
   client.disconnect()
 }
 
 ----
 NOTE: default address of server provided by `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
-
-Another simple way to connect without using the `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is to use the
-`link:../../yardoc/VertxMqttServer/MqttClient.html#connect-instance_method[connect]` passing the port and the host directly.
 
 === Subscribe to a topic
 

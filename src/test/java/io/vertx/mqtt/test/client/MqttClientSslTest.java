@@ -51,8 +51,6 @@ public class MqttClientSslTest {
   @Test
   public void clientSslTrustAllTest(TestContext context) {
     MqttClientOptions clientOptions = new MqttClientOptions()
-      .setPort(MQTT_SERVER_TLS_PORT)
-      .setHost(MQTT_SERVER_HOST)
       .setSsl(true)
       .setTrustAll(true);
 
@@ -61,7 +59,7 @@ public class MqttClientSslTest {
 
     this.context = context;
     Async async = context.async();
-    client.connect(s -> client.disconnect(d -> async.countDown()));
+    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST, s -> client.disconnect(d -> async.countDown()));
     async.await();
   }
 
@@ -73,8 +71,6 @@ public class MqttClientSslTest {
     JksOptions jksOptions = new JksOptions().setPath(trustStore.getPath());
 
     MqttClientOptions clientOptions = new MqttClientOptions()
-      .setPort(MQTT_SERVER_TLS_PORT)
-      .setHost(MQTT_SERVER_HOST)
       .setSsl(true)
       .setTrustStoreOptions(jksOptions);
 
@@ -82,7 +78,7 @@ public class MqttClientSslTest {
     client.exceptionHandler(t -> context.assertTrue(false));
 
     Async async = context.async();
-    client.connect(s -> client.disconnect(d -> async.countDown()));
+    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST, s -> client.disconnect(d -> async.countDown()));
     async.await();
   }
 

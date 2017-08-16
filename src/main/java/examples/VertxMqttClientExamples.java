@@ -17,6 +17,7 @@
 package examples;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.MqttClient;
@@ -25,19 +26,15 @@ import io.vertx.mqtt.MqttClientOptions;
 public class VertxMqttClientExamples {
 
   /**
-   * Example for demonstration of how {@link MqttClient#connect()} and  {@link MqttClient#disconnect()} methods
+   * Example for demonstration of how {@link MqttClient#connect(int, String, Handler)} and  {@link MqttClient#disconnect()} methods
    * should be used
    *
    * @param vertx
    */
   public void example1(Vertx vertx) {
-    MqttClientOptions options = new MqttClientOptions()
-      .setHost("iot.eclipse.org")
-      .setPort(1883);
+    MqttClient client = MqttClient.create(vertx);
 
-    MqttClient client = MqttClient.create(vertx, options);
-
-    client.connect(s -> {
+    client.connect(1883, "iot.eclipse.org", s -> {
       client.disconnect();
     });
   }

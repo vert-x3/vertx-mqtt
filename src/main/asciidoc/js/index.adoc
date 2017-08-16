@@ -392,26 +392,19 @@ The client gives you opportunity to connect to a server and disconnect from it.
 Also, you could specify things like the host and port of a server you would like
 to connect to passing instance of `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` as a param through constructor.
 
-This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client and calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#connect[connect]` and `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#disconnect[disconnect]` methods.
+This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client
+and calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#connect[connect]` and `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#disconnect[disconnect]` methods.
 [source,js]
 ----
 var MqttClient = require("vertx-mqtt-server-js/mqtt_client");
-var options = {
-  "host" : "iot.eclipse.org",
-  "port" : 1883
-};
+var client = MqttClient.create(vertx);
 
-var client = MqttClient.create(vertx, options);
-
-client.connect(function (s, s_err) {
+client.connect(1883, "iot.eclipse.org", function (s, s_err) {
   client.disconnect();
 });
 
 ----
 NOTE: default address of server provided by `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is localhost:1883 and localhost:8883 if you are using SSL/TSL.
-
-Another simple way to connect without using the `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` is to use the
-`link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#connect[connect]` passing the port and the host directly.
 
 === Subscribe to a topic
 
