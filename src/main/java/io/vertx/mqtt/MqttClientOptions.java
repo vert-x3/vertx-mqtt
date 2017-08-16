@@ -46,6 +46,7 @@ public class MqttClientOptions extends NetClientOptions {
 
   private int port = DEFAULT_PORT;
   private String host = DEFAULT_HOST;
+  private String serverName = null;
   private String clientId;
   private String username;
   private String password;
@@ -96,12 +97,21 @@ public class MqttClientOptions extends NetClientOptions {
     return this;
   }
 
+  public MqttClientOptions setServerName(String serverName) {
+    this.serverName = serverName;
+    return this;
+  }
+
   public String getHost() {
     return host;
   }
 
   public int getPort() {
     return port;
+  }
+
+  public String getServerName() {
+    return this.serverName;
   }
 
   public boolean hasUsername() {

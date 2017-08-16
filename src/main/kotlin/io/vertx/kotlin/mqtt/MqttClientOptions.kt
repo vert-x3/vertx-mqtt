@@ -46,6 +46,7 @@ import io.vertx.core.net.ProxyOptions
  * @param reconnectInterval 
  * @param reuseAddress 
  * @param sendBufferSize 
+ * @param serverName 
  * @param soLinger 
  * @param ssl 
  * @param tcpKeepAlive 
@@ -98,6 +99,7 @@ fun MqttClientOptions(
   reconnectInterval: Long? = null,
   reuseAddress: Boolean? = null,
   sendBufferSize: Int? = null,
+  serverName: String? = null,
   soLinger: Int? = null,
   ssl: Boolean? = null,
   tcpKeepAlive: Boolean? = null,
@@ -217,6 +219,9 @@ fun MqttClientOptions(
   }
   if (sendBufferSize != null) {
     this.setSendBufferSize(sendBufferSize)
+  }
+  if (serverName != null) {
+    this.setServerName(serverName)
   }
   if (soLinger != null) {
     this.setSoLinger(soLinger)

@@ -55,6 +55,7 @@ Set max MQTT message size
 |[[reconnectInterval]]`reconnectInterval`|`Number (long)`|-
 |[[reuseAddress]]`reuseAddress`|`Boolean`|-
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|-
+|[[serverName]]`serverName`|`String`|-
 |[[soLinger]]`soLinger`|`Number (int)`|-
 |[[ssl]]`ssl`|`Boolean`|-
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|-

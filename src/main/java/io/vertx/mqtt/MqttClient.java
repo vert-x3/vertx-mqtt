@@ -86,6 +86,18 @@ public interface MqttClient {
   MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
 
   /**
+   * Connects to an MQTT server calling connectHandler after connection
+   *
+   * @param port  port of the MQTT server
+   * @param host  hostname/ip address of the MQTT server
+   * @param serverName  the SNI server name
+   * @param connectHandler  handler called when the asynchronous connect call ends
+   * @return  current MQTT client instance
+   */
+  @Fluent
+  MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
+
+  /**
    * Disconnects from the MQTT server
    *
    * @return current MQTT client instance

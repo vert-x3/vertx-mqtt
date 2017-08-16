@@ -131,18 +131,50 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public MqttClient connect(Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
+    this.doConnect(options.getPort(), options.getHost(), options.getServerName(), connectHandler);
+    return this;
+  }
 
-    log.debug(String.format("Trying to connect with %s:%d", options.getHost(), options.getPort()));
-    this.client.connect(options.getPort(), options.getHost(), options.getHost(), done -> {
+  /**
+   * See {@link MqttClient#connect(int, String, Handler)} for more details
+   */
+  @Override
+  public MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
+
+    this.options
+      .setPort(port)
+      .setHost(host);
+
+    return this.connect(connectHandler);
+  }
+
+  /**
+   * See {@link MqttClient#connect(int, String, String, Handler)} for more details
+   */
+  @Override
+  public MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
+
+    this.options
+      .setPort(port)
+      .setHost(host)
+      .setServerName(serverName);
+
+    return this.connect(connectHandler);
+  }
+
+  private void doConnect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
+
+    log.debug(String.format("Trying to connect with %s:%d", host, port));
+    this.client.connect(port, host, serverName, done -> {
 
       // the TCP connection fails
       if (done.failed()) {
-        log.error(String.format("Can't connect to %s:%d", options.getHost(), options.getPort()), done.cause());
+        log.error(String.format("Can't connect to %s:%d", host, port), done.cause());
         if (connectHandler != null) {
           connectHandler.handle(Future.failedFuture(done.cause()));
         }
       } else {
-        log.info(String.format("Connection with %s:%d established successfully", options.getHost(), options.getPort()));
+        log.info(String.format("Connection with %s:%d established successfully", host, port));
 
         NetSocketInternal soi = (NetSocketInternal) done.result();
         ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
@@ -193,20 +225,6 @@ public class MqttClientImpl implements MqttClient {
       }
 
     });
-    return this;
-  }
-
-  /**
-   * See {@link MqttClient#connect(int, String, Handler)} for more details
-   */
-  @Override
-  public MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
-
-    this.options
-      .setPort(port)
-      .setHost(host);
-
-    return this.connect(connectHandler);
   }
 
   /**
