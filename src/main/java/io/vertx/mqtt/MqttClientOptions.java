@@ -84,99 +84,195 @@ public class MqttClientOptions extends NetClientOptions {
     super(other);
   }
 
+  /**
+   * @return if username is provided
+   */
   public boolean hasUsername() {
     return username != null;
   }
 
+  /**
+   * @return if password is provided
+   */
   public boolean hasPassword() {
     return password != null;
   }
 
+  /**
+   * @return if client wants to start with a clean session
+   */
   public boolean isCleanSession() {
     return cleanSession;
   }
 
+  /**
+   * @return if will information are provided on connection
+   */
   public boolean isWillFlag() {
     return willFlag;
   }
 
+  /**
+   * @return if the will messages must be retained
+   */
   public boolean isWillRetain() {
     return willRetain;
   }
 
+  /**
+   * @return the QoS level for the will message
+   */
   public int getWillQoS() {
     return willQoS;
   }
 
+  /**
+   * @return the keep alive timeout (in seconds)
+   */
   public int getKeepAliveTimeSeconds() {
     return keepAliveTimeSeconds;
   }
 
+  /**
+   * @return provided username
+   */
   public String getUsername() {
     return username;
   }
 
+  /**
+   * @return provided password
+   */
   public String getPassword() {
     return password;
   }
 
+  /**
+   * @return client identifier
+   */
   public String getClientId() {
     return clientId;
   }
 
+  /**
+   * @return topic on which the will message will be published
+   */
   public String getWillTopic() {
     return willTopic;
   }
 
+  /**
+   * @return will message content
+   */
   public String getWillMessage() {
     return willMessage;
   }
 
+  /**
+   * Set the client identifier
+   *
+   * @param clientId client identifier
+   * @return current options instance
+   */
   public MqttClientOptions setClientId(String clientId) {
     this.clientId = clientId;
     return this;
   }
 
+  /**
+   * Set the username
+   *
+   * @param username  username
+   * @return current options instance
+   */
   public MqttClientOptions setUsername(String username) {
     this.username = username;
     return this;
   }
 
+  /**
+   * Set the password
+   *
+   * @param password  password
+   * @return current options instance
+   */
   public MqttClientOptions setPassword(String password) {
     this.password = password;
     return this;
   }
 
+  /**
+   * Set the topic on which the will message will be published
+   *
+   * @param willTopic topic on which the will message will be published
+   * @return current options instance
+   */
   public MqttClientOptions setWillTopic(String willTopic) {
     this.willTopic = willTopic;
     return this;
   }
 
+  /**
+   * Set the content of the will message
+   *
+   * @param willMessage content of the will message
+   * @return current options instance
+   */
   public MqttClientOptions setWillMessage(String willMessage) {
     this.willMessage = willMessage;
     return this;
   }
 
+  /**
+   * Set to start with a clean session (or not)
+   *
+   * @param cleanSession if clean session should be activated
+   * @return current options instance
+   */
   public MqttClientOptions setCleanSession(boolean cleanSession) {
     this.cleanSession = cleanSession;
     return this;
   }
 
+  /**
+   * Set if will information are provided on connection
+   *
+   * @param willFlag if will information are provided on connection
+   * @return current options instance
+   */
   public MqttClientOptions setWillFlag(boolean willFlag) {
     this.willFlag = willFlag;
     return this;
   }
 
+  /**
+   * Set the QoS level for the will message
+   *
+   * @param willQoS QoS level for the will message
+   * @return current options instance
+   */
   public MqttClientOptions setWillQoS(int willQoS) {
     this.willQoS = willQoS;
     return this;
   }
 
+  /**
+   * Set if the will message must be retained
+   *
+   * @param willRetain if thw will message must be retained
+   * @return current options instance
+   */
   public MqttClientOptions setWillRetain(boolean willRetain) {
     this.willRetain = willRetain;
     return this;
   }
 
+  /**
+   * Set the keep alive timeout in seconds
+   *
+   * @param keepAliveTimeSeconds keep alive timeout in seconds
+   * @return current options instance
+   */
   public MqttClientOptions setKeepAliveTimeSeconds(int keepAliveTimeSeconds) {
     this.keepAliveTimeSeconds = keepAliveTimeSeconds;
     return this;

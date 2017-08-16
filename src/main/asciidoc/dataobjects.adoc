@@ -22,8 +22,14 @@ Set if the MQTT client must generate clientId automatically
 Set if the MQTT client must handle PINGREQ automatically
  (default is true)
 +++
-|[[cleanSession]]`cleanSession`|`Boolean`|-
-|[[clientId]]`clientId`|`String`|-
+|[[cleanSession]]`cleanSession`|`Boolean`|
++++
+Set to start with a clean session (or not)
++++
+|[[clientId]]`clientId`|`String`|
++++
+Set the client identifier
++++
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|-
 |[[crlPaths]]`crlPaths`|`Array of String`|-
 |[[crlValues]]`crlValues`|`Array of Buffer`|-
@@ -32,7 +38,10 @@ Set if the MQTT client must handle PINGREQ automatically
 |[[hostnameVerificationAlgorithm]]`hostnameVerificationAlgorithm`|`String`|-
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|-
 |[[jdkSslEngineOptions]]`jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keepAliveTimeSeconds]]`keepAliveTimeSeconds`|`Number (int)`|-
+|[[keepAliveTimeSeconds]]`keepAliveTimeSeconds`|`Number (int)`|
++++
+Set the keep alive timeout in seconds
++++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[localAddress]]`localAddress`|`String`|-
 |[[logActivity]]`logActivity`|`Boolean`|-
@@ -42,7 +51,10 @@ Set max MQTT message size
 +++
 |[[metricsName]]`metricsName`|`String`|-
 |[[openSslEngineOptions]]`openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[password]]`password`|`String`|-
+|[[password]]`password`|`String`|
++++
+Set the password
++++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|-
 |[[pemTrustOptions]]`pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|-
 |[[pfxKeyCertOptions]]`pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|-
@@ -62,12 +74,30 @@ Set max MQTT message size
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[useAlpn]]`useAlpn`|`Boolean`|-
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|-
-|[[username]]`username`|`String`|-
-|[[willFlag]]`willFlag`|`Boolean`|-
-|[[willMessage]]`willMessage`|`String`|-
-|[[willQoS]]`willQoS`|`Number (int)`|-
-|[[willRetain]]`willRetain`|`Boolean`|-
-|[[willTopic]]`willTopic`|`String`|-
+|[[username]]`username`|`String`|
++++
+Set the username
++++
+|[[willFlag]]`willFlag`|`Boolean`|
++++
+Set if will information are provided on connection
++++
+|[[willMessage]]`willMessage`|`String`|
++++
+Set the content of the will message
++++
+|[[willQoS]]`willQoS`|`Number (int)`|
++++
+Set the QoS level for the will message
++++
+|[[willRetain]]`willRetain`|`Boolean`|
++++
+Set if the will message must be retained
++++
+|[[willTopic]]`willTopic`|`String`|
++++
+Set the topic on which the will message will be published
++++
 |===
 
 [[MqttServerOptions]]
