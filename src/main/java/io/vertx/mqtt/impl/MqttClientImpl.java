@@ -50,6 +50,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
+import io.vertx.mqtt.MqttException;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
@@ -254,8 +255,9 @@ public class MqttClientImpl implements MqttClient {
     if (!isValidTopicName(topic)) {
       String msg = String.format("Invalid Topic Name - %s. It mustn't contains wildcards: # and +. Also it can't contains U+0000(NULL) chars", topic);
       log.error(msg);
+      MqttException exception = new MqttException(MqttException.MQTT_INVALID_TOPIC_NAME, msg);
       if (publishSentHandler != null) {
-        publishSentHandler.handle(Future.failedFuture(msg));
+        publishSentHandler.handle(Future.failedFuture(exception));
       }
       return this;
     }
@@ -351,8 +353,9 @@ public class MqttClientImpl implements MqttClient {
     if (invalidTopics.size() > 0) {
       String msg = String.format("Invalid Topic Filters: %s", invalidTopics);
       log.error(msg);
+      MqttException exception = new MqttException(MqttException.MQTT_INVALID_TOPIC_FILTER, msg);
       if (subscribeSentHandler != null) {
-        subscribeSentHandler.handle(Future.failedFuture(msg));
+        subscribeSentHandler.handle(Future.failedFuture(exception));
       }
       return this;
     }
@@ -756,7 +759,7 @@ public class MqttClientImpl implements MqttClient {
           this.connectHandler.handle(Future.succeededFuture(msg));
         } else {
           MqttConnectionException exception = new MqttConnectionException(msg.code());
-          log.error(exception.getMessage());
+          log.error("Connection refused by the server");
           this.connectHandler.handle(Future.failedFuture(exception));
         }
       }
