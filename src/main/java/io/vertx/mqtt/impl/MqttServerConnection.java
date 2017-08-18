@@ -181,7 +181,7 @@ public class MqttServerConnection {
    * Used for calling the endpoint handler when a connection is established with a remote MQTT client
    */
   private void handleConnect(MqttConnectMessage msg) {
-    
+
     // if client sent one more CONNECT packet
     if (endpoint != null) {
       //we should treat it as a protocol violation and disconnect the client
@@ -259,10 +259,10 @@ public class MqttServerConnection {
 
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
-      this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
       if (this.exceptionHandler != null) {
         this.exceptionHandler.handle(new VertxException("With zero-length client-id, clean session MUST be true"));
       }
+      this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
     } else {
 
       // an exception at connection level is propagated to the endpoint
