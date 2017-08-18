@@ -71,7 +71,6 @@ public class MqttClientOutOfOrderAcksTest {
     expectOrder.add(1);
     expectOrder.add(3);
 
-
     client.publishCompletionHandler(h -> {
       context.assertTrue(h.intValue() == expectOrder.poll());
       log.info("[CLIENT] Publish completed for message with id: " + h);
@@ -92,7 +91,6 @@ public class MqttClientOutOfOrderAcksTest {
     async.await();
     client.disconnect();
   }
-
 
   @Before
   public void before() {

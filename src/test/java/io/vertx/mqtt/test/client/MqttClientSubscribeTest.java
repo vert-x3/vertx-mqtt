@@ -48,7 +48,6 @@ public class MqttClientSubscribeTest {
   private int messageId = 0;
 
   @Test
-  @Ignore
   public void subscribeQos2AndReceive(TestContext context) throws InterruptedException {
     this.subscribeAndReceive(context, MqttQoS.EXACTLY_ONCE);
   }
