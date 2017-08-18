@@ -23,6 +23,7 @@ public class MqttException extends Throwable {
 
   public final static int MQTT_INVALID_TOPIC_NAME = 0;
   public final static int MQTT_INVALID_TOPIC_FILTER = 1;
+  public final static int MQTT_INFLIGHT_QUEUE_FULL = 2;
 
   private final int code;
 
