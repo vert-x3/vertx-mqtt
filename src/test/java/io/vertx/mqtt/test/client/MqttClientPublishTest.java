@@ -26,7 +26,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -46,7 +45,6 @@ public class MqttClientPublishTest {
   private int messageId = 0;
 
   @Test
-  @Ignore
   public void publishQoS2(TestContext context) throws InterruptedException {
     this.publish(context, MqttQoS.EXACTLY_ONCE);
   }

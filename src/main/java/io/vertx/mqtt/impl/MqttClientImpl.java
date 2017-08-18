@@ -52,11 +52,13 @@ import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
 import io.vertx.mqtt.MqttException;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
+import io.vertx.mqtt.messages.MqttMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -101,8 +103,21 @@ public class MqttClientImpl implements MqttClient {
   //handler to call when the remote MQTT server closes the connection
   Handler<Void> closeHandler;
 
+  // storage of PUBLISH QoS=1 messages which was not responded with PUBACK
+  LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos1outbound = new LinkedHashMap<>();
+
+  // storage of PUBLISH QoS=2 messages which was not responded with PUBREC
+  // and PUBREL messages which was not responded with PUBCOMP
+  LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos2outbound = new LinkedHashMap<>();
+
+  // storage of PUBLISH messages which was responded with PUBREC
+  LinkedHashMap<Integer, MqttMessage> qos2inbound = new LinkedHashMap<>();
+
   // counter for the message identifier
   private int messageIdCounter;
+
+  // total amount of unacknowledged packets
+  private int countInflightQueue;
 
   // patterns for topics validation
   private Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
@@ -252,6 +267,16 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
 
+    if (countInflightQueue >= options.getMaxInflightQueue()) {
+      String msg = String.format("Attempt to exceed the limit of %d inflight messages", options.getMaxInflightQueue());
+      log.error(msg);
+      MqttException exception = new MqttException(MqttException.MQTT_INFLIGHT_QUEUE_FULL, msg);
+      if (publishSentHandler != null) {
+        publishSentHandler.handle(Future.failedFuture(exception));
+      }
+      return this;
+    }
+
     if (!isValidTopicName(topic)) {
       String msg = String.format("Invalid Topic Name - %s. It mustn't contains wildcards: # and +. Also it can't contains U+0000(NULL) chars", topic);
       log.error(msg);
@@ -275,6 +300,17 @@ public class MqttClientImpl implements MqttClient {
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
 
     io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
+
+    switch (qosLevel) {
+      case AT_LEAST_ONCE:
+        qos1outbound.put(variableHeader.messageId(), publish);
+        countInflightQueue++;
+        break;
+      case EXACTLY_ONCE:
+        qos2outbound.put(variableHeader.messageId(), publish);
+        countInflightQueue++;
+        break;
+    }
 
     this.write(publish);
 
@@ -500,18 +536,19 @@ public class MqttClientImpl implements MqttClient {
   /**
    * Sends PUBREC packet to server
    *
-   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param publishMessage a PUBLISH message to acknowledge
    */
-  void publishReceived(int publishMessageId) {
+  void publishReceived(MqttPublishMessage publishMessage) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREC, false, AT_MOST_ONCE, false, 0);
 
     MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(publishMessageId);
+      MqttMessageIdVariableHeader.from(publishMessage.messageId());
 
     io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
+    qos2inbound.put(publishMessage.messageId(), publishMessage);
     this.write(pubrec);
   }
 
@@ -548,6 +585,7 @@ public class MqttClientImpl implements MqttClient {
 
     io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
+    qos2outbound.put(publishMessageId, pubrel);
     this.write(pubrel);
   }
 
@@ -650,6 +688,16 @@ public class MqttClientImpl implements MqttClient {
   void handlePuback(int pubackMessageId) {
 
     synchronized (this.connection) {
+
+      io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos1outbound.remove(pubackMessageId);
+
+      if (removedPacket == null) {
+        log.warn("Received PUBACK packet without having related PUBLISH packet in storage");
+        return;
+      }
+
+      countInflightQueue--;
+
       if (this.publishCompletionHandler != null) {
         this.publishCompletionHandler.handle(pubackMessageId);
       }
@@ -664,6 +712,15 @@ public class MqttClientImpl implements MqttClient {
   void handlePubcomp(int pubcompMessageId) {
 
     synchronized (this.connection) {
+      io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos2outbound.remove(pubcompMessageId);
+
+      if (removedPacket == null) {
+        log.warn("Received PUBCOMP packet without having related PUBREL packet in storage");
+        return;
+      }
+
+      countInflightQueue--;
+
       if (this.publishCompletionHandler != null) {
         this.publishCompletionHandler.handle(pubcompMessageId);
       }
@@ -721,8 +778,8 @@ public class MqttClientImpl implements MqttClient {
           break;
 
         case EXACTLY_ONCE:
-          this.publishReceived(msg.messageId());
-          // TODO : save the PUBLISH message for raising the handler when PUBREL will arrive
+          this.publishReceived(msg);
+          // we will handle the PUBLISH when a PUBREL comes
           break;
       }
 
@@ -737,10 +794,18 @@ public class MqttClientImpl implements MqttClient {
   void handlePubrel(int pubrelMessageId) {
 
     synchronized (this.connection) {
-      this.publishComplete(pubrelMessageId);
+      MqttMessage message = qos2inbound.get(pubrelMessageId);
 
-      // TODO : call publishHandler with the message received in the PUBISH
-      //        we have to save it somewhere (maybe in a queue)
+      if (message == null) {
+        log.warn("Received PUBREL packet without having related PUBREC packet in storage");
+        return;
+      }
+
+      if (this.publishHandler != null) {
+        this.publishHandler.handle((MqttPublishMessage) message);
+      }
+
+      this.publishComplete(pubrelMessageId);
     }
   }
 

@@ -45,6 +45,10 @@ Set the keep alive timeout in seconds
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[localAddress]]`localAddress`|`String`|-
 |[[logActivity]]`logActivity`|`Boolean`|-
+|[[maxInflightQueue]]`maxInflightQueue`|`Number (int)`|
++++
+Set max count of unacknowledged messages
++++
 |[[maxMessageSize]]`maxMessageSize`|`Number (int)`|
 +++
 Set max MQTT message size
