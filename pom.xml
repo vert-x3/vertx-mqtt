@@ -196,12 +196,16 @@
             io.vertx.ext.auth,\
             io.vertx.ext.auth.*;resolution:=optional,\
             io.vertx.lang.rxjava.*;resolution:=optional,\
+            io.vertx.lang.reactivex.*;resolution:=optional,\
             io.vertx.lang.groovy.*;resolution:=optional,\
             io.vertx.codegen.annotations;resolution:=optional,\
             io.vertx.rx.java;resolution:=optional,\
             io.vertx.rxjava.core.*;resolution:=optional,\
             io.vertx.rxjava.ext.auth.*;resolution:=optional,\
+            io.vertx.reactivex;resolution:=optional,\
+            io.vertx.reactivex.core.*;resolution:=optional,\
             rx.*;resolution:=optional,\
+            io.reactivex.*;resolution:=optional,\
             *
           -exportcontents: !*impl, !examples, *
           ]]></bnd>
