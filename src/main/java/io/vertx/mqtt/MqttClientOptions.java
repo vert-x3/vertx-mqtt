@@ -29,7 +29,7 @@ import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 
 /**
- * Represents options used by the MQTT client
+ * Represents options used by the MQTT client.
  */
 @DataObject(generateConverter = true)
 public class MqttClientOptions extends NetClientOptions {
