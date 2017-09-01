@@ -31,7 +31,7 @@ import io.vertx.core.net.TrustOptions;
 /**
  * Represents options used by the MQTT client
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class MqttClientOptions extends NetClientOptions {
 
   public static final int DEFAULT_PORT = 1883;
@@ -74,7 +74,7 @@ public class MqttClientOptions extends NetClientOptions {
    */
   public MqttClientOptions(JsonObject json) {
     super(json);
-    //TODO implement this constructor
+    MqttClientOptionsConverter.fromJson(json, this);
   }
 
   /**
