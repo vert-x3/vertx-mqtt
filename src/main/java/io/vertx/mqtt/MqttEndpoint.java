@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
@@ -39,6 +40,18 @@ public interface MqttEndpoint {
    * Close the endpoint, so the connection with remote MQTT client
    */
   void close();
+
+  /**
+   * @return the remote address for this socket
+   */
+  @CacheReturn
+  SocketAddress remoteAddress();
+
+  /**
+   * @return the local address for this socket
+   */
+  @CacheReturn
+  SocketAddress localAddress();
 
   /**
    * @return the client identifier as provided by the remote MQTT client

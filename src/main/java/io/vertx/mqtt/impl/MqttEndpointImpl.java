@@ -30,6 +30,7 @@ import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
@@ -650,6 +651,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
       this.conn.close();
 
       this.cleanup();
+    }
+  }
+
+  public SocketAddress localAddress() {
+    synchronized (this.conn) {
+      this.checkClosed();
+      return conn.localAddress();
+    }
+  }
+
+  public SocketAddress remoteAddress() {
+    synchronized (this.conn) {
+      this.checkClosed();
+      return conn.remoteAddress();
     }
   }
 
