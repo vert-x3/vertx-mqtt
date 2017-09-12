@@ -24,8 +24,9 @@
     <stack.version>3.5.0-SNAPSHOT</stack.version>
     <junit.version>4.12</junit.version>
     <paho.version>1.1.0</paho.version>
+    <fabric8-docker-plugin.version>0.22.1</fabric8-docker-plugin.version>
 
-    <!-- Profile for testing on CI server using broker provided by Eclipse-->
+    <!-- Depending on profile property for testing on CI server using broker provided by Eclipse-->
     <SERVER>iot.eclipse.org</SERVER>
   </properties>
 
@@ -269,7 +270,7 @@
           <plugin>
             <groupId>io.fabric8</groupId>
             <artifactId>docker-maven-plugin</artifactId>
-            <version>0.21.0</version>
+            <version>${fabric8-docker-plugin.version}</version>
             <configuration>
               <dockerHost>unix:///var/run/docker.sock</dockerHost>
               <images>
