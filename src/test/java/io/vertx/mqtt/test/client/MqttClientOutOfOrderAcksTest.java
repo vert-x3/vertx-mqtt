@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 
 
 /**
@@ -62,6 +63,7 @@ public class MqttClientOutOfOrderAcksTest {
   }
 
   private void clientSendThreePublishMessages(MqttQoS mqttQoS, TestContext context) {
+    this.context = context;
     Async async = context.async(3);
     MqttClient client = MqttClient.create(vertx);
 
@@ -93,11 +95,13 @@ public class MqttClientOutOfOrderAcksTest {
   }
 
   @Before
-  public void before() {
+  public void before() throws InterruptedException {
     server = MqttServer.create(vertx);
+    CountDownLatch async = new CountDownLatch(1);
     server.endpointHandler(MqttClientOutOfOrderAcksTest::serverLogic).listen(ar -> {
       if (ar.succeeded()) {
         log.info("[SERVER] MQTT server listening on port " + ar.result().actualPort());
+        async.countDown();
       } else {
         log.error("[SERVER] Error starting MQTT server", ar.cause());
         System.exit(1);
@@ -105,6 +109,7 @@ public class MqttClientOutOfOrderAcksTest {
     });
 
     server.exceptionHandler(t -> context.assertTrue(false));
+    async.await();
   }
 
   @After
