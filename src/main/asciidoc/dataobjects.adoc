@@ -4,7 +4,7 @@
 == MqttClientOptions
 
 ++++
- Represents options used by the MQTT client
+ Represents options used by the MQTT client.
 ++++
 '''
 
