@@ -36,12 +36,16 @@ import io.vertx.core.net.PfxOptions
  * @param port 
  * @param receiveBufferSize 
  * @param reuseAddress 
+ * @param reusePort 
  * @param sendBufferSize 
  * @param sni 
  * @param soLinger 
  * @param ssl 
+ * @param tcpCork 
+ * @param tcpFastOpen 
  * @param tcpKeepAlive 
  * @param tcpNoDelay 
+ * @param tcpQuickAck 
  * @param timeoutOnConnect  Set the timeout on CONNECT packet
  * @param trafficClass 
  * @param trustStoreOptions 
@@ -74,12 +78,16 @@ fun MqttServerOptions(
   port: Int? = null,
   receiveBufferSize: Int? = null,
   reuseAddress: Boolean? = null,
+  reusePort: Boolean? = null,
   sendBufferSize: Int? = null,
   sni: Boolean? = null,
   soLinger: Int? = null,
   ssl: Boolean? = null,
+  tcpCork: Boolean? = null,
+  tcpFastOpen: Boolean? = null,
   tcpKeepAlive: Boolean? = null,
   tcpNoDelay: Boolean? = null,
+  tcpQuickAck: Boolean? = null,
   timeoutOnConnect: Int? = null,
   trafficClass: Int? = null,
   trustStoreOptions: io.vertx.core.net.JksOptions? = null,
@@ -160,6 +168,9 @@ fun MqttServerOptions(
   if (reuseAddress != null) {
     this.setReuseAddress(reuseAddress)
   }
+  if (reusePort != null) {
+    this.setReusePort(reusePort)
+  }
   if (sendBufferSize != null) {
     this.setSendBufferSize(sendBufferSize)
   }
@@ -172,11 +183,20 @@ fun MqttServerOptions(
   if (ssl != null) {
     this.setSsl(ssl)
   }
+  if (tcpCork != null) {
+    this.setTcpCork(tcpCork)
+  }
+  if (tcpFastOpen != null) {
+    this.setTcpFastOpen(tcpFastOpen)
+  }
   if (tcpKeepAlive != null) {
     this.setTcpKeepAlive(tcpKeepAlive)
   }
   if (tcpNoDelay != null) {
     this.setTcpNoDelay(tcpNoDelay)
+  }
+  if (tcpQuickAck != null) {
+    this.setTcpQuickAck(tcpQuickAck)
   }
   if (timeoutOnConnect != null) {
     this.setTimeoutOnConnect(timeoutOnConnect)

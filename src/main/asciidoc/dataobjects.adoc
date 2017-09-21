@@ -68,11 +68,15 @@ Set the password
 |[[reconnectAttempts]]`reconnectAttempts`|`Number (int)`|-
 |[[reconnectInterval]]`reconnectInterval`|`Number (long)`|-
 |[[reuseAddress]]`reuseAddress`|`Boolean`|-
+|[[reusePort]]`reusePort`|`Boolean`|-
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|-
 |[[soLinger]]`soLinger`|`Number (int)`|-
 |[[ssl]]`ssl`|`Boolean`|-
+|[[tcpCork]]`tcpCork`|`Boolean`|-
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|-
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|-
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|-
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|-
 |[[trafficClass]]`trafficClass`|`Number (int)`|-
 |[[trustAll]]`trustAll`|`Boolean`|-
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
@@ -144,12 +148,16 @@ Set max MQTT message size
 |[[port]]`port`|`Number (int)`|-
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|-
 |[[reuseAddress]]`reuseAddress`|`Boolean`|-
+|[[reusePort]]`reusePort`|`Boolean`|-
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|-
 |[[sni]]`sni`|`Boolean`|-
 |[[soLinger]]`soLinger`|`Number (int)`|-
 |[[ssl]]`ssl`|`Boolean`|-
+|[[tcpCork]]`tcpCork`|`Boolean`|-
+|[[tcpFastOpen]]`tcpFastOpen`|`Boolean`|-
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|-
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|-
+|[[tcpQuickAck]]`tcpQuickAck`|`Boolean`|-
 |[[timeoutOnConnect]]`timeoutOnConnect`|`Number (int)`|
 +++
 Set the timeout on CONNECT packet

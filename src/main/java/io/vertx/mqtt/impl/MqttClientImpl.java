@@ -57,6 +57,7 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -206,9 +207,9 @@ public class MqttClientImpl implements MqttClient {
         MqttConnectPayload payload = new MqttConnectPayload(
           options.getClientId() == null ? "" : options.getClientId(),
           options.getWillTopic(),
-          options.getWillMessage(),
+          options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
           options.hasUsername() ? options.getUsername() : null,
-          options.hasPassword() ? options.getPassword() : null
+          options.hasPassword() ? options.getPassword().getBytes() : null
         );
 
         io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);

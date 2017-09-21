@@ -50,6 +50,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * MQTT server testing about bad clients not MQTT exchange compliant
  */
@@ -215,9 +217,9 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
     MqttConnectPayload payload = new MqttConnectPayload(
       options.getClientId() == null ? "" : options.getClientId(),
       options.getWillTopic(),
-      options.getWillMessage(),
+      options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
       options.hasUsername() ? options.getUsername() : null,
-      options.hasPassword() ? options.getPassword() : null
+      options.hasPassword() ? options.getPassword().getBytes(StandardCharsets.UTF_8) : null
     );
 
     return MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
