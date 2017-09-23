@@ -1,5 +1,19 @@
 = Cheatsheets
 
+[[MqttAuth]]
+== MqttAuth
+
+++++
+ MQTT authentication information
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
 [[MqttClientOptions]]
 == MqttClientOptions
 
@@ -166,5 +180,27 @@ Set the timeout on CONNECT packet
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[useAlpn]]`useAlpn`|`Boolean`|-
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|-
+|===
+
+[[MqttWill]]
+== MqttWill
+
+++++
+ Will information from the remote MQTT client
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[willFlag]]`willFlag`|`Boolean`|
++++
+
++++
+|[[willRetain]]`willRetain`|`Boolean`|
++++
+
++++
 |===
 

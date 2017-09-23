@@ -16,21 +16,62 @@
 
 package io.vertx.mqtt;
 
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.json.JsonObject;
 
 /**
  * MQTT authentication information
  */
-@VertxGen
-public interface MqttAuth {
+@DataObject
+public class MqttAuth {
+
+  private final String userName;
+  private final String password;
+
+  /**
+   * Constructor
+   *
+   * @param userName MQTT client username
+   * @param password MQTT client password
+   */
+  public MqttAuth(String userName, String password) {
+    this.userName = userName;
+    this.password = password;
+  }
+
+  /**
+   * Create instance from JSON
+   *
+   * @param json  the JSON
+   */
+  public MqttAuth(JsonObject json) {
+    this.userName = json.getString("userName");
+    this.password = json.getString("password");
+  }
 
   /**
    * @return the username provided by the remote MQTT client
    */
-  String userName();
+  public String userName() {
+    return this.userName;
+  }
 
   /**
    * @return the password provided by the remote MQTT client
    */
-  String password();
+  public String password() {
+    return this.password;
+  }
+
+  /**
+   * Convert instance in JSON
+   *
+   * @return  JSON representation
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    json.put("userName", this.userName);
+    json.put("password", this.password);
+    return json;
+  }
 }

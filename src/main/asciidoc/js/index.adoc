@@ -52,38 +52,7 @@ to check if the server is started properly or not.
 
 [source,js]
 ----
-var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
-
-var mqttServer = MqttServer.create(vertx);
-mqttServer.endpointHandler(function (endpoint) {
-
-  // shows main connect info
-  console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
-
-  if ((endpoint.auth() !== null && endpoint.auth() !== undefined)) {
-    console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
-  }
-  if ((endpoint.will() !== null && endpoint.will() !== undefined)) {
-    console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-  }
-
-  console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
-
-  // accept connection from the remote client
-  endpoint.accept(false);
-
-}).listen(function (ar, ar_err) {
-
-  if (ar_err == null) {
-
-    console.log("MQTT server is listening on port " + ar.actualPort());
-  } else {
-
-    console.log("Error on starting the server");
-    ar_err.printStackTrace();
-  }
-});
-
+Code not translatable
 ----
 
 The same _endpoint_ instance provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#disconnectHandler[disconnectHandler]`
@@ -117,47 +86,7 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,js]
 ----
-var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
-
-var options = {
-  "port" : 8883,
-  "keyCertOptions" : {
-    "keyPath" : "./src/test/resources/tls/server-key.pem",
-    "certPath" : "./src/test/resources/tls/server-cert.pem"
-  },
-  "ssl" : true
-};
-
-var mqttServer = MqttServer.create(vertx, options);
-mqttServer.endpointHandler(function (endpoint) {
-
-  // shows main connect info
-  console.log("MQTT client [" + endpoint.clientIdentifier() + "] request to connect, clean session = " + endpoint.isCleanSession());
-
-  if ((endpoint.auth() !== null && endpoint.auth() !== undefined)) {
-    console.log("[username = " + endpoint.auth().userName() + ", password = " + endpoint.auth().password() + "]");
-  }
-  if ((endpoint.will() !== null && endpoint.will() !== undefined)) {
-    console.log("[will topic = " + endpoint.will().willTopic() + " msg = " + endpoint.will().willMessage() + " QoS = " + endpoint.will().willQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
-  }
-
-  console.log("[keep alive timeout = " + endpoint.keepAliveTimeSeconds() + "]");
-
-  // accept connection from the remote client
-  endpoint.accept(false);
-
-}).listen(function (ar, ar_err) {
-
-  if (ar_err == null) {
-
-    console.log("MQTT server is listening on port " + ar.actualPort());
-  } else {
-
-    console.log("Error on starting the server");
-    ar_err.printStackTrace();
-  }
-});
-
+Code not translatable
 ----
 
 All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
