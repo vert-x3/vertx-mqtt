@@ -32,6 +32,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
+import io.vertx.mqtt.MqttWill;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
@@ -198,8 +199,8 @@ public class MqttServerConnection {
     }
 
     // retrieve will information from CONNECT message
-    MqttWillImpl will =
-      new MqttWillImpl(msg.variableHeader().isWillFlag(),
+    MqttWill will =
+      new MqttWill(msg.variableHeader().isWillFlag(),
         msg.payload().willTopic(),
         msg.payload().willMessage(),
         msg.variableHeader().willQos(),

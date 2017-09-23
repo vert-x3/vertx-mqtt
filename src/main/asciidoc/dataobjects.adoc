@@ -182,3 +182,25 @@ Set the timeout on CONNECT packet
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|-
 |===
 
+[[MqttWill]]
+== MqttWill
+
+++++
+ Will information from the remote MQTT client
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[willFlag]]`willFlag`|`Boolean`|
++++
+
++++
+|[[willRetain]]`willRetain`|`Boolean`|
++++
+
++++
+|===
+

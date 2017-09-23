@@ -104,7 +104,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
    */
-  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWillImpl will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds) {
+  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds) {
     this.conn = conn;
     this.clientIdentifier = clientIdentifier;
     this.auth = auth;
