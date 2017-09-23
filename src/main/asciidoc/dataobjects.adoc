@@ -1,5 +1,19 @@
 = Cheatsheets
 
+[[MqttAuth]]
+== MqttAuth
+
+++++
+ MQTT authentication information
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
 [[MqttClientOptions]]
 == MqttClientOptions
 

@@ -29,6 +29,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
@@ -181,7 +182,7 @@ public class MqttServerConnection {
    * Used for calling the endpoint handler when a connection is established with a remote MQTT client
    */
   private void handleConnect(MqttConnectMessage msg) {
-    
+
     // if client sent one more CONNECT packet
     if (endpoint != null) {
       //we should treat it as a protocol violation and disconnect the client
@@ -205,9 +206,9 @@ public class MqttServerConnection {
         msg.variableHeader().isWillRetain());
 
     // retrieve authorization information from CONNECT message
-    MqttAuthImpl auth = (msg.variableHeader().hasUserName() &&
+    MqttAuth auth = (msg.variableHeader().hasUserName() &&
       msg.variableHeader().hasPassword()) ?
-      new MqttAuthImpl(
+      new MqttAuth(
         msg.payload().userName(),
         msg.payload().password()) : null;
 

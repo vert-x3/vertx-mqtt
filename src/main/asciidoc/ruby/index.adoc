@@ -52,38 +52,7 @@ to check if the server is started properly or not.
 
 [source,ruby]
 ----
-require 'vertx-mqtt-server/mqtt_server'
-
-mqttServer = VertxMqttServer::MqttServer.create(vertx)
-mqttServer.endpoint_handler() { |endpoint|
-
-  # shows main connect info
-  puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
-
-  if (endpoint.auth() != nil)
-    puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
-  end
-  if (endpoint.will() != nil)
-    puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
-  end
-
-  puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
-
-  # accept connection from the remote client
-  endpoint.accept(false)
-
-}.listen() { |ar_err,ar|
-
-  if (ar_err == nil)
-
-    puts "MQTT server is listening on port #{ar.actual_port()}"
-  else
-
-    puts "Error on starting the server"
-    ar_err.print_stack_trace()
-  end
-}
-
+Code not translatable
 ----
 
 The same _endpoint_ instance provides the `link:../../yardoc/VertxMqttServer/MqttEndpoint.html#disconnect_handler-instance_method[disconnectHandler]`
@@ -117,47 +86,7 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,ruby]
 ----
-require 'vertx-mqtt-server/mqtt_server'
-
-options = {
-  'port' => 8883,
-  'keyCertOptions' => {
-    'keyPath' => "./src/test/resources/tls/server-key.pem",
-    'certPath' => "./src/test/resources/tls/server-cert.pem"
-  },
-  'ssl' => true
-}
-
-mqttServer = VertxMqttServer::MqttServer.create(vertx, options)
-mqttServer.endpoint_handler() { |endpoint|
-
-  # shows main connect info
-  puts "MQTT client [#{endpoint.client_identifier()}] request to connect, clean session = #{endpoint.clean_session?()}"
-
-  if (endpoint.auth() != nil)
-    puts "[username = #{endpoint.auth().user_name()}, password = #{endpoint.auth().password()}]"
-  end
-  if (endpoint.will() != nil)
-    puts "[will topic = #{endpoint.will().will_topic()} msg = #{endpoint.will().will_message()} QoS = #{endpoint.will().will_qos()} isRetain = #{endpoint.will().will_retain?()}]"
-  end
-
-  puts "[keep alive timeout = #{endpoint.keep_alive_time_seconds()}]"
-
-  # accept connection from the remote client
-  endpoint.accept(false)
-
-}.listen() { |ar_err,ar|
-
-  if (ar_err == nil)
-
-    puts "MQTT server is listening on port #{ar.actual_port()}"
-  else
-
-    puts "Error on starting the server"
-    ar_err.print_stack_trace()
-  end
-}
-
+Code not translatable
 ----
 
 All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.

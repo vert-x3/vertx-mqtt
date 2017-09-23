@@ -52,37 +52,7 @@ to check if the server is started properly or not.
 
 [source,groovy]
 ----
-
-def mqttServer = MqttServer.create(vertx)
-mqttServer.endpointHandler({ endpoint ->
-
-  // shows main connect info
-  println("MQTT client [${endpoint.clientIdentifier()}] request to connect, clean session = ${endpoint.isCleanSession()}")
-
-  if (endpoint.auth() != null) {
-    println("[username = ${endpoint.auth().userName()}, password = ${endpoint.auth().password()}]")
-  }
-  if (endpoint.will() != null) {
-    println("[will topic = ${endpoint.will().willTopic()} msg = ${endpoint.will().willMessage()} QoS = ${endpoint.will().willQos()} isRetain = ${endpoint.will().isWillRetain()}]")
-  }
-
-  println("[keep alive timeout = ${endpoint.keepAliveTimeSeconds()}]")
-
-  // accept connection from the remote client
-  endpoint.accept(false)
-
-}).listen({ ar ->
-
-  if (ar.succeeded()) {
-
-    println("MQTT server is listening on port ${ar.result().actualPort()}")
-  } else {
-
-    println("Error on starting the server")
-    ar.cause().printStackTrace()
-  }
-})
-
+Code not translatable
 ----
 
 The same _endpoint_ instance provides the `link:../../apidocs/io/vertx/mqtt/MqttEndpoint.html#disconnectHandler-io.vertx.core.Handler-[disconnectHandler]`
@@ -116,46 +86,7 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 [source,groovy]
 ----
-
-def options = [
-  port:8883,
-  keyCertOptions:[
-    keyPath:"./src/test/resources/tls/server-key.pem",
-    certPath:"./src/test/resources/tls/server-cert.pem"
-  ],
-  ssl:true
-]
-
-def mqttServer = MqttServer.create(vertx, options)
-mqttServer.endpointHandler({ endpoint ->
-
-  // shows main connect info
-  println("MQTT client [${endpoint.clientIdentifier()}] request to connect, clean session = ${endpoint.isCleanSession()}")
-
-  if (endpoint.auth() != null) {
-    println("[username = ${endpoint.auth().userName()}, password = ${endpoint.auth().password()}]")
-  }
-  if (endpoint.will() != null) {
-    println("[will topic = ${endpoint.will().willTopic()} msg = ${endpoint.will().willMessage()} QoS = ${endpoint.will().willQos()} isRetain = ${endpoint.will().isWillRetain()}]")
-  }
-
-  println("[keep alive timeout = ${endpoint.keepAliveTimeSeconds()}]")
-
-  // accept connection from the remote client
-  endpoint.accept(false)
-
-}).listen({ ar ->
-
-  if (ar.succeeded()) {
-
-    println("MQTT server is listening on port ${ar.result().actualPort()}")
-  } else {
-
-    println("Error on starting the server")
-    ar.cause().printStackTrace()
-  }
-})
-
+Code not translatable
 ----
 
 All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
