@@ -75,6 +75,8 @@ public abstract class MqttServerBaseTest {
         System.exit(1);
       }
     });
+
+    async.awaitSuccess();
   }
 
   /**
