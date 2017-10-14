@@ -878,11 +878,18 @@ public class MqttClientImpl implements MqttClient {
    * This method is for republishing an existed {@code io.netty.handler.codec.mqtt.MqttPublishMessage}
    *
    * @param msg message to republish
+   * @return either republish succed or not
    */
-  private void republish(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
+  private boolean republish(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
+    // in case if payload is released
+    if (msg.refCnt() == 0) {
+      return false;
+    }
+
     // increase a refcount because we may resend it one more time later
     msg.retain();
     this.write(msg);
+    return true;
   }
 
   /**
