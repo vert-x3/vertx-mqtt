@@ -38,7 +38,6 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -880,7 +879,9 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param msg message to republish
    */
-  private void publish(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
+  private void republish(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
+    // increase a refcount because we may resend it one more time later
+    msg.retain();
     this.write(msg);
   }
 
@@ -891,18 +892,16 @@ public class MqttClientImpl implements MqttClient {
   private void resendAllUnAcknowledgedPackets() {
 
     // first of all resend all PUBACK packets
-    for (io.netty.handler.codec.mqtt.MqttPublishMessage message: qos1outbound.values()) {
-      // increase a refcount because we may resend it one more time later
-      message.retain();
-      publish(message);
+    for (io.netty.handler.codec.mqtt.MqttPublishMessage message : qos1outbound.values()) {
+      republish(message);
     }
 
     // the next thing is outbound QoS = 2 messages
     for (Map.Entry<Integer, io.netty.handler.codec.mqtt.MqttMessage> packetIdAndPacketItself : qos2outbound.entrySet()) {
       // there are only two possible types in the queue
-      switch (packetIdAndPacketItself.getValue().fixedHeader().messageType()){
+      switch (packetIdAndPacketItself.getValue().fixedHeader().messageType()) {
         case PUBLISH:
-          publish((io.netty.handler.codec.mqtt.MqttPublishMessage) packetIdAndPacketItself.getValue());
+          republish((io.netty.handler.codec.mqtt.MqttPublishMessage) packetIdAndPacketItself.getValue());
           break;
         case PUBREL:
           publishRelease(packetIdAndPacketItself.getKey());
@@ -911,8 +910,8 @@ public class MqttClientImpl implements MqttClient {
     }
 
     // and, finally, QoS = 2 inbound messages
-    for (Map.Entry<Integer,MqttMessage> packetIdAndPacketItself : qos2inbound.entrySet()) {
-     publishReceived(packetIdAndPacketItself.getKey());
+    for (Map.Entry<Integer, MqttMessage> packetIdAndPacketItself : qos2inbound.entrySet()) {
+      publishReceived(packetIdAndPacketItself.getKey());
     }
   }
 
