@@ -301,6 +301,8 @@ public class MqttClientImpl implements MqttClient {
     MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
+    // retain buffer here becouse we don't want to lose the content after sending
+    // we want to be able to resend
     buf.retain();
 
     io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
@@ -605,6 +607,13 @@ public class MqttClientImpl implements MqttClient {
 
     io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
+    // before replacing PUBLISH packet with PUBERL in the queue we should relese a payload
+    io.netty.handler.codec.mqtt.MqttMessage msgToRelease = qos2outbound.get(publishMessageId);
+    if (msgToRelease instanceof io.netty.handler.codec.mqtt.MqttPublishMessage) {
+      ((io.netty.handler.codec.mqtt.MqttPublishMessage) msgToRelease).release();
+    }
+
+    // now PUBLISH is relesed and we can replace it
     qos2outbound.put(publishMessageId, pubrel);
     this.write(pubrel);
   }
@@ -709,12 +718,15 @@ public class MqttClientImpl implements MqttClient {
 
     synchronized (this.connection) {
 
-      io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos1outbound.remove(pubackMessageId);
+      io.netty.handler.codec.mqtt.MqttPublishMessage removedPacket = qos1outbound.remove(pubackMessageId);
 
       if (removedPacket == null) {
         log.warn("Received PUBACK packet without having related PUBLISH packet in storage");
         return;
       }
+
+      // it is a very important to relese Butebuf because we dont need the packet with its content anymore
+      removedPacket.release();
 
       countInflightQueue--;
 
@@ -869,14 +881,6 @@ public class MqttClientImpl implements MqttClient {
    * @param msg message to republish
    */
   private void publish(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
-
-    // hope that {@code msg.payload()} buffer is not released yet
-    // not sure about it
-//    ByteBuf buf = Unpooled.copiedBuffer(msg.payload());
-//
-//    io.netty.handler.codec.mqtt.MqttMessage publish =
-//      MqttMessageFactory.newMessage(msg.fixedHeader(), msg.variableHeader(), buf);
-
     this.write(msg);
   }
 
@@ -888,6 +892,7 @@ public class MqttClientImpl implements MqttClient {
 
     // first of all resend all PUBACK packets
     for (io.netty.handler.codec.mqtt.MqttPublishMessage message: qos1outbound.values()) {
+      // increase a refcount because we may resend it one more time later
       message.retain();
       publish(message);
     }
