@@ -38,6 +38,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -105,7 +106,7 @@ public class MqttClientImpl implements MqttClient {
   Handler<Void> closeHandler;
 
   // storage of PUBLISH QoS=1 messages which was not responded with PUBACK
-  LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos1outbound = new LinkedHashMap<>();
+  LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttPublishMessage> qos1outbound = new LinkedHashMap<>();
 
   // storage of PUBLISH QoS=2 messages which was not responded with PUBREC
   // and PUBREL messages which was not responded with PUBCOMP
@@ -186,6 +187,7 @@ public class MqttClientImpl implements MqttClient {
         // an exception at connection level
         soi.exceptionHandler(this::handleException);
 
+        // creating and sending a CONNECT packet
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
           false,
           AT_MOST_ONCE,
@@ -299,12 +301,13 @@ public class MqttClientImpl implements MqttClient {
     MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
+    buf.retain();
 
     io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
 
     switch (qosLevel) {
       case AT_LEAST_ONCE:
-        qos1outbound.put(variableHeader.messageId(), publish);
+        qos1outbound.put(variableHeader.messageId(), (io.netty.handler.codec.mqtt.MqttPublishMessage) publish);
         countInflightQueue++;
         break;
       case EXACTLY_ONCE:
@@ -550,6 +553,22 @@ public class MqttClientImpl implements MqttClient {
     io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
     qos2inbound.put(publishMessage.messageId(), publishMessage);
+    this.write(pubrec);
+  }
+
+  /**
+   * Sends PUBREC packet to server
+   *
+   * @param publishReceivedMessageId a packet id of message to acknowledge
+   */
+  void publishReceived(int publishReceivedMessageId){
+    MqttFixedHeader fixedHeader =
+      new MqttFixedHeader(MqttMessageType.PUBREC, false, AT_MOST_ONCE, false, 0);
+
+    MqttMessageIdVariableHeader variableHeader =
+      MqttMessageIdVariableHeader.from(publishReceivedMessageId);
+
+    io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
     this.write(pubrec);
   }
 
@@ -818,17 +837,77 @@ public class MqttClientImpl implements MqttClient {
   void handleConnack(MqttConnAckMessage msg) {
 
     synchronized (this.connection) {
+      if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
 
-      if (this.connectHandler != null) {
+        // in case if the connection is just resuming of an old session
+        if (!options.isCleanSession()) {
+          // then we should just resend
+          // QoS 1 and QoS 2 messages which have been sent to the Server, but have not been completely acknowledged
+          // and
+          // QoS 2 messages which have been received from the Server, but have not been completely acknowledged
+          resendAllUnAcknowledgedPackets();
+        }
 
-        if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+        if (this.connectHandler != null) {
           this.connectHandler.handle(Future.succeededFuture(msg));
-        } else {
-          MqttConnectionException exception = new MqttConnectionException(msg.code());
-          log.error("Connection refused by the server");
+        }
+
+      } else {
+        MqttConnectionException exception = new MqttConnectionException(msg.code());
+        log.error("Connection refused by the server");
+        if (this.connectHandler != null) {
           this.connectHandler.handle(Future.failedFuture(exception));
         }
       }
+    }
+  }
+
+
+  /**
+   * This method is for republishing an existed {@code io.netty.handler.codec.mqtt.MqttPublishMessage}
+   *
+   * @param msg message to republish
+   */
+  private void publish(io.netty.handler.codec.mqtt.MqttPublishMessage msg) {
+
+    // hope that {@code msg.payload()} buffer is not released yet
+    // not sure about it
+//    ByteBuf buf = Unpooled.copiedBuffer(msg.payload());
+//
+//    io.netty.handler.codec.mqtt.MqttMessage publish =
+//      MqttMessageFactory.newMessage(msg.fixedHeader(), msg.variableHeader(), buf);
+
+    this.write(msg);
+  }
+
+  /**
+   * This method is used for resending all unacknowledged packets
+   * when connecting with clean Session = 0 flag
+   */
+  private void resendAllUnAcknowledgedPackets() {
+
+    // first of all resend all PUBACK packets
+    for (io.netty.handler.codec.mqtt.MqttPublishMessage message: qos1outbound.values()) {
+      message.retain();
+      publish(message);
+    }
+
+    // the next thing is outbound QoS = 2 messages
+    for (Map.Entry<Integer, io.netty.handler.codec.mqtt.MqttMessage> packetIdAndPacketItself : qos2outbound.entrySet()) {
+      // there are only two possible types in the queue
+      switch (packetIdAndPacketItself.getValue().fixedHeader().messageType()){
+        case PUBLISH:
+          publish((io.netty.handler.codec.mqtt.MqttPublishMessage) packetIdAndPacketItself.getValue());
+          break;
+        case PUBREL:
+          publishRelease(packetIdAndPacketItself.getKey());
+          break;
+      }
+    }
+
+    // and, finally, QoS = 2 inbound messages
+    for (Map.Entry<Integer,MqttMessage> packetIdAndPacketItself : qos2inbound.entrySet()) {
+     publishReceived(packetIdAndPacketItself.getKey());
     }
   }
 
