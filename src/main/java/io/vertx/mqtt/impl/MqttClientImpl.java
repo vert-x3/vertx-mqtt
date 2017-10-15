@@ -300,7 +300,7 @@ public class MqttClientImpl implements MqttClient {
     MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
-    // retain buffer here becouse we don't want to lose the content after sending
+    // retain buffer here because we don't want to lose the content after sending
     // we want to be able to resend
     buf.retain();
 
@@ -637,7 +637,7 @@ public class MqttClientImpl implements MqttClient {
       pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
 
         @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
 
           if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
