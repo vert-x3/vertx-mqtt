@@ -327,7 +327,7 @@
  * ----
  */
 @Document(fileName = "index.adoc")
-@ModuleGen(name = "vertx-mqtt-server", groupPackage = "io.vertx")
+@ModuleGen(name = "vertx-mqtt", groupPackage = "io.vertx")
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.ModuleGen;
