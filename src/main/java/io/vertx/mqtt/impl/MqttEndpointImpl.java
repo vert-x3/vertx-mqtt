@@ -30,6 +30,8 @@ import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
@@ -45,6 +47,8 @@ import java.util.stream.Collectors;
 public class MqttEndpointImpl implements MqttEndpoint {
 
   private static final int MAX_MESSAGE_ID = 65535;
+
+  private static final Logger log = LoggerFactory.getLogger(MqttEndpointImpl.class);
 
   // connection to the remote MQTT client
   private final NetSocketInternal conn;

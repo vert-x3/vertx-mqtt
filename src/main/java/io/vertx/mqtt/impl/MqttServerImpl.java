@@ -28,6 +28,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
@@ -37,6 +39,8 @@ import io.vertx.mqtt.MqttServerOptions;
  * An MQTT server implementation
  */
 public class MqttServerImpl implements MqttServer {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttServerImpl.class);
 
   private final NetServer server;
   private Handler<MqttEndpoint> endpointHandler;

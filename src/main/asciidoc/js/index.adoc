@@ -12,7 +12,7 @@ of your build descriptor:
 <dependency>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-mqtt</artifactId>
-    <version>3.5.0</version>
+    <version>3.5.1-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -20,7 +20,7 @@ of your build descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt:3.5.0
+compile io.vertx:vertx-mqtt:3.5.1-SNAPSHOT
 ----
 
 = Vert.x MQTT server
@@ -40,13 +40,13 @@ WARNING: this module has the tech preview status, this means the API can change 
 === Handling client connection/disconnection
 
 This example shows how it's possible to handle the connection request from a remote MQTT client. First, an
-`link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_server-MqttServer.html[MqttServer]` instance is created and the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_server-MqttServer.html#endpointHandler[endpointHandler]` method is used to specify the handler called
-when a remote client sends a CONNECT message for connecting to the server itself. The `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]`
+`link:../../jsdoc/module-vertx-mqtt-js_mqtt_server-MqttServer.html[MqttServer]` instance is created and the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_server-MqttServer.html#endpointHandler[endpointHandler]` method is used to specify the handler called
+when a remote client sends a CONNECT message for connecting to the server itself. The `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]`
 instance, provided as parameter to the handler, brings all main information related to the CONNECT message like client identifier,
 username/password, "will" information, clean session flag, protocol version and the "keep alive" timeout.
-Inside that handler, the _endpoint_ instance provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#accept[accept]` method
+Inside that handler, the _endpoint_ instance provides the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#accept[accept]` method
 for replying to the remote client with the corresponding CONNACK message : in this way, the connection is established.
-Finally, the server is started using the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_server-MqttServer.html#listen[listen]` method with
+Finally, the server is started using the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_server-MqttServer.html#listen[listen]` method with
 the default behavior (on localhost and default MQTT port 1883). The same method allows to specify an handler in order
 to check if the server is started properly or not.
 
@@ -55,7 +55,7 @@ to check if the server is started properly or not.
 Code not translatable
 ----
 
-The same _endpoint_ instance provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#disconnectHandler[disconnectHandler]`
+The same _endpoint_ instance provides the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#disconnectHandler[disconnectHandler]`
 for specifying the handler called when the remote client sends a DISCONNECT message in order to disconnect from the server;
 this handler takes no parameters.
 
@@ -94,11 +94,11 @@ All the other stuff related to handle endpoint connection and related disconnect
 === Handling client subscription/unsubscription request
 
 After a connection is established between client and server, the client can send a subscription request for a topic
-using the SUBSCRIBE message. The `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]` interface allows to specify an handler for the
-incoming subscription request using the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#subscribeHandler[subscribeHandler]` method.
-Such handler receives an instance of the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_subscribe_message-MqttSubscribeMessage.html[MqttSubscribeMessage]` interface which brings
+using the SUBSCRIBE message. The `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]` interface allows to specify an handler for the
+incoming subscription request using the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#subscribeHandler[subscribeHandler]` method.
+Such handler receives an instance of the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_subscribe_message-MqttSubscribeMessage.html[MqttSubscribeMessage]` interface which brings
 the list of topics with related QoS levels as desired by the client.
-Finally, the endpoint instance provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#subscribeAcknowledge[subscribeAcknowledge]` method
+Finally, the endpoint instance provides the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#subscribeAcknowledge[subscribeAcknowledge]` method
 for replying to the client with the related SUBACK message containing the granted QoS levels.
 
 [source,js]
@@ -119,10 +119,10 @@ endpoint.subscribeHandler(function (subscribe) {
 
 ----
 
-In the same way, it's possible to use the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#unsubscribeHandler[unsubscribeHandler]` method
+In the same way, it's possible to use the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#unsubscribeHandler[unsubscribeHandler]` method
 on the endpoint in order to specify the handler called when the client sends an UNSUBSCRIBE message. This handler receives
-an instance of the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_unsubscribe_message-MqttUnsubscribeMessage.html[MqttUnsubscribeMessage]` interface as parameter with the list of topics to unsubscribe.
-Finally, the endpoint instance provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#unsubscribeAcknowledge[unsubscribeAcknowledge]` method
+an instance of the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_unsubscribe_message-MqttUnsubscribeMessage.html[MqttUnsubscribeMessage]` interface as parameter with the list of topics to unsubscribe.
+Finally, the endpoint instance provides the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#unsubscribeAcknowledge[unsubscribeAcknowledge]` method
 for replying to the client with the related UNSUBACK message.
 
 [source,js]
@@ -142,21 +142,21 @@ endpoint.unsubscribeHandler(function (unsubscribe) {
 
 === Handling client published message
 
-In order to handle incoming messages published by the remote client, the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]` interface provides
-the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishHandler[publishHandler]` method for specifying the handler called
-when the client sends a PUBLISH message. This handler receives an instance of the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_publish_message-MqttPublishMessage.html[MqttPublishMessage]`
+In order to handle incoming messages published by the remote client, the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]` interface provides
+the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishHandler[publishHandler]` method for specifying the handler called
+when the client sends a PUBLISH message. This handler receives an instance of the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_publish_message-MqttPublishMessage.html[MqttPublishMessage]`
 interface as parameter with the payload, the QoS level, the duplicate and retain flags.
 
 If the QoS level is 0 (AT_MOST_ONCE), there is no need from the endpoint to reply the client.
 
 If the QoS level is 1 (AT_LEAST_ONCE), the endpoind needs to reply with a PUBACK message using the
-available `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishAcknowledge[publishAcknowledge]` method.
+available `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishAcknowledge[publishAcknowledge]` method.
 
 If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to reply with a PUBREC message using the
-available `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishReceived[publishReceived]` method; in this case the same endpoint should handle
+available `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishReceived[publishReceived]` method; in this case the same endpoint should handle
 the PUBREL message received from the client as well (the remote client sends it after receiving the PUBREC from the endpoint)
-and it can do that specifying the handler through the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishReleaseHandler[publishReleaseHandler]` method.
-In order to close the QoS level 2 delivery, the endpoint can use the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishComplete[publishComplete]` method
+and it can do that specifying the handler through the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishReleaseHandler[publishReleaseHandler]` method.
+In order to close the QoS level 2 delivery, the endpoint can use the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishComplete[publishComplete]` method
 for sending the PUBCOMP message to the client.
 
 [source,js]
@@ -183,20 +183,20 @@ endpoint.publishHandler(function (message) {
 === Publish message to the client
 
 The endpoint can publish a message to the remote client (sending a PUBLISH message) using the
-`link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publish[publish]` method
+`link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publish[publish]` method
 which takes the following input parameters : the topic to publish, the payload, the QoS level, the duplicate and retain flags.
 
 If the QoS level is 0 (AT_MOST_ONCE), the endpoint won't receiving any feedback from the client.
 
 If the QoS level is 1 (AT_LEAST_ONCE), the endpoint needs to handle the PUBACK message received from the client
-in order to receive final acknowledge of delivery. It's possible using the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishAcknowledgeHandler[publishAcknowledgeHandler]` method
+in order to receive final acknowledge of delivery. It's possible using the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishAcknowledgeHandler[publishAcknowledgeHandler]` method
 specifying such an handler.
 
 If the QoS level is 2 (EXACTLY_ONCE), the endpoint needs to handle the PUBREC message received from the client.
-The `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishReceivedHandler[publishReceivedHandler]` method allows to specify
-the handler for that. Inside that handler, the endpoint can use the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishRelease[publishRelease]` method
+The `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishReceivedHandler[publishReceivedHandler]` method allows to specify
+the handler for that. Inside that handler, the endpoint can use the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishRelease[publishRelease]` method
 for replying to the client with the PUBREL message. The last step is to handle the PUBCOMP message received from the client
-as final acknowledge for the published message; it's possible using the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#publishCompletionHandler[publishCompletionHandler]`
+as final acknowledge for the published message; it's possible using the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#publishCompletionHandler[publishCompletionHandler]`
 for specifying the handler called when the final PUBCOMP message is received.
 
 [source,js]
@@ -228,8 +228,8 @@ The underlying MQTT keep alive mechanism is handled by the server internally. Wh
 the server takes care of the keep alive timeout specified inside that message in order to check if the client doesn't
 send messages in such timeout. At same time, for every PINGREQ received, the server replies with the related PINGRESP.
 
-Even if there is no need for the high level application to handle that, the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]` interface
-provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_endpoint-MqttEndpoint.html#pingHandler[pingHandler]` method for specifying an handler
+Even if there is no need for the high level application to handle that, the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html[MqttEndpoint]` interface
+provides the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_endpoint-MqttEndpoint.html#pingHandler[pingHandler]` method for specifying an handler
 called when a PINGREQ message is received from the client. It's just a notification to the application that the client
 isn't sending meaningful messages but only pings for keeping alive; in any case the PINGRESP is automatically sent
 by the server internally as described above.
@@ -247,7 +247,7 @@ endpoint.pingHandler(function (v) {
 
 === Closing the server
 
-The `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_server-MqttServer.html[MqttServer]` interface provides the `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_server-MqttServer.html#close[close]` method
+The `link:../../jsdoc/module-vertx-mqtt-js_mqtt_server-MqttServer.html[MqttServer]` interface provides the `link:../../jsdoc/module-vertx-mqtt-js_mqtt_server-MqttServer.html#close[close]` method
 that can be used for closing the server; it stops to listen for incoming connections and closes all the active connections
 with remote clients. This method is asynchronous and one overload provides the possibility to specify a complention handler
 that will be called when the server is really closed.
@@ -276,7 +276,7 @@ It's possible to do that programmatically:
 
 [source,js]
 ----
-var MqttServer = require("vertx-mqtt-server-js/mqtt_server");
+var MqttServer = require("vertx-mqtt-js/mqtt_server");
 
 for (var i = 0;i < 10;i++) {
 
@@ -322,10 +322,10 @@ Also, you could specify things like the host and port of a server you would like
 to connect to passing instance of `link:../dataobjects.html#MqttClientOptions[MqttClientOptions]` as a param through constructor.
 
 This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client
-and calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#connect[connect]` and `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#disconnect[disconnect]` methods.
+and calling `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#connect[connect]` and `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#disconnect[disconnect]` methods.
 [source,js]
 ----
-var MqttClient = require("vertx-mqtt-server-js/mqtt_client");
+var MqttClient = require("vertx-mqtt-js/mqtt_client");
 var client = MqttClient.create(vertx);
 
 client.connect(1883, "iot.eclipse.org", function (s, s_err) {
@@ -349,13 +349,13 @@ client.publishHandler(function (s) {
 
 ----
 
-Here we have the example of usage of `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#subscribe[subscribe]` method. In order to receive messages from rpi2/temp topic we call `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#subscribe[subscribe]` method.
+Here we have the example of usage of `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#subscribe[subscribe]` method. In order to receive messages from rpi2/temp topic we call `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#subscribe[subscribe]` method.
 Although, to handle received messages from server you need to provide a handler, which will be called each time you have a new messages in the topics you subscribe on.
-As this example shows, handler could be provided via `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#publishHandler[publishHandler]` method.
+As this example shows, handler could be provided via `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#publishHandler[publishHandler]` method.
 
 === Publishing message to a topic
 
-If you would like to publish some message into topic then `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#publish[publish]` should be called.
+If you would like to publish some message into topic then `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#publish[publish]` should be called.
 Let's take a look at the example:
 [source,js]
 ----
@@ -367,10 +367,10 @@ In the example we send message to topic with name "temperature".
 
 === Keep connection with server alive
 In order to keep connection with server you should time to time send something to server otherwise server will close the connection.
-The right way to keep connection alive is a `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#ping[ping]` method.
+The right way to keep connection alive is a `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#ping[ping]` method.
 
-IMPORTANT: by default you client keep connections with server automatically. That means that you don't need to call `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#ping[ping]` in order to keep connections with server.
-The `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html[MqttClient]` will do it for you.
+IMPORTANT: by default you client keep connections with server automatically. That means that you don't need to call `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#ping[ping]` in order to keep connections with server.
+The `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html[MqttClient]` will do it for you.
 
 If you want to disable this feature then you should call `link:../dataobjects.html#MqttClientOptions#setAutoKeepAlive[autoKeepAlive]` with `false` as argument:
 [source,js]
@@ -382,7 +382,7 @@ options.autoKeepAlive = false;
 === Be notified when
 * publish is completed
 +
-You could provide handler by calling `link:../../jsdoc/module-vertx-mqtt-server-js_mqtt_client-MqttClient.html#publishCompletionHandler[publishCompletionHandler]`. The handler will be called each time publish is completed.
+You could provide handler by calling `link:../../jsdoc/module-vertx-mqtt-js_mqtt_client-MqttClient.html#publishCompletionHandler[publishCompletionHandler]`. The handler will be called each time publish is completed.
 This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
 [source,js]
 ----
