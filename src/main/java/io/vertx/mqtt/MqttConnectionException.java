@@ -38,6 +38,7 @@ public class MqttConnectionException extends Throwable {
    * @param code  return code from the CONNACK message
    */
   public MqttConnectionException(MqttConnectReturnCode code) {
+    super(String.format("Connection failed: %s", code));
     this.code = code;
   }
 }
