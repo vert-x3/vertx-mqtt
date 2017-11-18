@@ -825,7 +825,7 @@ public class MqttClientImpl implements MqttClient {
           this.connectHandler.handle(Future.succeededFuture(msg));
         } else {
           MqttConnectionException exception = new MqttConnectionException(msg.code());
-          log.error("Connection refused by the server");
+          log.error(String.format("Connection refused by the server - code: %s", msg.code()));
           this.connectHandler.handle(Future.failedFuture(exception));
         }
       }
