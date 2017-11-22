@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2017 Red Hat Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,6 +167,10 @@ public class MqttClientImpl implements MqttClient {
         log.error(String.format("Can't connect to %s:%d", host, port), done.cause());
         if (connectHandler != null) {
           connectHandler.handle(Future.failedFuture(done.cause()));
+        }
+        final Handler<Void> closeHandler = this.closeHandler;
+        if (closeHandler != null) {
+            closeHandler.handle(null);
         }
       } else {
         log.info(String.format("Connection with %s:%d established successfully", host, port));
