@@ -829,10 +829,11 @@ public class MqttClientImpl implements MqttClient {
 
     synchronized (this.connection) {
 
+      this.isConnected = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
+
       if (this.connectHandler != null) {
 
         if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-          this.isConnected = true;
           this.connectHandler.handle(Future.succeededFuture(msg));
         } else {
           MqttConnectionException exception = new MqttConnectionException(msg.code());
