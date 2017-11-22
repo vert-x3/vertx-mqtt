@@ -124,6 +124,8 @@ public class MqttClientImpl implements MqttClient {
   private Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
   private Pattern validTopicFilterPattern = Pattern.compile("^(#|((\\+(?![^/]))?([^#+]*(/\\+(?![^/]))?)*(/#)?))$");
 
+  private boolean isConnected;
+
   /**
    * Constructor
    *
@@ -516,6 +518,11 @@ public class MqttClientImpl implements MqttClient {
     return this.options.getClientId();
   }
 
+  @Override
+  public boolean isConnected() {
+    return this.isConnected;
+  }
+
   /**
    * Sends PUBACK packet to server
    *
@@ -649,7 +656,10 @@ public class MqttClientImpl implements MqttClient {
    */
   void handleClosed() {
     synchronized (this.connection) {
-      if (this.closeHandler != null) {
+      boolean isConnected = this.isConnected;
+      this.cleanup();
+
+      if (this.closeHandler != null && isConnected) {
         this.closeHandler.handle(null);
       }
     }
@@ -819,6 +829,8 @@ public class MqttClientImpl implements MqttClient {
 
     synchronized (this.connection) {
 
+      this.isConnected = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
+
       if (this.connectHandler != null) {
 
         if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
@@ -897,5 +909,12 @@ public class MqttClientImpl implements MqttClient {
     }
 
     return false;
+  }
+
+  /**
+   * Cleanup
+   */
+  private void cleanup() {
+      this.isConnected = false;
   }
 }

@@ -264,4 +264,9 @@ public interface MqttClient {
    * @return the client identifier
    */
   String clientId();
+
+  /**
+   * @return if the connection between client and remote server is established/open
+   */
+  boolean isConnected();
 }
