@@ -170,7 +170,7 @@ endpoint.publish_handler() { |message|
   if (message.qos_level() == :AT_LEAST_ONCE)
     endpoint.publish_acknowledge(message.message_id())
   elsif (message.qos_level() == :EXACTLY_ONCE)
-    endpoint.publish_release(message.message_id())
+    endpoint.publish_received(message.message_id())
   end
 
 }.publish_release_handler() { |messageId|

@@ -183,7 +183,7 @@ public class VertxMqttServerExamples {
       if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
         endpoint.publishAcknowledge(message.messageId());
       } else if (message.qosLevel() == MqttQoS.EXACTLY_ONCE) {
-        endpoint.publishRelease(message.messageId());
+        endpoint.publishReceived(message.messageId());
       }
 
     }).publishReleaseHandler(messageId -> {
