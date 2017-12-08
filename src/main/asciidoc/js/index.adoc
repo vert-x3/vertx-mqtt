@@ -170,7 +170,7 @@ endpoint.publishHandler(function (message) {
   if (message.qosLevel() === 'AT_LEAST_ONCE') {
     endpoint.publishAcknowledge(message.messageId());
   } else if (message.qosLevel() === 'EXACTLY_ONCE') {
-    endpoint.publishRelease(message.messageId());
+    endpoint.publishReceived(message.messageId());
   }
 
 }).publishReleaseHandler(function (messageId) {
