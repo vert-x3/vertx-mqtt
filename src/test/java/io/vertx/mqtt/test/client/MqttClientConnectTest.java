@@ -59,9 +59,11 @@ public class MqttClientConnectTest {
   }
 
   @Test
-  public void connectDisconnectNoOptions(TestContext context) {
+  public void connectDisconnectWithIdleOption(TestContext context) {
     Async async = context.async();
-    MqttClient client = MqttClient.create(Vertx.vertx());
+    MqttClientOptions options = new MqttClientOptions();
+    options.setIdleTimeout(100);
+    MqttClient client = MqttClient.create(Vertx.vertx(),options);
 
     client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
