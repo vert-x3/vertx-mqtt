@@ -47,6 +47,7 @@ import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
@@ -82,6 +83,7 @@ public class MqttClientImpl implements MqttClient {
   private static final int MIN_TOPIC_LEN = 1;
   private static final String PROTOCOL_NAME = "MQTT";
   private static final int PROTOCOL_VERSION = 4;
+  private static final int DEFAULT_IDLE_TIMEOUT = 0;
 
   private MqttClientOptions options;
   private MqttClientConnection connection;
@@ -133,7 +135,12 @@ public class MqttClientImpl implements MqttClient {
    * @param options MQTT client options
    */
   public MqttClientImpl(Vertx vertx, MqttClientOptions options) {
-    this.client = vertx.createNetClient(options);
+
+    // copy given options
+    NetClientOptions netClientOptions = new NetClientOptions(options);
+    netClientOptions.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
+
+    this.client = vertx.createNetClient(netClientOptions);
     this.options = options;
   }
 
