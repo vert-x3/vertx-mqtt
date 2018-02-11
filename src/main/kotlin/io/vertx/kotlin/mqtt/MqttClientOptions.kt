@@ -24,7 +24,7 @@ import io.vertx.core.net.ProxyOptions
  * @param enabledCipherSuites 
  * @param enabledSecureTransportProtocols 
  * @param hostnameVerificationAlgorithm 
- * @param idleTimeout 
+ * @param idleTimeout  Do the same thing as [io.vertx.mqtt.MqttClientOptions]. Use it instead.
  * @param jdkSslEngineOptions 
  * @param keepAliveTimeSeconds  Set the keep alive timeout in seconds
  * @param keyStoreOptions 
@@ -151,9 +151,7 @@ fun MqttClientOptions(
     }
   }
   if (enabledSecureTransportProtocols != null) {
-    for (item in enabledSecureTransportProtocols) {
-      this.addEnabledSecureTransportProtocol(item)
-    }
+    this.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols.toSet())
   }
   if (hostnameVerificationAlgorithm != null) {
     this.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm)

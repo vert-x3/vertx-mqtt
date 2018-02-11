@@ -50,7 +50,10 @@ Set the client identifier
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|-
 |[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|-
 |[[hostnameVerificationAlgorithm]]`hostnameVerificationAlgorithm`|`String`|-
-|[[idleTimeout]]`idleTimeout`|`Number (int)`|-
+|[[idleTimeout]]`idleTimeout`|`Number (int)`|
++++
+Do the same thing as link. Use it instead.
++++
 |[[jdkSslEngineOptions]]`jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
 |[[keepAliveTimeSeconds]]`keepAliveTimeSeconds`|`Number (int)`|
 +++
