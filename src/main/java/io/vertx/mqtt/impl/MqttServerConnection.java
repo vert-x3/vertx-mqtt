@@ -172,14 +172,14 @@ public class MqttServerConnection {
 
         default:
 
-          this.chctx.fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
+          this.chctx.fireExceptionCaught(new Exception("Wrong MQTT message type " + mqttMessage.fixedHeader().messageType()));
           break;
 
       }
 
     } else {
 
-      this.chctx.fireExceptionCaught(new Exception("Wrong message type"));
+      this.chctx.fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
     }
   }
 
