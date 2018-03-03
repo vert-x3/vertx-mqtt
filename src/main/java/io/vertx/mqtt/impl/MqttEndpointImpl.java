@@ -425,13 +425,18 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    publishWithId(topic, payload, qosLevel, isDup, isRetain, nextMessageId());
+    return this;
+  }
 
+  @Override
+  public MqttEndpointImpl publishWithId(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId) {
     this.checkConnected();
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
     MqttPublishVariableHeader variableHeader =
-      new MqttPublishVariableHeader(topic, this.nextMessageId());
+      new MqttPublishVariableHeader(topic, messageId);
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
 
@@ -440,6 +445,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.write(publish);
 
     return this;
+  }
+
+  @Override
+  public int requireMessageId() {
+    return 0;
   }
 
   public MqttEndpointImpl pong() {
