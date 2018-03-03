@@ -65,7 +65,7 @@ public abstract class MqttServerBaseTest {
       rejection = err;
     });
 
-    this.mqttServer.endpointHandler(this::endpointHandler).listen(ar -> {
+    this.mqttServer.endpointHandler(endpoint -> endpointHandler(endpoint, context)).listen(ar -> {
 
       if (ar.succeeded()) {
         log.info("MQTT server listening on port " + ar.result().actualPort());
@@ -99,7 +99,7 @@ public abstract class MqttServerBaseTest {
     this.vertx.close();
   }
 
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.accept(false);
   }

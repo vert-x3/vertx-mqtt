@@ -134,7 +134,7 @@ public class MqttServerSslTest extends MqttServerBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.publishHandler(message -> {
 

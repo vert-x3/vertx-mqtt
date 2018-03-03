@@ -84,7 +84,7 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
     this.topic = topic;
     this.message = message;
 
-    this.async = context.async();
+    this.async = context.async(2);
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
@@ -115,7 +115,7 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.subscribeHandler(subscribe -> {
 
@@ -125,7 +125,10 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
           .map(MqttTopicSubscription::qualityOfService)
           .collect(Collectors.toList()));
 
-      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false, publishSent -> {
+        context.assertTrue(publishSent.succeeded());
+        this.async.complete();
+      });
     }).publishAcknowledgeHandler(messageId -> {
 
       log.info("Message [" + messageId + "] acknowledged");

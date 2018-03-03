@@ -124,7 +124,7 @@ public class MqttServerEndpointStatusTest extends MqttServerBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     this.endpoint = endpoint;
 
