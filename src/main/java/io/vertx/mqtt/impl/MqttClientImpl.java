@@ -47,6 +47,7 @@ import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
@@ -82,6 +83,7 @@ public class MqttClientImpl implements MqttClient {
   private static final int MIN_TOPIC_LEN = 1;
   private static final String PROTOCOL_NAME = "MQTT";
   private static final int PROTOCOL_VERSION = 4;
+  private static final int DEFAULT_IDLE_TIMEOUT = 0;
 
   private MqttClientOptions options;
   private MqttClientConnection connection;
@@ -124,6 +126,8 @@ public class MqttClientImpl implements MqttClient {
   private Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
   private Pattern validTopicFilterPattern = Pattern.compile("^(#|((\\+(?![^/]))?([^#+]*(/\\+(?![^/]))?)*(/#)?))$");
 
+  private boolean isConnected;
+
   /**
    * Constructor
    *
@@ -131,7 +135,12 @@ public class MqttClientImpl implements MqttClient {
    * @param options MQTT client options
    */
   public MqttClientImpl(Vertx vertx, MqttClientOptions options) {
-    this.client = vertx.createNetClient(options);
+
+    // copy given options
+    NetClientOptions netClientOptions = new NetClientOptions(options);
+    netClientOptions.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
+
+    this.client = vertx.createNetClient(netClientOptions);
     this.options = options;
   }
 
@@ -520,6 +529,11 @@ public class MqttClientImpl implements MqttClient {
     return this.options.getClientId();
   }
 
+  @Override
+  public boolean isConnected() {
+    return this.isConnected;
+  }
+
   /**
    * Sends PUBACK packet to server
    *
@@ -676,7 +690,10 @@ public class MqttClientImpl implements MqttClient {
    */
   void handleClosed() {
     synchronized (this.connection) {
-      if (this.closeHandler != null) {
+      boolean isConnected = this.isConnected;
+      this.cleanup();
+
+      if (this.closeHandler != null && isConnected) {
         this.closeHandler.handle(null);
       }
     }
@@ -848,8 +865,12 @@ public class MqttClientImpl implements MqttClient {
   void handleConnack(MqttConnAckMessage msg) {
 
     synchronized (this.connection) {
-      if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
 
+      boolean isAccepted = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
+
+      this.isConnected = isAccepted;
+
+      if (isAccepted) {
         // in case if the connection is just resuming of an old session
         if (!options.isCleanSession()) {
           // then we should just resend
@@ -858,14 +879,12 @@ public class MqttClientImpl implements MqttClient {
           // QoS 2 messages which have been received from the Server, but have not been completely acknowledged
           resendAllUnAcknowledgedPackets();
         }
-
         if (this.connectHandler != null) {
           this.connectHandler.handle(Future.succeededFuture(msg));
         }
-
       } else {
         MqttConnectionException exception = new MqttConnectionException(msg.code());
-        log.error("Connection refused by the server");
+        log.error(String.format("Connection refused by the server - code: %s", msg.code()));
         if (this.connectHandler != null) {
           this.connectHandler.handle(Future.failedFuture(exception));
         }
@@ -987,5 +1006,12 @@ public class MqttClientImpl implements MqttClient {
     }
 
     return false;
+  }
+
+  /**
+   * Cleanup
+   */
+  private void cleanup() {
+      this.isConnected = false;
   }
 }

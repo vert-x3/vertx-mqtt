@@ -16,15 +16,21 @@
 
 package io.vertx.mqtt.test.client;
 
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
+import io.vertx.mqtt.MqttConnectionException;
+import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttServerOptions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -53,9 +59,11 @@ public class MqttClientConnectTest {
   }
 
   @Test
-  public void connectDisconnectNoOptions(TestContext context) {
+  public void connectDisconnectWithIdleOption(TestContext context) {
     Async async = context.async();
-    MqttClient client = MqttClient.create(Vertx.vertx());
+    MqttClientOptions options = new MqttClientOptions();
+    options.setIdleTimeout(100);
+    MqttClient client = MqttClient.create(Vertx.vertx(),options);
 
     client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
@@ -86,6 +94,64 @@ public class MqttClientConnectTest {
 
     client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
+    });
+
+    async.await();
+  }
+
+  @Test
+  public void tcpConnectionFails(TestContext context) {
+    Async async = context.async();
+    MqttClient client = MqttClient.create(Vertx.vertx());
+
+    client.closeHandler(v -> {
+      // when TCP connection fails, this handler should not be called, connection not established
+      context.fail();
+    });
+
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, c -> {
+      // connection
+      assertTrue(c.failed());
+      assertFalse(client.isConnected());
+      async.complete();
+    });
+
+    async.await();
+  }
+
+  @Test
+  public void connackNotOk(TestContext context) {
+    Async async = context.async();
+    Async asyncServer = context.async();
+    Vertx vertx = Vertx.vertx();
+
+    MqttServer server = MqttServer.create(vertx);
+    server.endpointHandler(endpoint -> {
+      endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+    });
+    server.listen(MqttServerOptions.DEFAULT_PORT, done -> {
+      if (done.succeeded()) {
+        asyncServer.complete();
+      } else {
+        context.fail();
+      }
+    });
+    asyncServer.await();
+
+    MqttClient client = MqttClient.create(vertx);
+    client.closeHandler(v -> {
+      // when server replies with "negative" CONNACK, this handler should not be called
+      // the failure is just part of the connectHandler
+      context.fail();
+    });
+
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, c -> {
+      assertTrue(c.failed());
+      assertTrue(c.cause() instanceof MqttConnectionException);
+      MqttConnectionException connEx = (MqttConnectionException) c.cause();
+      assertEquals(connEx.code(), MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+      assertFalse(client.isConnected());
+      async.complete();
     });
 
     async.await();

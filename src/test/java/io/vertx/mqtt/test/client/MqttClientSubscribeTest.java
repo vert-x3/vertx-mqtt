@@ -77,6 +77,84 @@ public class MqttClientSubscribeTest {
     this.subscribe(context, MqttQoS.EXACTLY_ONCE);
   }
 
+  @Test
+  public void unsubscribedNoMessageReceived(TestContext context) throws InterruptedException {
+
+    Async publish = context.async(2);
+    Async async = context.async();
+
+    MqttClient subscriber1 = MqttClient.create(Vertx.vertx());
+    MqttClient subscriber2 = MqttClient.create(Vertx.vertx());
+    MqttClient publisher = MqttClient.create(Vertx.vertx());
+
+    // subscriber1 connects, subscribe and then un-unsubscribe, it won't get the published message
+    subscriber1.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+
+      assertTrue(ar.succeeded());
+
+      subscriber1.publishHandler(message -> {
+        log.error("Subscriber " + subscriber1.clientId() + " received message " + new String(message.payload().getBytes()));
+        context.fail();
+      });
+
+      subscriber1.subscribe(MQTT_TOPIC, MqttQoS.AT_MOST_ONCE.value(), ar1 -> {
+
+        assertTrue(ar1.succeeded());
+        log.info("Subscriber " + subscriber1.clientId() + " subscribed to " + MQTT_TOPIC);
+
+        subscriber1.unsubscribe(MQTT_TOPIC, ar2 -> {
+
+          assertTrue(ar2.succeeded());
+          log.info("Subscriber " + subscriber1.clientId() + " un-subscribed from " + MQTT_TOPIC);
+          publish.countDown();
+        });
+
+      });
+
+    });
+
+    // subscriber2 connects and subscribe, it will get the published message
+    subscriber2.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+
+      assertTrue(ar.succeeded());
+
+      subscriber2.publishHandler(message -> {
+        log.error("Subscriber " + subscriber2.clientId() + " received message " + new String(message.payload().getBytes()));
+        async.complete();
+      });
+
+      subscriber2.subscribe(MQTT_TOPIC, MqttQoS.AT_MOST_ONCE.value(), ar1 -> {
+
+        assertTrue(ar1.succeeded());
+        log.info("Subscriber " + subscriber2.clientId() + " subscribed to " + MQTT_TOPIC);
+        publish.countDown();
+      });
+
+    });
+
+    // waiting for subscribers to subscribe and then the first client to un-subscribe, before publishing a message
+    publish.await();
+
+    publisher.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+
+      publisher.publish(
+        MQTT_TOPIC,
+        Buffer.buffer(MQTT_MESSAGE.getBytes()),
+        MqttQoS.AT_MOST_ONCE,
+        false,
+        false,
+        ar1 -> {
+          assertTrue(ar.succeeded());
+          messageId = ar1.result();
+          log.info("Publishing message id = " + messageId);
+        }
+      );
+
+    });
+
+    async.await();
+  }
+
   private void subscribeAndReceive(TestContext context, MqttQoS qos) {
 
     Async async = context.async();

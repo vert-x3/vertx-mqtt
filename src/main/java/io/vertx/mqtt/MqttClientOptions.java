@@ -382,6 +382,15 @@ public class MqttClientOptions extends NetClientOptions {
     return this;
   }
 
+  /**
+   * Do the same thing as {@link MqttClientOptions#setKeepAliveTimeSeconds(int)}. Use it instead.
+   */
+  @Deprecated
+  @Override
+  public MqttClientOptions setIdleTimeout(int idleTimeout) {
+    return setKeepAliveTimeSeconds(idleTimeout);
+  }
+
   @Override
   public MqttClientOptions setSsl(boolean ssl) {
     super.setSsl(ssl);

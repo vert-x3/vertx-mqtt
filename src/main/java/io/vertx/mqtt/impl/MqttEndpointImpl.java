@@ -27,11 +27,16 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.mqtt.MqttAuth;
+import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.MqttWill;
@@ -45,6 +50,8 @@ import java.util.stream.Collectors;
 public class MqttEndpointImpl implements MqttEndpoint {
 
   private static final int MAX_MESSAGE_ID = 65535;
+
+  private static final Logger log = LoggerFactory.getLogger(MqttEndpointImpl.class);
 
   // connection to the remote MQTT client
   private final NetSocketInternal conn;
@@ -421,7 +428,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, null);
+  }
 
+  @Override
+  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
     this.checkConnected();
 
     MqttFixedHeader fixedHeader =
@@ -434,6 +445,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
     io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
 
     this.write(publish);
+
+    if (publishSentHandler != null) {
+      publishSentHandler.handle(Future.succeededFuture(variableHeader.messageId()));
+    }
 
     return this;
   }

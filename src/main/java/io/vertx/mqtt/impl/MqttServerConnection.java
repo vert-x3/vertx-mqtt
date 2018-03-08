@@ -28,6 +28,8 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
@@ -43,6 +45,8 @@ import java.util.UUID;
  * Represents an MQTT connection with a remote client
  */
 public class MqttServerConnection {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttServerConnection.class);
 
   // handler to call when a remote MQTT client connects and establishes a connection
   private Handler<MqttEndpoint> endpointHandler;
@@ -168,14 +172,14 @@ public class MqttServerConnection {
 
         default:
 
-          this.chctx.fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
+          this.chctx.fireExceptionCaught(new Exception("Wrong MQTT message type " + mqttMessage.fixedHeader().messageType()));
           break;
 
       }
 
     } else {
 
-      this.chctx.fireExceptionCaught(new Exception("Wrong message type"));
+      this.chctx.fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
     }
   }
 

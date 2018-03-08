@@ -21,6 +21,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
@@ -351,6 +352,20 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+  /**
+   * Sends the PUBLISH message to the remote MQTT server
+   *
+   * @param topic    topic on which the message is published
+   * @param payload  message payload
+   * @param qosLevel QoS level
+   * @param isDup    if the message is a duplicate
+   * @param isRetain if the message needs to be retained
+   * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
    * Sends the PINGRESP message to the remote MQTT client
