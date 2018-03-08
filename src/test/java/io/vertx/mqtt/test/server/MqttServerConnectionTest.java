@@ -239,7 +239,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     MqttConnectReturnCode returnCode = this.expectedReturnCode;
 

@@ -90,7 +90,7 @@ public class MqttServerUnsubscribeTest extends MqttServerBaseTest {
   }
 
   @Override
-  protected void endpointHandler(MqttEndpoint endpoint) {
+  protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.subscribeHandler(subscribe -> {
 
