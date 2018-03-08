@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(VertxUnitRunner.class)
 public class MqttClientRecoveryTest {
   private static final Logger log = LoggerFactory.getLogger(MqttClientRecoveryTest.class);
-  
+
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Client";
   private static final String MQTT_HOST = "localhost";
@@ -67,7 +67,7 @@ public class MqttClientRecoveryTest {
     client.connect(MQTT_PORT, MQTT_HOST, c -> {
         log.info("[CLIENT] Connected to the test server");
 
-        // publishing the message which should not be acknowleded by the test server and be resenred on reconnection
+        // publishing the message which should not be acknowledged by the test server and be resenred on reconnection
         client.publish(
           MQTT_TOPIC,
           Buffer.buffer(MQTT_MESSAGE.getBytes()),
@@ -79,7 +79,7 @@ public class MqttClientRecoveryTest {
             sentPacketId.set(h.result());
           });
 
-        // after publishind server should instantly close the connection
+        // after publishing server should instantly close the connection
         phase1.countDown();
       }
     );
@@ -91,7 +91,7 @@ public class MqttClientRecoveryTest {
     });
 
     // waiting for :
-    //            1. client conectiong
+    //            1. client connecting
     //            2. sending PUBLISH packet
     //            3. disconnection without responding on PUBLISH
     phase1.await();
@@ -137,7 +137,7 @@ public class MqttClientRecoveryTest {
     this.vertx.close();
   }
 
-  // this is for remebering of received packetId
+  // this is for remembering of received packetId
   final AtomicInteger receivedPacketId = new AtomicInteger();
   // for counting of how many times the client was connected
   final AtomicInteger connectionCounter = new AtomicInteger(0);
