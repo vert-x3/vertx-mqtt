@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-ext-parent</artifactId>
-    <version>30</version>
+    <version>34</version>
   </parent>
 
   <artifactId>vertx-mqtt</artifactId>
@@ -69,11 +69,6 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-codetrans</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen</artifactId>
       <optional>true</optional>
     </dependency>
@@ -110,20 +105,6 @@
   </licenses>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <!-- Copy resources after compilation phase as we generate JS in src/main/resources -->
-        <plugin>
-          <artifactId>maven-resources-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>default-resources</id>
-              <phase>process-classes</phase>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
@@ -135,10 +116,6 @@
                 <!-- A manifest containing the OSGi metadata has been generated using the maven-bundle-plugin -->
                 <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
               </archive>
-              <!-- Remove examples and docoverride -->
-              <excludes>
-                <exclude>/examples/**</exclude>
-              </excludes>
             </configuration>
           </execution>
         </executions>
