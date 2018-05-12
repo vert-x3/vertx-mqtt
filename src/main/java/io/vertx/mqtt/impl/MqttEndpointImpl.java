@@ -310,6 +310,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
+  @Override
+  public MqttEndpoint accept() {
+    return accept(false);
+  }
+
   public MqttEndpointImpl accept(boolean sessionPresent) {
 
     if (this.isConnected) {

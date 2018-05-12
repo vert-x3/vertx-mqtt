@@ -266,6 +266,12 @@ public interface MqttEndpoint {
   MqttEndpoint exceptionHandler(Handler<Throwable> handler);
 
   /**
+   * Like {@link #accept(boolean)} with no session is present.
+   */
+  @Fluent
+  MqttEndpoint accept();
+
+  /**
    * Sends the CONNACK message to the remote MQTT client with "connection accepted"
    * return code. See {@link #reject(MqttConnectReturnCode)} for refusing connection
    *
