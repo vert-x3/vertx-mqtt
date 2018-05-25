@@ -102,7 +102,7 @@ public class MqttServerSslTest extends MqttServerBaseTest {
       context.assertTrue(true);
 
     } catch (MqttException e) {
-      context.assertTrue(false);
+      context.fail(e);
       e.printStackTrace();
     } catch (Exception e1) {
 

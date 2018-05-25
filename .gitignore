@@ -1,6 +1,9 @@
 # Maven stuff
 **/target/*
 
+# Vert.x stuff
+.vertx
+
 # Eclipse stuff
 **/.project
 **/.settings/*

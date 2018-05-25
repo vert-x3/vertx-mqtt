@@ -44,7 +44,7 @@ public class MqttClientSslTest {
   private static final int MQTT_SERVER_TLS_PORT = 8883;
   private static final String MQTT_SERVER_HOST = "localhost";
 
-  Vertx vertx = Vertx.vertx();
+  Vertx vertx;
   MqttServer server;
   TestContext context;
 
@@ -84,6 +84,9 @@ public class MqttClientSslTest {
 
   @Before
   public void before() {
+
+    vertx = Vertx.vertx();
+
     PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
       .setKeyPath("tls/server-key.pem")
       .setCertPath("tls/server-cert.pem");
@@ -113,8 +116,7 @@ public class MqttClientSslTest {
   }
 
   @After
-  public void after() {
-    this.server.close();
-    this.vertx.close();
+  public void after(TestContext ctx) {
+    this.vertx.close(ctx.asyncAssertSuccess());
   }
 }
