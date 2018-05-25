@@ -650,19 +650,16 @@ public class MqttClientImpl implements MqttClient {
   }
 
   public MqttClientImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
-
-    synchronized (this.connection) {
-      log.debug(String.format("Sending packet %s", mqttMessage));
-      this.connection.writeMessage(mqttMessage);
-      return this;
-    }
+    log.debug(String.format("Sending packet %s", mqttMessage));
+    this.connection.writeMessage(mqttMessage);
+    return this;
   }
 
   /**
    * Used for calling the close handler when the remote MQTT server closes the connection
    */
   void handleClosed() {
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       boolean isConnected = this.isConnected;
       this.cleanup();
 
@@ -677,7 +674,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handlePingresp() {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       if (this.pingrespHandler != null) {
         this.pingrespHandler.handle(null);
       }
@@ -691,7 +688,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handleUnsuback(int unsubackMessageId) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       if (this.unsubscribeCompletionHandler != null) {
         this.unsubscribeCompletionHandler.handle(unsubackMessageId);
       }
@@ -705,7 +702,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handlePuback(int pubackMessageId) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
 
       io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos1outbound.remove(pubackMessageId);
 
@@ -729,7 +726,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handlePubcomp(int pubcompMessageId) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos2outbound.remove(pubcompMessageId);
 
       if (removedPacket == null) {
@@ -752,9 +749,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handlePubrec(int pubrecMessageId) {
 
-    synchronized (this.connection) {
-      this.publishRelease(pubrecMessageId);
-    }
+    this.publishRelease(pubrecMessageId);
   }
 
   /**
@@ -764,7 +759,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handleSuback(MqttSubAckMessage msg) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       if (this.subscribeCompletionHandler != null) {
         this.subscribeCompletionHandler.handle(msg);
       }
@@ -778,7 +773,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handlePublish(MqttPublishMessage msg) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
 
       switch (msg.qosLevel()) {
 
@@ -811,7 +806,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handlePubrel(int pubrelMessageId) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       MqttMessage message = qos2inbound.get(pubrelMessageId);
 
       if (message == null) {
@@ -834,7 +829,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handleConnack(MqttConnAckMessage msg) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
 
       this.isConnected = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
 
@@ -858,7 +853,7 @@ public class MqttClientImpl implements MqttClient {
    */
   void handleException(Throwable t) {
 
-    synchronized (this.connection) {
+    synchronized (this.connection.so) {
       if (this.exceptionHandler != null) {
         this.exceptionHandler.handle(t);
       }
