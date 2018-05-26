@@ -27,6 +27,10 @@ import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import org.junit.runner.RunWith;
 
+import javax.net.ssl.*;
+import java.io.InputStream;
+import java.security.KeyStore;
+
 /**
  * Base class for MQTT server unit tests
  */
@@ -102,5 +106,43 @@ public abstract class MqttServerBaseTest {
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.accept(false);
+  }
+
+  /**
+   * Socket factory for Paho MQTT client so that used trust store and keystore can be configured from vertx-core test resources.
+   *
+   * @param trustStoreName Trust storename in classpath format
+   * @param keyStoreName Key store name in classpath format
+   * @return SSLSocketFactory instance with requested stores
+   * @throws Exception
+   */
+  protected SSLSocketFactory getSocketFactory(String trustStoreName, String keyStoreName) throws Exception {
+
+    InputStream clientTrustStoreInput = this.getClass().getResourceAsStream(trustStoreName);
+
+    KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    trustStore.load(clientTrustStoreInput, "wibble".toCharArray());
+
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+    tmf.init(trustStore);
+
+    KeyManager[] keyManagers = null;
+
+    if (keyStoreName != null) {
+      InputStream clientKeyStoreInput = this.getClass().getResourceAsStream(keyStoreName);
+
+      KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      keyStore.load(clientKeyStoreInput, "wibble".toCharArray());
+
+      KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      kmf.init(keyStore, "wibble".toCharArray());
+
+      keyManagers = kmf.getKeyManagers();
+    }
+
+    SSLContext context = SSLContext.getInstance("TLSv1.2");
+    context.init(keyManagers, tmf.getTrustManagers(), null);
+
+    return context.getSocketFactory();
   }
 }
