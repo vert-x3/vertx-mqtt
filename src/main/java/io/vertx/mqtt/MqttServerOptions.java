@@ -18,6 +18,7 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
@@ -96,6 +97,12 @@ public class MqttServerOptions extends NetServerOptions {
   @Override
   public MqttServerOptions setHost(String host) {
     super.setHost(host);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setClientAuth(ClientAuth clientAuth) {
+    super.setClientAuth(clientAuth);
     return this;
   }
 

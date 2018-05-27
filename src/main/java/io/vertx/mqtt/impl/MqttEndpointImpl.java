@@ -41,6 +41,7 @@ import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.MqttWill;
 
+import javax.net.ssl.SSLSession;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -685,6 +686,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
     synchronized (this.conn) {
       this.checkClosed();
       return conn.remoteAddress();
+    }
+  }
+
+  public boolean isSsl() {
+    synchronized (this.conn) {
+      this.checkClosed();
+      return conn.isSsl();
+    }
+  }
+
+  public SSLSession sslSession() {
+    synchronized (this.conn) {
+      this.checkClosed();
+      return this.conn.sslSession();
     }
   }
 

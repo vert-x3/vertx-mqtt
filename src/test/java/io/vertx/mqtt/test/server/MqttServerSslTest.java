@@ -18,13 +18,14 @@ package io.vertx.mqtt.test.server;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
+import io.vertx.test.core.tls.Cert;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
@@ -32,13 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
-import java.net.URL;
 import java.nio.charset.Charset;
-import java.security.KeyStore;
 
 /**
  * MQTT server testing about using SSL/TLS
@@ -56,13 +51,9 @@ public class MqttServerSslTest extends MqttServerBaseTest {
   @Before
   public void before(TestContext context) {
 
-    PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
-      .setKeyPath("tls/server-key.pem")
-      .setCertPath("tls/server-cert.pem");
-
     MqttServerOptions options = new MqttServerOptions()
       .setPort(MQTT_SERVER_TLS_PORT)
-      .setKeyCertOptions(pemKeyCertOptions)
+      .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
       .setSsl(true);
 
     // just useful for enabling decryption using Wireshark (which doesn't support default Diffie-Hellmann for key exchange)
@@ -81,17 +72,9 @@ public class MqttServerSslTest extends MqttServerBaseTest {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("ssl://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_TLS_PORT), "12345", persistence);
 
-      URL trustStore =  this.getClass().getResource("/tls/client-truststore.jks");
-      System.setProperty("javax.net.ssl.trustStore", trustStore.getPath());
-      System.setProperty("javax.net.ssl.trustStorePassword", "wibble");
-
-      client.connect();
-
-      /*
       MqttConnectOptions options = new MqttConnectOptions();
-      options.setSocketFactory(this.getSocketFactory());
+      options.setSocketFactory(this.getSocketFactory("/tls/client-truststore-root-ca.jks", null));
       client.connect(options);
-      */
 
       client.publish(MQTT_TOPIC, MQTT_MESSAGE.getBytes(), 0, false);
 
@@ -102,10 +85,11 @@ public class MqttServerSslTest extends MqttServerBaseTest {
       context.assertTrue(true);
 
     } catch (MqttException e) {
-      context.assertTrue(false);
       e.printStackTrace();
+      context.assertTrue(false);
     } catch (Exception e1) {
-
+      e1.printStackTrace();
+      context.assertTrue(false);
     }
   }
 
@@ -113,24 +97,6 @@ public class MqttServerSslTest extends MqttServerBaseTest {
   public void after(TestContext context) {
 
     this.tearDown(context);
-  }
-
-  private SSLSocketFactory getSocketFactory() throws Exception {
-
-    URL trustStore =  this.getClass().getResource("/tls/client-truststore.jks");
-
-    FileInputStream input = new FileInputStream(trustStore.getPath());
-
-    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-    ks.load(input, "wibble".toCharArray());
-
-    TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
-    tmf.init(ks);
-
-    SSLContext context = SSLContext.getInstance("TLSv1.2");
-    context.init(null, tmf.getTrustManagers(), null);
-
-    return context.getSocketFactory();
   }
 
   @Override
