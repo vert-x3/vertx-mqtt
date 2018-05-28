@@ -37,7 +37,7 @@ public class MqttClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientConnection.class);
 
-  private final NetSocketInternal so;
+  final NetSocketInternal so;
   private final ChannelHandlerContext chctx;
   private MqttClientOptions options;
   private MqttClientImpl client;
@@ -54,103 +54,106 @@ public class MqttClientConnection {
    *
    * @param msg Incoming Packet
    */
-  synchronized void handleMessage(Object msg) {
+  void handleMessage(Object msg) {
+    synchronized (so) {
+      // handling directly native Netty MQTT messages, some of them are translated
+      // to the related Vert.x ones for polyglotization
+      if (msg instanceof MqttMessage) {
 
-    // handling directly native Netty MQTT messages, some of them are translated
-    // to the related Vert.x ones for polyglotization
-    if (msg instanceof MqttMessage) {
+        MqttMessage mqttMessage = (MqttMessage) msg;
 
-      MqttMessage mqttMessage = (MqttMessage) msg;
+        DecoderResult result = mqttMessage.decoderResult();
+        if (result.isFailure()) {
+          chctx.pipeline().fireExceptionCaught(result.cause());
+          return;
+        }
+        if (!result.isFinished()) {
+          chctx.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
+          return;
+        }
 
-      DecoderResult result = mqttMessage.decoderResult();
-      if (result.isFailure()) {
-        chctx.pipeline().fireExceptionCaught(result.cause());
-        return;
+        log.debug(String.format("Incoming packet %s", msg));
+        switch (mqttMessage.fixedHeader().messageType()) {
+
+          case CONNACK:
+
+            io.netty.handler.codec.mqtt.MqttConnAckMessage connack = (io.netty.handler.codec.mqtt.MqttConnAckMessage) mqttMessage;
+
+            MqttConnAckMessage mqttConnAckMessage = MqttConnAckMessage.create(
+              connack.variableHeader().connectReturnCode(),
+              connack.variableHeader().isSessionPresent());
+            handleConnack(mqttConnAckMessage);
+            break;
+
+          case PUBLISH:
+
+            io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
+            ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), chctx.alloc());
+
+            MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
+              publish.variableHeader().messageId(),
+              publish.fixedHeader().qosLevel(),
+              publish.fixedHeader().isDup(),
+              publish.fixedHeader().isRetain(),
+              publish.variableHeader().topicName(),
+              newBuf);
+            handlePublish(mqttPublishMessage);
+            break;
+
+          case PUBACK:
+            handlePuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+            break;
+
+          case PUBREC:
+            handlePubrec(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+            break;
+
+          case PUBREL:
+            handlePubrel(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+            break;
+
+          case PUBCOMP:
+            handlePubcomp(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+            break;
+
+          case SUBACK:
+
+            io.netty.handler.codec.mqtt.MqttSubAckMessage unsuback = (io.netty.handler.codec.mqtt.MqttSubAckMessage) mqttMessage;
+
+            MqttSubAckMessage mqttSubAckMessage = MqttSubAckMessage.create(
+              unsuback.variableHeader().messageId(),
+              unsuback.payload().grantedQoSLevels());
+            handleSuback(mqttSubAckMessage);
+            break;
+
+          case UNSUBACK:
+            handleUnsuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+            break;
+
+          case PINGRESP:
+            handlePingresp();
+            break;
+
+          default:
+
+            this.chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
+            break;
+        }
+
+      } else {
+
+        this.chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
       }
-      if (!result.isFinished()) {
-        chctx.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
-        return;
-      }
-
-      log.debug(String.format("Incoming packet %s", msg));
-      switch (mqttMessage.fixedHeader().messageType()) {
-
-        case CONNACK:
-
-          io.netty.handler.codec.mqtt.MqttConnAckMessage connack = (io.netty.handler.codec.mqtt.MqttConnAckMessage) mqttMessage;
-
-          MqttConnAckMessage mqttConnAckMessage = MqttConnAckMessage.create(
-            connack.variableHeader().connectReturnCode(),
-            connack.variableHeader().isSessionPresent());
-          handleConnack(mqttConnAckMessage);
-          break;
-
-        case PUBLISH:
-
-          io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), chctx.alloc());
-
-          MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
-            publish.variableHeader().messageId(),
-            publish.fixedHeader().qosLevel(),
-            publish.fixedHeader().isDup(),
-            publish.fixedHeader().isRetain(),
-            publish.variableHeader().topicName(),
-            newBuf);
-          handlePublish(mqttPublishMessage);
-          break;
-
-        case PUBACK:
-          handlePuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
-          break;
-
-        case PUBREC:
-          handlePubrec(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
-          break;
-
-        case PUBREL:
-          handlePubrel(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
-          break;
-
-        case PUBCOMP:
-          handlePubcomp(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
-          break;
-
-        case SUBACK:
-
-          io.netty.handler.codec.mqtt.MqttSubAckMessage unsuback = (io.netty.handler.codec.mqtt.MqttSubAckMessage) mqttMessage;
-
-          MqttSubAckMessage mqttSubAckMessage = MqttSubAckMessage.create(
-            unsuback.variableHeader().messageId(),
-            unsuback.payload().grantedQoSLevels());
-          handleSuback(mqttSubAckMessage);
-          break;
-
-        case UNSUBACK:
-          handleUnsuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
-          break;
-
-        case PINGRESP:
-          handlePingresp();
-          break;
-
-        default:
-
-          this.chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
-          break;
-      }
-
-    } else {
-
-      this.chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
     }
   }
 
   /**
    * Used for calling the pingresp handler when the server replies to the ping
    */
-  synchronized private void handlePingresp() {
-    this.client.handlePingresp();
+  private void handlePingresp() {
+    synchronized (so) {
+      this.client.handlePingresp();
+    }
   }
 
   /**
@@ -158,8 +161,10 @@ public class MqttClientConnection {
    *
    * @param unsubackMessageId identifier of the subscribe acknowledged by the server
    */
-  synchronized private void handleUnsuback(int unsubackMessageId) {
-    this.client.handleUnsuback(unsubackMessageId);
+  private void handleUnsuback(int unsubackMessageId) {
+    synchronized (so) {
+      this.client.handleUnsuback(unsubackMessageId);
+    }
   }
 
   /**
@@ -167,8 +172,10 @@ public class MqttClientConnection {
    *
    * @param msg message with suback information
    */
-  synchronized private void handleSuback(MqttSubAckMessage msg) {
-    this.client.handleSuback(msg);
+  private void handleSuback(MqttSubAckMessage msg) {
+    synchronized (so) {
+      this.client.handleSuback(msg);
+    }
   }
 
   /**
@@ -176,8 +183,10 @@ public class MqttClientConnection {
    *
    * @param pubcompMessageId identifier of the message acknowledged by the server
    */
-  synchronized private void handlePubcomp(int pubcompMessageId) {
-    this.client.handlePubcomp(pubcompMessageId);
+  private void handlePubcomp(int pubcompMessageId) {
+    synchronized (so) {
+      this.client.handlePubcomp(pubcompMessageId);
+    }
   }
 
   /**
@@ -185,8 +194,10 @@ public class MqttClientConnection {
    *
    * @param pubackMessageId identifier of the message acknowledged by the server
    */
-  synchronized private void handlePuback(int pubackMessageId) {
-    this.client.handlePuback(pubackMessageId);
+  private void handlePuback(int pubackMessageId) {
+    synchronized (so) {
+      this.client.handlePuback(pubackMessageId);
+    }
   }
 
   /**
@@ -194,8 +205,10 @@ public class MqttClientConnection {
    *
    * @param pubrelMessageId identifier of the message acknowledged by the server
    */
-  synchronized private void handlePubrel(int pubrelMessageId) {
-    this.client.handlePubrel(pubrelMessageId);
+  private void handlePubrel(int pubrelMessageId) {
+    synchronized (so) {
+      this.client.handlePubrel(pubrelMessageId);
+    }
   }
 
   /**
@@ -203,8 +216,10 @@ public class MqttClientConnection {
    *
    * @param msg published message
    */
-  synchronized private void handlePublish(MqttPublishMessage msg) {
-    this.client.handlePublish(msg);
+  private void handlePublish(MqttPublishMessage msg) {
+    synchronized (so) {
+      this.client.handlePublish(msg);
+    }
   }
 
   /**
@@ -212,8 +227,10 @@ public class MqttClientConnection {
    *
    * @param pubrecMessageId identifier of the message acknowledged by server
    */
-  synchronized private void handlePubrec(int pubrecMessageId) {
-    this.client.handlePubrec(pubrecMessageId);
+  private void handlePubrec(int pubrecMessageId) {
+    synchronized (so) {
+      this.client.handlePubrec(pubrecMessageId);
+    }
   }
 
   /**
@@ -221,15 +238,19 @@ public class MqttClientConnection {
    *
    * @param msg  connection response message
    */
-  synchronized private void handleConnack(MqttConnAckMessage msg) {
-    this.client.handleConnack(msg);
+  private void handleConnack(MqttConnAckMessage msg) {
+    synchronized (so) {
+      this.client.handleConnack(msg);
+    }
   }
 
   /**
    * Close the NetSocket
    */
-  void close(){
-    so.close();
+  void close() {
+    synchronized (so) {
+      so.close();
+    }
   }
 
   /**
