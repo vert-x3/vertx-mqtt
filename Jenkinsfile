@@ -1,3 +1,4 @@
+library "vertx-shared-library@master"
 pipeline {
   agent any
   tools {
@@ -13,7 +14,8 @@ pipeline {
       }
       steps {
         sh 'mvn -U -B -Dsurefire.reportNameSuffix=OracleJDK_8 clean deploy -s $MAVEN_SETTINGS_PATH'
-      }
+        triggerWorkflow()
+       }
       post {
         always {
           junit '**/target/surefire-reports/*.xml'
