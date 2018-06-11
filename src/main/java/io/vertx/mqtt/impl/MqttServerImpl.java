@@ -138,7 +138,7 @@ public class MqttServerImpl implements MqttServer {
     }
 
     // adding the idle state handler for timeout on CONNECT packet
-    pipeline.addBefore("handler", "idle", new IdleStateHandler(this.options.timeoutOnConnect(), 0, 0));
+    pipeline.addBefore("handler", "mqttIdle", new IdleStateHandler(this.options.timeoutOnConnect(), 0, 0));
     pipeline.addBefore("handler", "timeoutOnConnect", new ChannelDuplexHandler() {
 
       @Override
