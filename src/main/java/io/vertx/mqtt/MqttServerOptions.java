@@ -260,8 +260,7 @@ public class MqttServerOptions extends NetServerOptions {
   public MqttServerOptions setIdleTimeout(int idleTimeout) {
     return setTimeoutOnConnect(idleTimeout);
   }
-
-
+  
   /**
    * @return  timeout on CONNECT before closing connection
    */
