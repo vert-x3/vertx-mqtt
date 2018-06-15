@@ -313,11 +313,11 @@ public class MqttClientImpl implements MqttClient {
 
     switch (qosLevel) {
       case AT_LEAST_ONCE:
-        qos1outbound.put(variableHeader.messageId(), publish);
+        qos1outbound.put(variableHeader.packetId(), publish);
         countInflightQueue++;
         break;
       case EXACTLY_ONCE:
-        qos2outbound.put(variableHeader.messageId(), publish);
+        qos2outbound.put(variableHeader.packetId(), publish);
         countInflightQueue++;
         break;
     }
@@ -325,7 +325,7 @@ public class MqttClientImpl implements MqttClient {
     this.write(publish);
 
     if (publishSentHandler != null) {
-      publishSentHandler.handle(Future.succeededFuture(variableHeader.messageId()));
+      publishSentHandler.handle(Future.succeededFuture(variableHeader.packetId()));
     }
 
     return this;

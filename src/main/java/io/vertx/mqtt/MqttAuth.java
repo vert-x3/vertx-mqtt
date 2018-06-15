@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt;
 
+import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
@@ -39,6 +40,16 @@ public class MqttAuth {
     this.password = password;
   }
 
+  /**
+   * Constructor
+   *
+   * @param userName MQTT client username
+   * @param passwordBytes MQTT client password
+   */
+  public MqttAuth(String userName, byte[] passwordBytes) {
+    this.userName = userName;
+    this.password = (passwordBytes  == null ? null :  new String(passwordBytes, CharsetUtil.UTF_8));;
+  }
   /**
    * Create instance from JSON
    *

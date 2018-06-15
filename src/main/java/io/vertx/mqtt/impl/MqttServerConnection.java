@@ -127,7 +127,7 @@ public class MqttServerConnection {
           ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), this.chctx.alloc());
 
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
-            publish.variableHeader().messageId(),
+            publish.variableHeader().packetId(),
             publish.fixedHeader().qosLevel(),
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
@@ -206,7 +206,7 @@ public class MqttServerConnection {
     MqttWill will =
       new MqttWill(msg.variableHeader().isWillFlag(),
         msg.payload().willTopic(),
-        msg.payload().willMessage(),
+        msg.payload().willMessageInBytes(),
         msg.variableHeader().willQos(),
         msg.variableHeader().isWillRetain());
 
@@ -215,7 +215,7 @@ public class MqttServerConnection {
       msg.variableHeader().hasPassword()) ?
       new MqttAuth(
         msg.payload().userName(),
-        msg.payload().password()) : null;
+        msg.payload().passwordInBytes()) : null;
 
     // check if remote MQTT client didn't specify a client-id
     boolean isZeroBytes = (msg.payload().clientIdentifier() == null) ||
