@@ -253,9 +253,28 @@ public class MqttServerOptions extends NetServerOptions {
   }
 
   /**
+   * Do the same thing as {@link MqttClientOptions#setKeepAliveTimeSeconds(int)}. Use it instead.
+   */
+  @Deprecated
+  @Override
+  public MqttServerOptions setIdleTimeout(int idleTimeout) {
+    super.setIdleTimeout(0);
+    return setTimeoutOnConnect(idleTimeout);
+  }
+
+
+  /**
    * @return  timeout on CONNECT before closing connection
    */
   public int timeoutOnConnect() {
     return this.timeoutOnConnect;
+  }
+
+  /**
+   * @return  the TCP idle timeout, in seconds,In MqttServer the Parameter should be 0, it will use timeoutOnConnect.
+   */
+  @Override
+  public int getIdleTimeout() {
+    return 0;
   }
 }
