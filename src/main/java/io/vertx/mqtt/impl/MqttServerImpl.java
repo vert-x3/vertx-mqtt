@@ -154,6 +154,5 @@ public class MqttServerImpl implements MqttServer {
         }
       }
     });
-    
   }
 }
