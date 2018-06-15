@@ -91,7 +91,7 @@ public class MqttClientConnection {
             ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), chctx.alloc());
 
             MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
-              publish.variableHeader().messageId(),
+              publish.variableHeader().packetId(),
               publish.fixedHeader().qosLevel(),
               publish.fixedHeader().isDup(),
               publish.fixedHeader().isRetain(),

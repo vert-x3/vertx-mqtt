@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt;
 
+import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
@@ -45,6 +46,23 @@ public class MqttWill {
     this.isWillFlag = isWillFlag;
     this.willTopic = willTopic;
     this.willMessage = willMessage;
+    this.willQos = willQos;
+    this.isWillRetain = isWillRetain;
+  }
+
+  /**
+   * Constructor
+   *
+   * @param isWillFlag  indicates will message presence
+   * @param willTopic    topic to publish the will
+   * @param willMessageBytes  payload of the will
+   * @param willQos      qos level for the will
+   * @param isWillRetain if the will message must be retained
+   */
+  public MqttWill(boolean isWillFlag, String willTopic, byte[] willMessageBytes, int willQos, boolean isWillRetain) {
+    this.isWillFlag = isWillFlag;
+    this.willTopic = willTopic;
+    this.willMessage = (willMessageBytes == null ? null : new String(willMessageBytes, CharsetUtil.UTF_8));
     this.willQos = willQos;
     this.isWillRetain = isWillRetain;
   }

@@ -453,7 +453,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.write(publish);
 
     if (publishSentHandler != null) {
-      publishSentHandler.handle(Future.succeededFuture(variableHeader.messageId()));
+      publishSentHandler.handle(Future.succeededFuture(variableHeader.packetId()));
     }
 
     return this;
