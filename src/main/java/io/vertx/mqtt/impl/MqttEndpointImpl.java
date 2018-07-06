@@ -302,6 +302,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
       this.close();
     } else {
       this.isConnected = true;
+      log.info("connected flag has been set to true");
     }
 
     return this;
