@@ -90,7 +90,9 @@ public class MqttServerImpl implements MqttServer {
       MqttServerConnection conn = new MqttServerConnection(soi, options);
 
       soi.messageHandler(msg -> {
-        conn.handleMessage(msg);
+        synchronized (conn) {
+          conn.handleMessage(msg);
+        }
       });
 
       conn.init(h1, h2);

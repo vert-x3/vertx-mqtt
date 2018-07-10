@@ -178,12 +178,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public boolean isConnected() {
-    return this.isConnected;
+    synchronized (this.conn) {
+      return this.isConnected;
+    }
   }
 
   public MqttEndpoint setClientIdentifier(String clientIdentifier) {
 
-    this.clientIdentifier = clientIdentifier;
+    synchronized (this.conn) {
+      this.clientIdentifier = clientIdentifier;
+    }
     return this;
   }
 
@@ -309,26 +313,28 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttEndpointImpl accept(boolean sessionPresent) {
 
-    if (this.isConnected) {
-      throw new IllegalStateException("Connection already accepted");
-    }
+    synchronized (conn) {
+      if (this.isConnected) {
+        throw new IllegalStateException("Connection already accepted");
+      }
 
-    return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent);
+      return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent);
+    }
   }
 
   public MqttEndpointImpl reject(MqttConnectReturnCode returnCode) {
 
-    if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-      throw new IllegalArgumentException("Need to use the 'accept' method for accepting connection");
-    }
+    synchronized (conn) {
+      if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+        throw new IllegalArgumentException("Need to use the 'accept' method for accepting connection");
+      }
 
-    // sessionPresent flag has no meaning in this case, the network connection will be closed
-    return this.connack(returnCode, false);
+      // sessionPresent flag has no meaning in this case, the network connection will be closed
+      return this.connack(returnCode, false);
+    }
   }
 
   public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<MqttQoS> grantedQoSLevels) {
-
-    this.checkConnected();
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
@@ -346,8 +352,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttEndpointImpl unsubscribeAcknowledge(int unsubscribeMessageId) {
 
-    this.checkConnected();
-
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
     MqttMessageIdVariableHeader variableHeader =
@@ -361,8 +365,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publishAcknowledge(int publishMessageId) {
-
-    this.checkConnected();
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
@@ -378,8 +380,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttEndpointImpl publishReceived(int publishMessageId) {
 
-    this.checkConnected();
-
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
     MqttMessageIdVariableHeader variableHeader =
@@ -393,8 +393,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publishRelease(int publishMessageId) {
-
-    this.checkConnected();
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
@@ -410,8 +408,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   public MqttEndpointImpl publishComplete(int publishMessageId) {
 
-    this.checkConnected();
-
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
     MqttMessageIdVariableHeader variableHeader =
@@ -425,8 +421,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
-
-    this.checkConnected();
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
@@ -443,8 +437,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl pong() {
-
-    this.checkConnected();
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);
@@ -672,11 +664,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
+  private void write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
-      this.checkClosed();
+      if (mqttMessage.fixedHeader().messageType() != MqttMessageType.CONNACK) {
+        this.checkConnected();
+      }
       this.conn.writeMessage(mqttMessage);
-      return this;
     }
   }
 
