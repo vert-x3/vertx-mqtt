@@ -77,7 +77,7 @@ public class MqttServerConnection {
    *
    * @param msg message to handle
    */
-  synchronized void handleMessage(Object msg) {
+  void handleMessage(Object msg) {
 
     // handling directly native Netty MQTT messages, some of them are translated
     // to the related Vert.x ones for polyglotization
@@ -195,13 +195,6 @@ public class MqttServerConnection {
       return;
     }
 
-    // if client sent one more CONNECT packet
-    if (endpoint != null) {
-      //we should treat it as a protocol violation and disconnect the client
-      endpoint.close();
-      return;
-    }
-
     // retrieve will information from CONNECT message
     MqttWill will =
       new MqttWill(msg.variableHeader().isWillFlag(),
@@ -295,10 +288,12 @@ public class MqttServerConnection {
    *
    * @param msg message with subscribe information
    */
-  synchronized void handleSubscribe(MqttSubscribeMessage msg) {
+  void handleSubscribe(MqttSubscribeMessage msg) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handleSubscribe(msg);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handleSubscribe(msg);
+      }
     }
   }
 
@@ -307,10 +302,12 @@ public class MqttServerConnection {
    *
    * @param msg message with unsubscribe information
    */
-  synchronized void handleUnsubscribe(MqttUnsubscribeMessage msg) {
+  void handleUnsubscribe(MqttUnsubscribeMessage msg) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handleUnsubscribe(msg);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handleUnsubscribe(msg);
+      }
     }
   }
 
@@ -319,10 +316,12 @@ public class MqttServerConnection {
    *
    * @param msg published message
    */
-  synchronized void handlePublish(MqttPublishMessage msg) {
+  void handlePublish(MqttPublishMessage msg) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handlePublish(msg);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handlePublish(msg);
+      }
     }
   }
 
@@ -331,10 +330,12 @@ public class MqttServerConnection {
    *
    * @param pubackMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  synchronized void handlePuback(int pubackMessageId) {
+  void handlePuback(int pubackMessageId) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handlePuback(pubackMessageId);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handlePuback(pubackMessageId);
+      }
     }
   }
 
@@ -343,10 +344,12 @@ public class MqttServerConnection {
    *
    * @param pubrecMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  synchronized void handlePubrec(int pubrecMessageId) {
+  void handlePubrec(int pubrecMessageId) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handlePubrec(pubrecMessageId);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handlePubrec(pubrecMessageId);
+      }
     }
   }
 
@@ -355,10 +358,12 @@ public class MqttServerConnection {
    *
    * @param pubrelMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  synchronized void handlePubrel(int pubrelMessageId) {
+  void handlePubrel(int pubrelMessageId) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handlePubrel(pubrelMessageId);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handlePubrel(pubrelMessageId);
+      }
     }
   }
 
@@ -367,30 +372,36 @@ public class MqttServerConnection {
    *
    * @param pubcompMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  synchronized void handlePubcomp(int pubcompMessageId) {
+  void handlePubcomp(int pubcompMessageId) {
 
-    if (this.checkConnected()) {
-      this.endpoint.handlePubcomp(pubcompMessageId);
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handlePubcomp(pubcompMessageId);
+      }
     }
   }
 
   /**
    * Used internally for handling the pinreq from the remote MQTT client
    */
-  synchronized void handlePingreq() {
+  void handlePingreq() {
 
-    if (this.checkConnected()) {
-      this.endpoint.handlePingreq();
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handlePingreq();
+      }
     }
   }
 
   /**
    * Used for calling the disconnect handler when the remote MQTT client disconnects
    */
-  synchronized void handleDisconnect() {
+  void handleDisconnect() {
 
-    if (this.checkConnected()) {
-      this.endpoint.handleDisconnect();
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handleDisconnect();
+      }
     }
   }
 
@@ -401,11 +412,13 @@ public class MqttServerConnection {
    */
   private boolean checkConnected() {
 
-    if ((this.endpoint != null) && (this.endpoint.isConnected())) {
-      return true;
-    } else {
-      so.close();
-      throw new IllegalStateException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
+    synchronized (this.so) {
+      if ((this.endpoint != null) && (this.endpoint.isConnected())) {
+        return true;
+      } else {
+        so.close();
+        throw new IllegalStateException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
+      }
     }
   }
 }
