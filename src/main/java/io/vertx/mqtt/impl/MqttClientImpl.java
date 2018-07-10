@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
@@ -38,16 +39,14 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
@@ -76,6 +75,9 @@ import static io.netty.handler.codec.mqtt.MqttQoS.*;
  */
 public class MqttClientImpl implements MqttClient {
 
+  // patterns for topics validation
+  private static final Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
+  private static final Pattern validTopicFilterPattern = Pattern.compile("^(#|((\\+(?![^/]))?([^#+]*(/\\+(?![^/]))?)*(/#)?))$");
   private static final Logger log = LoggerFactory.getLogger(MqttClientImpl.class);
 
   private static final int MAX_MESSAGE_ID = 65535;
@@ -85,46 +87,43 @@ public class MqttClientImpl implements MqttClient {
   private static final int PROTOCOL_VERSION = 4;
   private static final int DEFAULT_IDLE_TIMEOUT = 0;
 
-  private MqttClientOptions options;
-  private MqttClientConnection connection;
+  private final MqttClientOptions options;
   private final NetClient client;
+  private NetSocketInternal connection;
+  private Context ctx;
 
   // handler to call when a publish is complete
-  Handler<Integer> publishCompletionHandler;
+  private Handler<Integer> publishCompletionHandler;
   // handler to call when a unsubscribe request is completed
-  Handler<Integer> unsubscribeCompletionHandler;
+  private Handler<Integer> unsubscribeCompletionHandler;
   // handler to call when a publish message comes in
-  Handler<MqttPublishMessage> publishHandler;
+  private Handler<MqttPublishMessage> publishHandler;
   // handler to call when a subscribe request is completed
-  Handler<MqttSubAckMessage> subscribeCompletionHandler;
+  private Handler<MqttSubAckMessage> subscribeCompletionHandler;
   // handler to call when a connection request is completed
-  Handler<AsyncResult<MqttConnAckMessage>> connectHandler;
+  private Handler<AsyncResult<MqttConnAckMessage>> connectHandler;
   // handler to call when a pingresp is received
-  Handler<Void> pingrespHandler;
+  private Handler<Void> pingrespHandler;
   // handler to call when a problem at protocol level happens
-  Handler<Throwable> exceptionHandler;
+  private Handler<Throwable> exceptionHandler;
   //handler to call when the remote MQTT server closes the connection
-  Handler<Void> closeHandler;
+  private Handler<Void> closeHandler;
 
   // storage of PUBLISH QoS=1 messages which was not responded with PUBACK
-  LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos1outbound = new LinkedHashMap<>();
+  private LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos1outbound = new LinkedHashMap<>();
 
   // storage of PUBLISH QoS=2 messages which was not responded with PUBREC
   // and PUBREL messages which was not responded with PUBCOMP
-  LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos2outbound = new LinkedHashMap<>();
+  private LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos2outbound = new LinkedHashMap<>();
 
   // storage of PUBLISH messages which was responded with PUBREC
-  LinkedHashMap<Integer, MqttMessage> qos2inbound = new LinkedHashMap<>();
+  private LinkedHashMap<Integer, MqttMessage> qos2inbound = new LinkedHashMap<>();
 
   // counter for the message identifier
   private int messageIdCounter;
 
   // total amount of unacknowledged packets
   private int countInflightQueue;
-
-  // patterns for topics validation
-  private Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
-  private Pattern validTopicFilterPattern = Pattern.compile("^(#|((\\+(?![^/]))?([^#+]*(/\\+(?![^/]))?)*(/#)?))$");
 
   private boolean isConnected;
 
@@ -187,9 +186,10 @@ public class MqttClientImpl implements MqttClient {
         }
 
         initChannel(pipeline);
-        this.connection = new MqttClientConnection(this, soi, options);
+        this.connection = soi;
+        this.ctx = Vertx.currentContext();
 
-        soi.messageHandler(msg -> connection.handleMessage(msg));
+        soi.messageHandler(msg -> this.handleMessage(soi.channelHandlerContext(), msg));
         soi.closeHandler(v -> handleClosed());
 
         // an exception at connection level
@@ -258,8 +258,7 @@ public class MqttClientImpl implements MqttClient {
     if (disconnectHandler != null) {
       disconnectHandler.handle(Future.succeededFuture());
     }
-
-    this.connection.close();
+    connection().close();
     return this;
   }
 
@@ -277,53 +276,52 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
 
-    if (countInflightQueue >= options.getMaxInflightQueue()) {
-      String msg = String.format("Attempt to exceed the limit of %d inflight messages", options.getMaxInflightQueue());
-      log.error(msg);
-      MqttException exception = new MqttException(MqttException.MQTT_INFLIGHT_QUEUE_FULL, msg);
-      if (publishSentHandler != null) {
-        publishSentHandler.handle(Future.failedFuture(exception));
+    io.netty.handler.codec.mqtt.MqttMessage publish;
+    MqttPublishVariableHeader variableHeader;
+    synchronized (this) {
+      if (countInflightQueue >= options.getMaxInflightQueue()) {
+        String msg = String.format("Attempt to exceed the limit of %d inflight messages", options.getMaxInflightQueue());
+        log.error(msg);
+        MqttException exception = new MqttException(MqttException.MQTT_INFLIGHT_QUEUE_FULL, msg);
+        if (publishSentHandler != null) {
+          ctx.runOnContext(v -> publishSentHandler.handle(Future.failedFuture(exception)));
+        }
+        return this;
       }
-      return this;
-    }
 
-    if (!isValidTopicName(topic)) {
-      String msg = String.format("Invalid Topic Name - %s. It mustn't contains wildcards: # and +. Also it can't contains U+0000(NULL) chars", topic);
-      log.error(msg);
-      MqttException exception = new MqttException(MqttException.MQTT_INVALID_TOPIC_NAME, msg);
-      if (publishSentHandler != null) {
-        publishSentHandler.handle(Future.failedFuture(exception));
+      if (!isValidTopicName(topic)) {
+        String msg = String.format("Invalid Topic Name - %s. It mustn't contains wildcards: # and +. Also it can't contains U+0000(NULL) chars", topic);
+        log.error(msg);
+        MqttException exception = new MqttException(MqttException.MQTT_INVALID_TOPIC_NAME, msg);
+        if (publishSentHandler != null) {
+          ctx.runOnContext(v -> publishSentHandler.handle(Future.failedFuture(exception)));
+        }
+        return this;
       }
-      return this;
-    }
 
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(
-      MqttMessageType.PUBLISH,
-      isDup,
-      qosLevel,
-      isRetain,
-      0
-    );
-
-    MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
-
-    ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
-
-    io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
-
-    switch (qosLevel) {
-      case AT_LEAST_ONCE:
-        qos1outbound.put(variableHeader.messageId(), publish);
-        countInflightQueue++;
-        break;
-      case EXACTLY_ONCE:
-        qos2outbound.put(variableHeader.messageId(), publish);
-        countInflightQueue++;
-        break;
+      MqttFixedHeader fixedHeader = new MqttFixedHeader(
+        MqttMessageType.PUBLISH,
+        isDup,
+        qosLevel,
+        isRetain,
+        0
+      );
+      ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
+      variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
+      publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
+      switch (qosLevel) {
+        case AT_LEAST_ONCE:
+          qos1outbound.put(variableHeader.messageId(), publish);
+          countInflightQueue++;
+          break;
+        case EXACTLY_ONCE:
+          qos2outbound.put(variableHeader.messageId(), publish);
+          countInflightQueue++;
+          break;
+      }
     }
 
     this.write(publish);
-
     if (publishSentHandler != null) {
       publishSentHandler.handle(Future.succeededFuture(variableHeader.messageId()));
     }
@@ -341,6 +339,10 @@ public class MqttClientImpl implements MqttClient {
     return this;
   }
 
+  private synchronized Handler<Integer> publishCompletionHandler() {
+    return this.publishCompletionHandler;
+  }
+
   /**
    * See {@link MqttClient#publishHandler(Handler)} for more details
    */
@@ -351,6 +353,10 @@ public class MqttClientImpl implements MqttClient {
     return this;
   }
 
+  private synchronized Handler<MqttPublishMessage> publishHandler() {
+    return this.publishHandler;
+  }
+
   /**
    * See {@link MqttClient#subscribeCompletionHandler(Handler)} for more details
    */
@@ -359,6 +365,10 @@ public class MqttClientImpl implements MqttClient {
 
     this.subscribeCompletionHandler = subscribeCompletionHandler;
     return this;
+  }
+
+  private synchronized Handler<MqttSubAckMessage> subscribeCompletionHandler() {
+    return this.subscribeCompletionHandler;
   }
 
   /**
@@ -441,6 +451,11 @@ public class MqttClientImpl implements MqttClient {
     return this;
   }
 
+  private synchronized Handler<Integer> unsubscribeCompletionHandler() {
+
+    return this.unsubscribeCompletionHandler;
+  }
+
   /**
    * See {@link MqttClient#unsubscribe(String, Handler)} )} for more details
    */
@@ -468,6 +483,10 @@ public class MqttClientImpl implements MqttClient {
     return this;
   }
 
+  private synchronized Handler<AsyncResult<MqttConnAckMessage>> connectHandler() {
+    return this.connectHandler;
+  }
+
   /**
    * See {@link MqttClient#unsubscribe(String)} )} for more details
    */
@@ -480,28 +499,39 @@ public class MqttClientImpl implements MqttClient {
    * See {@link MqttClient#pingResponseHandler(Handler)} for more details
    */
   @Override
-  public MqttClient pingResponseHandler(Handler<Void> pingResponseHandler) {
-
+  public synchronized MqttClient pingResponseHandler(Handler<Void> pingResponseHandler) {
     this.pingrespHandler = pingResponseHandler;
     return this;
+  }
+
+  private synchronized Handler<Void> pingResponseHandler() {
+    return this.pingrespHandler;
   }
 
   /**
    * See {@link MqttClient#exceptionHandler(Handler)} for more details
    */
   @Override
-  public MqttClient exceptionHandler(Handler<Throwable> handler) {
+  public synchronized MqttClient exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
+  }
+
+  private synchronized Handler<Throwable> exceptionHandler() {
+    return this.exceptionHandler;
   }
 
   /**
    * See {@link MqttClient#closeHandler(Handler)} for more details
    */
   @Override
-  public MqttClient closeHandler(Handler<Void> closeHandler) {
+  public synchronized MqttClient closeHandler(Handler<Void> closeHandler) {
     this.closeHandler = closeHandler;
     return this;
+  }
+
+  private synchronized Handler<Void> closeHandler() {
+    return this.closeHandler;
   }
 
   /**
@@ -521,12 +551,12 @@ public class MqttClientImpl implements MqttClient {
   }
 
   @Override
-  public String clientId() {
+  public synchronized String clientId() {
     return this.options.getClientId();
   }
 
   @Override
-  public boolean isConnected() {
+  public synchronized boolean isConnected() {
     return this.isConnected;
   }
 
@@ -535,7 +565,7 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param publishMessageId identifier of the PUBLISH message to acknowledge
    */
-  void publishAcknowledge(int publishMessageId) {
+  private void publishAcknowledge(int publishMessageId) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBACK, false, AT_MOST_ONCE, false, 0);
@@ -553,7 +583,7 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param publishMessage a PUBLISH message to acknowledge
    */
-  void publishReceived(MqttPublishMessage publishMessage) {
+  private void publishReceived(MqttPublishMessage publishMessage) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREC, false, AT_MOST_ONCE, false, 0);
@@ -563,7 +593,9 @@ public class MqttClientImpl implements MqttClient {
 
     io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
-    qos2inbound.put(publishMessage.messageId(), publishMessage);
+    synchronized (this) {
+      qos2inbound.put(publishMessage.messageId(), publishMessage);
+    }
     this.write(pubrec);
   }
 
@@ -572,7 +604,7 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param publishMessageId identifier of the PUBLISH message to acknowledge
    */
-  void publishComplete(int publishMessageId) {
+  private void publishComplete(int publishMessageId) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBCOMP, false, AT_MOST_ONCE, false, 0);
@@ -590,7 +622,7 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param publishMessageId  identifier of the PUBLISH message to acknowledge
    */
-  void publishRelease(int publishMessageId) {
+  private void publishRelease(int publishMessageId) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
@@ -600,7 +632,9 @@ public class MqttClientImpl implements MqttClient {
 
     io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
-    qos2outbound.put(publishMessageId, pubrel);
+    synchronized (this) {
+      qos2outbound.put(publishMessageId, pubrel);
+    }
     this.write(pubrel);
   }
 
@@ -642,42 +676,144 @@ public class MqttClientImpl implements MqttClient {
    *
    * @return message identifier
    */
-  private int nextMessageId() {
+  private synchronized int nextMessageId() {
 
     // if 0 or MAX_MESSAGE_ID, it becomes 1 (first valid messageId)
     this.messageIdCounter = ((this.messageIdCounter % MAX_MESSAGE_ID) != 0) ? this.messageIdCounter + 1 : 1;
     return this.messageIdCounter;
   }
 
-  public MqttClientImpl write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
+  private synchronized NetSocketInternal connection() {
+    return connection;
+  }
+
+  void write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     log.debug(String.format("Sending packet %s", mqttMessage));
-    this.connection.writeMessage(mqttMessage);
-    return this;
+    this.connection().writeMessage(mqttMessage);
   }
 
   /**
    * Used for calling the close handler when the remote MQTT server closes the connection
    */
-  void handleClosed() {
-    synchronized (this.connection.so) {
+  private void handleClosed() {
+    synchronized (this) {
       boolean isConnected = this.isConnected;
-      this.cleanup();
-
-      if (this.closeHandler != null && isConnected) {
-        this.closeHandler.handle(null);
+      this.isConnected = false;
+      if (!isConnected) {
+        return;
       }
+    }
+    Handler<Void> handler = closeHandler();
+    if (handler != null) {
+      handler.handle(null);
+    }
+  }
+
+  /**
+   * Handle the MQTT message received from the remote MQTT server
+   *
+   * @param msg Incoming Packet
+   */
+  private void handleMessage(ChannelHandlerContext chctx, Object msg) {
+
+    // handling directly native Netty MQTT messages, some of them are translated
+    // to the related Vert.x ones for polyglotization
+    if (msg instanceof io.netty.handler.codec.mqtt.MqttMessage) {
+
+      io.netty.handler.codec.mqtt.MqttMessage mqttMessage = (io.netty.handler.codec.mqtt.MqttMessage) msg;
+
+      DecoderResult result = mqttMessage.decoderResult();
+      if (result.isFailure()) {
+        chctx.pipeline().fireExceptionCaught(result.cause());
+        return;
+      }
+      if (!result.isFinished()) {
+        chctx.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
+        return;
+      }
+
+      log.debug(String.format("Incoming packet %s", msg));
+      switch (mqttMessage.fixedHeader().messageType()) {
+
+        case CONNACK:
+
+          io.netty.handler.codec.mqtt.MqttConnAckMessage connack = (io.netty.handler.codec.mqtt.MqttConnAckMessage) mqttMessage;
+
+          MqttConnAckMessage mqttConnAckMessage = MqttConnAckMessage.create(
+            connack.variableHeader().connectReturnCode(),
+            connack.variableHeader().isSessionPresent());
+          handleConnack(mqttConnAckMessage);
+          break;
+
+        case PUBLISH:
+
+          io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
+          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), chctx.alloc());
+
+          MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
+            publish.variableHeader().messageId(),
+            publish.fixedHeader().qosLevel(),
+            publish.fixedHeader().isDup(),
+            publish.fixedHeader().isRetain(),
+            publish.variableHeader().topicName(),
+            newBuf);
+          handlePublish(mqttPublishMessage);
+          break;
+
+        case PUBACK:
+          handlePuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+          break;
+
+        case PUBREC:
+          handlePubrec(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+          break;
+
+        case PUBREL:
+          handlePubrel(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+          break;
+
+        case PUBCOMP:
+          handlePubcomp(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+          break;
+
+        case SUBACK:
+
+          io.netty.handler.codec.mqtt.MqttSubAckMessage unsuback = (io.netty.handler.codec.mqtt.MqttSubAckMessage) mqttMessage;
+
+          MqttSubAckMessage mqttSubAckMessage = MqttSubAckMessage.create(
+            unsuback.variableHeader().messageId(),
+            unsuback.payload().grantedQoSLevels());
+          handleSuback(mqttSubAckMessage);
+          break;
+
+        case UNSUBACK:
+          handleUnsuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+          break;
+
+        case PINGRESP:
+          handlePingresp();
+          break;
+
+        default:
+
+          chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
+          break;
+      }
+
+    } else {
+
+      chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
     }
   }
 
   /**
    * Used for calling the pingresp handler when the server replies to the ping
    */
-  void handlePingresp() {
+  private void handlePingresp() {
 
-    synchronized (this.connection.so) {
-      if (this.pingrespHandler != null) {
-        this.pingrespHandler.handle(null);
-      }
+    Handler<Void> handler = pingResponseHandler();
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 
@@ -686,12 +822,11 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param unsubackMessageId identifier of the subscribe acknowledged by the server
    */
-  void handleUnsuback(int unsubackMessageId) {
+  private void handleUnsuback(int unsubackMessageId) {
 
-    synchronized (this.connection.so) {
-      if (this.unsubscribeCompletionHandler != null) {
-        this.unsubscribeCompletionHandler.handle(unsubackMessageId);
-      }
+    Handler<Integer> handler = unsubscribeCompletionHandler();
+    if (handler != null) {
+      handler.handle(unsubackMessageId);
     }
   }
 
@@ -700,9 +835,9 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param pubackMessageId identifier of the message acknowledged by the server
    */
-  void handlePuback(int pubackMessageId) {
+  private void handlePuback(int pubackMessageId) {
 
-    synchronized (this.connection.so) {
+    synchronized (this) {
 
       io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos1outbound.remove(pubackMessageId);
 
@@ -712,10 +847,10 @@ public class MqttClientImpl implements MqttClient {
       }
 
       countInflightQueue--;
-
-      if (this.publishCompletionHandler != null) {
-        this.publishCompletionHandler.handle(pubackMessageId);
-      }
+    }
+    Handler<Integer> handler = publishCompletionHandler();
+    if (handler != null) {
+      handler.handle(pubackMessageId);
     }
   }
 
@@ -724,9 +859,9 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param pubcompMessageId identifier of the message acknowledged by the server
    */
-  void handlePubcomp(int pubcompMessageId) {
+  private void handlePubcomp(int pubcompMessageId) {
 
-    synchronized (this.connection.so) {
+    synchronized (this) {
       io.netty.handler.codec.mqtt.MqttMessage removedPacket = qos2outbound.remove(pubcompMessageId);
 
       if (removedPacket == null) {
@@ -735,10 +870,10 @@ public class MqttClientImpl implements MqttClient {
       }
 
       countInflightQueue--;
-
-      if (this.publishCompletionHandler != null) {
-        this.publishCompletionHandler.handle(pubcompMessageId);
-      }
+    }
+    Handler<Integer> handler = publishCompletionHandler();
+    if (handler != null) {
+      handler.handle(pubcompMessageId);
     }
   }
 
@@ -747,7 +882,7 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param pubrecMessageId identifier of the message acknowledged by server
    */
-  void handlePubrec(int pubrecMessageId) {
+  private void handlePubrec(int pubrecMessageId) {
 
     this.publishRelease(pubrecMessageId);
   }
@@ -757,12 +892,11 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param msg message with suback information
    */
-  void handleSuback(MqttSubAckMessage msg) {
+  private void handleSuback(MqttSubAckMessage msg) {
 
-    synchronized (this.connection.so) {
-      if (this.subscribeCompletionHandler != null) {
-        this.subscribeCompletionHandler.handle(msg);
-      }
+    Handler<MqttSubAckMessage> handler = subscribeCompletionHandler();
+    if (handler != null) {
+      handler.handle(msg);
     }
   }
 
@@ -771,31 +905,30 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param msg published message
    */
-  void handlePublish(MqttPublishMessage msg) {
+  private void handlePublish(MqttPublishMessage msg) {
 
-    synchronized (this.connection.so) {
+    Handler<MqttPublishMessage> handler;
+    switch (msg.qosLevel()) {
 
-      switch (msg.qosLevel()) {
+      case AT_MOST_ONCE:
+        handler = this.publishHandler();
+        if (handler != null) {
+          handler.handle(msg);
+        }
+        break;
 
-        case AT_MOST_ONCE:
-          if (this.publishHandler != null) {
-            this.publishHandler.handle(msg);
-          }
-          break;
+      case AT_LEAST_ONCE:
+        this.publishAcknowledge(msg.messageId());
+        handler = this.publishHandler();
+        if (handler != null) {
+          handler.handle(msg);
+        }
+        break;
 
-        case AT_LEAST_ONCE:
-          this.publishAcknowledge(msg.messageId());
-          if (this.publishHandler != null) {
-            this.publishHandler.handle(msg);
-          }
-          break;
-
-        case EXACTLY_ONCE:
-          this.publishReceived(msg);
-          // we will handle the PUBLISH when a PUBREL comes
-          break;
-      }
-
+      case EXACTLY_ONCE:
+        this.publishReceived(msg);
+        // we will handle the PUBLISH when a PUBREL comes
+        break;
     }
   }
 
@@ -804,21 +937,20 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param pubrelMessageId identifier of the message acknowledged by the server
    */
-  void handlePubrel(int pubrelMessageId) {
-
-    synchronized (this.connection.so) {
-      MqttMessage message = qos2inbound.get(pubrelMessageId);
+  private void handlePubrel(int pubrelMessageId) {
+    MqttMessage message;
+    synchronized (this) {
+      message = qos2inbound.get(pubrelMessageId);
 
       if (message == null) {
         log.warn("Received PUBREL packet without having related PUBREC packet in storage");
         return;
       }
-
-      if (this.publishHandler != null) {
-        this.publishHandler.handle((MqttPublishMessage) message);
-      }
-
       this.publishComplete(pubrelMessageId);
+    }
+    Handler<MqttPublishMessage> handler = this.publishHandler();
+    if (handler != null) {
+      handler.handle((MqttPublishMessage) message);
     }
   }
 
@@ -827,21 +959,21 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param msg  connection response message
    */
-  void handleConnack(MqttConnAckMessage msg) {
+  private void handleConnack(MqttConnAckMessage msg) {
 
-    synchronized (this.connection.so) {
-
+    synchronized (this) {
       this.isConnected = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
+    }
 
-      if (this.connectHandler != null) {
+    Handler<AsyncResult<MqttConnAckMessage>> handler = connectHandler();
+    if (handler != null) {
 
-        if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-          this.connectHandler.handle(Future.succeededFuture(msg));
-        } else {
-          MqttConnectionException exception = new MqttConnectionException(msg.code());
-          log.error(String.format("Connection refused by the server - code: %s", msg.code()));
-          this.connectHandler.handle(Future.failedFuture(exception));
-        }
+      if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+        handler.handle(Future.succeededFuture(msg));
+      } else {
+        MqttConnectionException exception = new MqttConnectionException(msg.code());
+        log.error(String.format("Connection refused by the server - code: %s", msg.code()));
+        handler.handle(Future.failedFuture(exception));
       }
     }
   }
@@ -851,12 +983,11 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param t exception raised
    */
-  void handleException(Throwable t) {
+  private void handleException(Throwable t) {
 
-    synchronized (this.connection.so) {
-      if (this.exceptionHandler != null) {
-        this.exceptionHandler.handle(t);
-      }
+    Handler<Throwable> handler = exceptionHandler();
+    if (handler != null) {
+      handler.handle(t);
     }
   }
 
@@ -911,12 +1042,5 @@ public class MqttClientImpl implements MqttClient {
     }
 
     return false;
-  }
-
-  /**
-   * Cleanup
-   */
-  private void cleanup() {
-      this.isConnected = false;
   }
 }
