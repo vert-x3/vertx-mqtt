@@ -16,4 +16,23 @@ See the in-source docs for more details:
 
 Some examples are available for getting started with the server under the [vertx-examples](https://github.com/vert-x3/vertx-examples/tree/master/mqtt-server-examples) project.
 
-**Note: This module has Tech Preview status, this means the API can change between versions.**
+## Running tests
+
+Run all tests. The client is tested with the `iot.eclipse.org` server.
+
+```
+> mvn verify
+```
+
+Run all tests. The client is tested with a Docker container started by Maven on the `1884` port
+
+```
+> mvn verify -Plocal_test
+```
+
+Like above but with an manual Docker container start/stop.
+
+```
+> docker run -d -p 1884:1883 ansi/mosquitto
+> mvn verify -Dmqtt.server.host=localhost -Dmqtt.server.port=1884
+```
