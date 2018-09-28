@@ -17,6 +17,7 @@
 package io.vertx.mqtt.test.server;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -54,7 +55,7 @@ public class MqttServerTest {
   private Vertx vertx;
 
   @Before
-  public void before(TestContext context) {
+  public void before() {
 
     this.vertx = Vertx.vertx();
   }
@@ -62,13 +63,13 @@ public class MqttServerTest {
   @After
   public void after(TestContext context) {
 
-    this.vertx.close();
+    this.vertx.close(context.asyncAssertSuccess());
   }
 
   @Test
   public void sharedServersRoundRobin(TestContext context) {
 
-    int numServers = 5;
+    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 20;
 
     List<MqttServer> servers = new ArrayList<>();

@@ -87,8 +87,8 @@ public abstract class MqttServerBaseTest {
    */
   protected void tearDown(TestContext context) {
 
-    this.mqttServer.close();
-    this.vertx.close();
+    this.mqttServer.close(context.asyncAssertSuccess());
+    this.vertx.close(context.asyncAssertSuccess());
   }
 
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
