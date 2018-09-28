@@ -13,6 +13,10 @@ jobs:
       name: "OracleJDK 8"
       jdk: oraclejdk8
       script: mvn -q clean verify -Dmqtt.server.host=localhost -Dmqtt.server.port=1884 -B
+    - if: type != pull_request
+      name: "OpenJDK 11"
+      jdk: openjdk11
+      script: mvn -q clean verify -Dmqtt.server.host=localhost -Dmqtt.server.port=1884 -B
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
       if: type != pull_request
