@@ -83,7 +83,7 @@ public class MqttClientUnsubscribeTest {
       });
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
       assertTrue(ar.succeeded());
 
       client.subscribe(MQTT_TOPIC, qos.value(), ar1 -> {

@@ -16,34 +16,13 @@
 
 package io.vertx.mqtt.test.client;
 
-
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 class TestUtil {
 
-  private static final Logger log = LoggerFactory.getLogger(TestUtil.class);
-
   static final String BROKER_ADDRESS;
+  static final int BROKER_PORT;
 
   static {
-    InputStream inputStream;
-    Properties properties = null;
-
-    try {
-      inputStream = new FileInputStream("./target/project.properties");
-      properties = new Properties();
-      properties.load(inputStream);
-      log.debug("Properties was loaded successfully");
-    } catch (IOException e) {
-      log.error("Properties was not loaded, it should be generated during mvn verify -Plocal_test", e);
-    }
-
-    BROKER_ADDRESS = properties.getProperty("SERVER");
+    BROKER_ADDRESS = System.getProperty("mqtt.server.host");
+    BROKER_PORT = Integer.parseInt(System.getProperty("mqtt.server.port"));
   }
 }

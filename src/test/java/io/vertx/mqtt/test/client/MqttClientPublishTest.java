@@ -68,7 +68,7 @@ public class MqttClientPublishTest {
       async.countDown();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
 
       assertTrue(ar.succeeded());
 

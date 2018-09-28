@@ -88,7 +88,7 @@ public class MqttClientSubscribeTest {
     MqttClient publisher = MqttClient.create(Vertx.vertx());
 
     // subscriber1 connects, subscribe and then un-unsubscribe, it won't get the published message
-    subscriber1.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    subscriber1.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
 
       assertTrue(ar.succeeded());
 
@@ -114,7 +114,7 @@ public class MqttClientSubscribeTest {
     });
 
     // subscriber2 connects and subscribe, it will get the published message
-    subscriber2.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    subscriber2.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
 
       assertTrue(ar.succeeded());
 
@@ -135,7 +135,7 @@ public class MqttClientSubscribeTest {
     // waiting for subscribers to subscribe and then the first client to un-subscribe, before publishing a message
     publish.await();
 
-    publisher.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    publisher.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
 
       publisher.publish(
         MQTT_TOPIC,
@@ -167,7 +167,7 @@ public class MqttClientSubscribeTest {
         async.countDown();
       });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
       assertTrue(ar.succeeded());
       client.subscribe(MQTT_TOPIC, qos.value());
       client.publish(
@@ -198,7 +198,7 @@ public class MqttClientSubscribeTest {
       async.countDown();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
       assertTrue(ar.succeeded());
 
       client.subscribe(MQTT_TOPIC, qos.value(), done -> {

@@ -44,7 +44,7 @@ public class MqttClientConnectTest {
     Async async = context.async();
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
       assertTrue(c.succeeded());
 
@@ -65,7 +65,7 @@ public class MqttClientConnectTest {
     options.setIdleTimeout(100);
     MqttClient client = MqttClient.create(Vertx.vertx(),options);
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
       assertTrue(c.succeeded());
 
@@ -92,7 +92,7 @@ public class MqttClientConnectTest {
       async.countDown();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
     });
 
@@ -129,13 +129,7 @@ public class MqttClientConnectTest {
     server.endpointHandler(endpoint -> {
       endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
     });
-    server.listen(MqttServerOptions.DEFAULT_PORT, done -> {
-      if (done.succeeded()) {
-        asyncServer.complete();
-      } else {
-        context.fail();
-      }
-    });
+    server.listen(MqttServerOptions.DEFAULT_PORT, context.asyncAssertSuccess(v -> asyncServer.complete()));
     asyncServer.await();
 
     MqttClient client = MqttClient.create(vertx);

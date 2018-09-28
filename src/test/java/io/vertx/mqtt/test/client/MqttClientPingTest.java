@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
  * MQTT client testing on keep alive mechanism
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientPingTest  {
+public class MqttClientPingTest {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientPingTest.class);
 
@@ -56,7 +56,7 @@ public class MqttClientPingTest  {
 
     count = 0;
     MqttClient client = MqttClient.create(vertx, options);
-    client.connect(MqttClientOptions.DEFAULT_PORT,  TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT,  TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v ->{
 
@@ -91,7 +91,7 @@ public class MqttClientPingTest  {
 
     count = 0;
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
-    client.connect(MqttClientOptions.DEFAULT_PORT,  TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT,  TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v -> {
 

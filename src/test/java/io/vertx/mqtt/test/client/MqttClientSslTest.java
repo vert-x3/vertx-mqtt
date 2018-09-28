@@ -67,8 +67,7 @@ public class MqttClientSslTest {
   public void clientSslClientTruststoreTest(TestContext context) {
 
     this.context = context;
-    URL trustStore = this.getClass().getResource("/tls/client-truststore.jks");
-    JksOptions jksOptions = new JksOptions().setPath(trustStore.getPath());
+    JksOptions jksOptions = new JksOptions().setPath("/tls/client-truststore.jks");
 
     MqttClientOptions clientOptions = new MqttClientOptions()
       .setSsl(true)

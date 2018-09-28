@@ -6,13 +6,13 @@ branches:
   - /^\d+\.\d+$/
 before_install:
   - docker pull ansi/mosquitto
-  - docker run -d -p 127.0.0.1:1883:1883 ansi/mosquitto
+  - docker run -d -p 127.0.0.1:1883:1884 ansi/mosquitto
 jobs:
   include:
     - stage: test
       name: "OracleJDK 8"
       jdk: oraclejdk8
-      script: mvn -q clean verify -B
+      script: mvn -q clean verify -Dmqtt.server.host=localhost -Dmqtt.server.port=1884 -B
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
       if: type != pull_request

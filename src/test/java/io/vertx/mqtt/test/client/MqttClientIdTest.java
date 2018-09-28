@@ -50,7 +50,7 @@ public class MqttClientIdTest {
 
     assertThat(options.getClientId(), nullValue());
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
       assertTrue(c.succeeded());
       assertTrue(client.clientId().length() == 36);
@@ -73,7 +73,7 @@ public class MqttClientIdTest {
     options.setClientId("myClient");
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
 
       assertTrue(c.succeeded());
       assertThat(client.clientId(), notNullValue());

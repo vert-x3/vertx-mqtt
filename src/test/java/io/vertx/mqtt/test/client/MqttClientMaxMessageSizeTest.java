@@ -70,7 +70,7 @@ public class MqttClientMaxMessageSizeTest {
     });
 
     log.info("CONNECT --->");
-    client.connect(MqttClientOptions.DEFAULT_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
       assertTrue(c.succeeded());
       log.info("CONNACK <---");
       client.subscribe(MQTT_TOPIC, 0);
