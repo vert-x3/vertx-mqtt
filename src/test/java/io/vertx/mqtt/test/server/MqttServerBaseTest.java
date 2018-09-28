@@ -62,25 +62,13 @@ public abstract class MqttServerBaseTest {
       this.mqttServer = MqttServer.create(this.vertx, options);
     }
 
-    // be sure that all other tests will start only if the MQTT server starts correctly
-    Async async = context.async();
-
     this.mqttServer.exceptionHandler(err -> {
       rejection = err;
     });
 
-    this.mqttServer.endpointHandler(endpoint -> endpointHandler(endpoint, context)).listen(ar -> {
-
-      if (ar.succeeded()) {
-        log.info("MQTT server listening on port " + ar.result().actualPort());
-        async.complete();
-      } else {
-        log.error("Error starting MQTT server", ar.cause());
-        System.exit(1);
-      }
-    });
-
-    async.awaitSuccess();
+    this.mqttServer.endpointHandler(endpoint -> endpointHandler(endpoint, context)).listen(context.asyncAssertSuccess(res -> {
+      log.info("MQTT server listening on port " + res.actualPort());
+    }));
   }
 
   /**
