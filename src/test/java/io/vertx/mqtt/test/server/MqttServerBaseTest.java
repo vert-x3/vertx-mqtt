@@ -66,9 +66,13 @@ public abstract class MqttServerBaseTest {
       rejection = err;
     });
 
+    Async async = context.async();
     this.mqttServer.endpointHandler(endpoint -> endpointHandler(endpoint, context)).listen(context.asyncAssertSuccess(res -> {
       log.info("MQTT server listening on port " + res.actualPort());
+      async.complete();
     }));
+    // Synchronous start since the proxy might be triggered in method overrides
+    async.awaitSuccess(15000);
   }
 
   /**
