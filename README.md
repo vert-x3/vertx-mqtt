@@ -1,6 +1,6 @@
-[![Build Status](https://vertx.ci.cloudbees.com/buildStatus/icon?job=vert.x3-mqtt)](https://vertx.ci.cloudbees.com/view/vert.x-3/job/vert.x3-mqtt/)
-
 # Vert.x MQTT
+
+[![Build Status](https://travis-ci.org/vert-x3/vertx-mqtt.svg?branch=master)](https://travis-ci.org/vert-x3/vertx-mqtt)
 
 This project provides the following two different components :
 

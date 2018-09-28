@@ -1,0 +1,31 @@
+sudo: required
+language: java
+branches:
+  only:
+  - master
+  - /^\d+\.\d+$/
+before_install:
+  - docker pull ansi/mosquitto
+  - docker run -d -p 1883:1883 ansi/mosquitto
+jobs:
+  include:
+    - stage: test
+      name: "OracleJDK 8"
+      jdk: oraclejdk8
+      script: mvn -q clean verify -B
+    - if: type != pull_request
+      name: "OpenJDK 11"
+      jdk: openjdk11
+      script: mvn -q clean verify -B
+    - stage: deploy
+      name: "Deploy to Sonatype's snapshots repository"
+      if: type != pull_request
+      script: bash .travis.deploy.artifacts.sh
+services:
+  - docker
+notifications:
+  email:
+    recipients:
+      - vertx3-ci@googlegroups.com
+    on_success: always
+    on_failure: always
