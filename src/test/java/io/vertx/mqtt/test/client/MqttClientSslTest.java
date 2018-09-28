@@ -82,7 +82,7 @@ public class MqttClientSslTest {
   }
 
   @Before
-  public void before() {
+  public void before(TestContext ctx) {
     PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
       .setKeyPath("tls/server-key.pem")
       .setCertPath("tls/server-cert.pem");
@@ -94,21 +94,12 @@ public class MqttClientSslTest {
       .setSsl(true);
 
     server = MqttServer.create(vertx, serverOptions);
-
+    server.exceptionHandler(t -> context.assertTrue(false));
     server.endpointHandler(e -> {
       log.info("Client connected");
       e.disconnectHandler(d -> log.info("Client disconnected"));
       e.accept(false);
-    }).listen(ar -> {
-      if (ar.succeeded()) {
-        log.info("MQTT server listening on port " + ar.result().actualPort());
-      } else {
-        log.error("Error starting MQTT server", ar.cause());
-        System.exit(1);
-      }
-    });
-
-    server.exceptionHandler(t -> context.assertTrue(false));
+    }).listen(ctx.asyncAssertSuccess());
   }
 
   @After

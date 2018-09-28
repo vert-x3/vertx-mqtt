@@ -6,7 +6,7 @@ branches:
   - /^\d+\.\d+$/
 before_install:
   - docker pull ansi/mosquitto
-  - docker run -d -p 127.0.0.1:1883:1884 ansi/mosquitto
+  - docker run -d -p 1884:1883 ansi/mosquitto
 jobs:
   include:
     - stage: test
