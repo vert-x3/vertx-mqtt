@@ -19,13 +19,13 @@ jobs:
       script: mvn -q clean verify -Dmqtt.server.host=localhost -Dmqtt.server.port=1884 -B
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
-      if: type != pull_request
+      if: type != pull_request AND env(SONATYPE_NEXUS_USERNAME) IS present
       script: bash .travis.deploy.artifacts.sh
 services:
   - docker
 notifications:
   email:
     recipients:
-      - vertx3-ci@googlegroups.com
+      - secure: "ReBhD9rlPcA8ktCAb3a6VNHiWCRoqdiZQ9FfpCk2dkjt3voYnULuufGl/kGTEnXv3JJ4gc+Dq+zp5MBeEfYFcnZRLHUBIcmxLxviyxL65Rq3bknBrBNjySPohhWGExbLcurWz4RvBEgEK1XMf5dij0qQOIG0KpEfhV95gxj2pzTk+lhmg7wsCGoGNeYS+kingkuigpjVcvacEVFUNX5ymxA4i4Icnqn8FGkjht41i3Y0KFIaoclDadaO/xf6jXC0f2I8nyNVBcphJLeiYzqS85lw3sUOu9//p2bDX8Svx7BrHTKkVr7IxplrzuSD/zbC0HlZ2tC05ZdLx1Iyzqj86UghPUc+umNEhlxqqW3rfaXgp+5/g9dWW8sDFJBi2L1o5xUcL2YvwaAbjf3iVIXIs6B6dIS1QUgZUOJC15xhek9CkmUJgUh4B/73KO1lQGm07j40KOdIUBTsHNl0Lds9kyhdpVR5ihRw2W6Tn8iOuX6Rml7sCvPyWmmfI94HPcjXT4pZCNVPxgWKlKV7SZDph2japHe5nH3j8Ap2B/eGk/sXIZQq0LLyGRVBsyx7asckhjqXyiI+4yg1w6S6aX3dwWYL5Soc8fGQhRBcRfuUK5RSYRg9YZuUtc3FTGmHZlaX1WphbNef1hNJpUEZWdI7CVwbcbPqWw2CgLtlkaRuLQs="
     on_success: always
     on_failure: always
