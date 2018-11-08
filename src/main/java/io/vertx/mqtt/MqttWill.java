@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt;
 
-import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
@@ -65,7 +64,6 @@ public class MqttWill {
   /**
    * @return the will flag for indicating the will message presence
    */
-  @CacheReturn
   public boolean isWillFlag() {
     return this.isWillFlag;
   }
@@ -73,33 +71,56 @@ public class MqttWill {
   /**
    * @return the topic for the will as provided by the remote MQTT client
    */
-  @CacheReturn
-  public String willTopic() {
+  public String getWillTopic() {
     return this.willTopic;
   }
 
   /**
    * @return the payload for the will as provided by the remote MQTT client
    */
-  @CacheReturn
-  public String willMessage() {
+  public String getWillMessage() {
     return this.willMessage;
   }
 
   /**
    * @return the QoS level for the will as provided by the remote MQTT client
    */
-  @CacheReturn
-  public int willQos() {
+  public int getWillQos() {
     return this.willQos;
   }
 
   /**
    * @return true if the will must be retained as provided by the remote MQTT client
    */
-  @CacheReturn
   public boolean isWillRetain() {
     return this.isWillRetain;
+  }
+
+  /**
+   * @deprecated use {@link #getWillTopic()} instead
+   * @return the topic for the will as provided by the remote MQTT client
+   */
+  @Deprecated
+  public String willTopic() {
+    return this.willTopic;
+  }
+
+  /**
+   * @deprecated use {@link #willMessage()} instead
+   * @return the payload for the will as provided by the remote MQTT client
+   */
+  @Deprecated
+  public String willMessage() {
+    return this.willMessage;
+  }
+
+  /**
+   * @deprecated use {@link #willQos()} instead
+   * @return the QoS level for the will as provided by the remote MQTT client
+   */
+  @Deprecated
+  public int willQos() {
+    return this.willQos;
   }
 
   /**

@@ -25,17 +25,17 @@ import io.vertx.core.json.JsonObject;
 @DataObject
 public class MqttAuth {
 
-  private final String userName;
+  private final String username;
   private final String password;
 
   /**
    * Constructor
    *
-   * @param userName MQTT client username
+   * @param username MQTT client username
    * @param password MQTT client password
    */
-  public MqttAuth(String userName, String password) {
-    this.userName = userName;
+  public MqttAuth(String username, String password) {
+    this.username = username;
     this.password = password;
   }
 
@@ -45,20 +45,38 @@ public class MqttAuth {
    * @param json  the JSON
    */
   public MqttAuth(JsonObject json) {
-    this.userName = json.getString("userName");
+    this.username = json.getString("username");
     this.password = json.getString("password");
   }
 
   /**
    * @return the username provided by the remote MQTT client
    */
+  public String getUsername() {
+    return this.username;
+  }
+
+  /**
+   * @deprecated use instead {@link #getUsername()} ()}
+   * @return the username provided by the remote MQTT client
+   */
+  @Deprecated
   public String userName() {
-    return this.userName;
+    return this.username;
   }
 
   /**
    * @return the password provided by the remote MQTT client
    */
+  public String getPassword() {
+    return this.password;
+  }
+
+  /**
+   * @deprecated use instead {@link #getPassword()}
+   * @return the password provided by the remote MQTT client
+   */
+  @Deprecated
   public String password() {
     return this.password;
   }
@@ -70,7 +88,7 @@ public class MqttAuth {
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    json.put("userName", this.userName);
+    json.put("username", this.username);
     json.put("password", this.password);
     return json;
   }

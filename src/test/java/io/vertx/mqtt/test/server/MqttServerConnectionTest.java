@@ -248,8 +248,8 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
       case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
 
         returnCode =
-          (endpoint.auth().userName().equals(MQTT_USERNAME) &&
-            endpoint.auth().password().equals(MQTT_PASSWORD)) ?
+          (endpoint.auth().getUsername().equals(MQTT_USERNAME) &&
+            endpoint.auth().getPassword().equals(MQTT_PASSWORD)) ?
             MqttConnectReturnCode.CONNECTION_ACCEPTED :
             MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
         break;

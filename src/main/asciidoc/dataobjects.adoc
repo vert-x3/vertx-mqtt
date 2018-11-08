@@ -12,6 +12,12 @@
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[password]]`@password`|`String`|+++
+
++++
+|[[username]]`@username`|`String`|+++
+
++++
 |===
 
 [[MqttClientOptions]]
@@ -184,7 +190,16 @@ Set the timeout on CONNECT packet
 |[[willFlag]]`@willFlag`|`Boolean`|+++
 
 +++
+|[[willMessage]]`@willMessage`|`String`|+++
+
++++
+|[[willQos]]`@willQos`|`Number (int)`|+++
+
++++
 |[[willRetain]]`@willRetain`|`Boolean`|+++
+
++++
+|[[willTopic]]`@willTopic`|`String`|+++
 
 +++
 |===
