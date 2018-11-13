@@ -265,7 +265,7 @@ The right way to keep connection alive is a {@link io.vertx.mqtt.MqttClient#ping
 IMPORTANT: by default you client keep connections with server automatically. That means that you don't need to call {@link io.vertx.mqtt.MqttClient#ping()} in order to keep connections with server.
 The {@link io.vertx.mqtt.MqttClient} will do it for you.
 
-If you want to disable this feature then you should call {@link io.vertx.mqtt.MqttClientOptions#setAutoKeepAlive(boolean)} with {@code false} as argument:
+If you want to disable this feature then you should call {@link io.vertx.mqtt.MqttClientOptions#setAutoKeepAlive(boolean)} with `false` as argument:
 [source,$lang]
 ----
 {@link examples.VertxMqttClientExamples#example4}
