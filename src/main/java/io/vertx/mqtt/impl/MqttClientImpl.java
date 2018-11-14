@@ -654,7 +654,7 @@ public class MqttClientImpl implements MqttClient {
       this.options.getKeepAliveTimeSeconds() != 0) {
 
       pipeline.addBefore("handler", "idle",
-        new IdleStateHandler(this.options.getReadTimeout(), this.options.getKeepAliveTimeSeconds(), 0));
+        new IdleStateHandler(0, this.options.getKeepAliveTimeSeconds(), 0));
       pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
 
         @Override
@@ -664,9 +664,6 @@ public class MqttClientImpl implements MqttClient {
             IdleStateEvent e = (IdleStateEvent) evt;
             if (e.state() == IdleState.WRITER_IDLE) {
               ping();
-            } else if (e.state() == IdleState.READER_IDLE) {
-              // implicitly triggers #handleClosed
-              ctx.close();
             }
           }
         }
