@@ -84,6 +84,8 @@ public class MqttClientImpl implements MqttClient {
   private static final int MAX_TOPIC_LEN = 65535;
   private static final int MIN_TOPIC_LEN = 1;
   private static final String PROTOCOL_NAME = "MQTT";
+  private static final String CONNACK_IDLE_HANDLER_NAME = "CONNACK_IDLE_HANDLER";
+  private static final String CONNACK_TIMEOUT_HANDLER_NAME = "CONNACK_TIMEOUT_HANDLER";
   private static final int PROTOCOL_VERSION = 4;
   private static final int DEFAULT_IDLE_TIMEOUT = 0;
 
@@ -650,6 +652,23 @@ public class MqttClientImpl implements MqttClient {
       pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
     }
 
+    pipeline.addBefore("handler", CONNACK_IDLE_HANDLER_NAME, new IdleStateHandler(0, 0, options.getConnackTimeoutSeconds()));
+    pipeline.addBefore("handler", CONNACK_TIMEOUT_HANDLER_NAME, new ChannelDuplexHandler() {
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+
+        if (evt instanceof IdleStateEvent) {
+          IdleStateEvent e = (IdleStateEvent) evt;
+          if (e.state() == IdleState.ALL_IDLE) {
+            connectHandler().handle(
+              Future.failedFuture(String.format("Connection timeout. Have not received CONNACK in %d seconds",
+                options.getConnackTimeoutSeconds()))
+            );
+          }
+        }
+      }
+    });
+
     if (this.options.isAutoKeepAlive() &&
       this.options.getKeepAliveTimeSeconds() != 0) {
 
@@ -960,6 +979,10 @@ public class MqttClientImpl implements MqttClient {
    * @param msg  connection response message
    */
   private void handleConnack(MqttConnAckMessage msg) {
+    ChannelPipeline pipeline = connection.channelHandlerContext().pipeline();
+
+    pipeline.remove(CONNACK_TIMEOUT_HANDLER_NAME);
+    pipeline.remove(CONNACK_IDLE_HANDLER_NAME);
 
     synchronized (this) {
       this.isConnected = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
