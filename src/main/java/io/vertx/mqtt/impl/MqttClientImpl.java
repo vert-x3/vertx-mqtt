@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
@@ -36,6 +37,8 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribePayload;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -58,11 +61,8 @@ import io.vertx.mqtt.messages.MqttSubAckMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -653,6 +653,7 @@ public class MqttClientImpl implements MqttClient {
     if (this.options.isAutoKeepAlive() &&
       this.options.getKeepAliveTimeSeconds() != 0) {
 
+      // Idle state handler for keep alive -> will result in pinging broker
       pipeline.addBefore("handler", "idle",
         new IdleStateHandler(0, this.options.getKeepAliveTimeSeconds(), 0));
       pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
@@ -664,6 +665,23 @@ public class MqttClientImpl implements MqttClient {
             IdleStateEvent e = (IdleStateEvent) evt;
             if (e.state() == IdleState.WRITER_IDLE) {
               ping();
+            }
+          }
+        }
+      });
+
+      // Idle state handler for timeout -> will result in connection close if no traffic comes in (including ping request)
+      int timeout = (int) (this.options.getKeepAliveTimeSeconds() * 1.5);
+      pipeline.addBefore("handler","idleTimeout",
+        new IdleStateHandler(timeout, 0, 0));
+      pipeline.addBefore("handler","idleTimeoutHandler", new ChannelDuplexHandler() {
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+          if (evt instanceof IdleStateEvent) {
+            IdleStateEvent e = (IdleStateEvent) evt;
+            if (e.state() == IdleState.READER_IDLE) {
+              ctx.close();
             }
           }
         }
