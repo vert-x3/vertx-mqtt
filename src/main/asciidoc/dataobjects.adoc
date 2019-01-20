@@ -167,6 +167,9 @@ Set the timeout on CONNECT packet
 |[[trafficClass]]`@trafficClass`|`Number (int)`|-
 |[[useAlpn]]`@useAlpn`|`Boolean`|-
 |[[useProxyProtocol]]`@useProxyProtocol`|`Boolean`|-
+|[[useWebSocket]]`@useWebSocket`|`Boolean`|+++
+enable mqtt over websocket
++++
 |===
 
 [[MqttWill]]
