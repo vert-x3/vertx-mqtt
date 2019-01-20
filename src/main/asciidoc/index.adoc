@@ -81,7 +81,19 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 {@link examples.VertxMqttServerExamples#example3}
 ----
 
-All the other stuff related to handle endpoint connection and related disconnection is managed in the same way without SSL/TLS support.
+=== Handling client connections via WebSocket
+
+If you want to support connections via WebSockets, you can enable this via {@link io.vertx.mqtt.MqttServerOptions},
+too. By passing `true` to {@link io.vertx.mqtt.MqttServerOptions#setUseWebSocket(boolean)}, it will listen for
+websocket connections on the path `/mqtt`.
+
+As with other setup configurations, the resulting endpoint connections and related disconnection are managed the same
+way as regular connections.
+
+[source,$lang]
+----
+{@link examples.VertxMqttServerExamples#example11}
+----
 
 === Handling client subscription/unsubscription request
 

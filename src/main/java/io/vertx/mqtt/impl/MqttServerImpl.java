@@ -16,9 +16,16 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.MessageToMessageDecoder;
+import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.timeout.IdleState;
@@ -36,6 +43,10 @@ import io.vertx.core.net.NetServer;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
+
+import java.util.List;
+
+import static io.vertx.mqtt.MqttServerOptions.MQTT_SUBPROTOCOL_CSV_LIST;
 
 /**
  * An MQTT server implementation
@@ -137,6 +148,30 @@ public class MqttServerImpl implements MqttServer {
     server.close(completionHandler);
   }
 
+
+  static class WebSocketFrameToByteBufDecoder extends MessageToMessageDecoder<BinaryWebSocketFrame> {
+
+    @Override
+    protected void decode(ChannelHandlerContext chc, BinaryWebSocketFrame frame, List<Object> out)
+      throws Exception {
+      // convert the frame to a ByteBuf
+      ByteBuf bb = frame.content();
+      bb.retain();
+      out.add(bb);
+    }
+  }
+
+  static class ByteBufToWebSocketFrameEncoder extends MessageToMessageEncoder<ByteBuf> {
+
+    @Override
+    protected void encode(ChannelHandlerContext chc, ByteBuf bb, List<Object> out) throws Exception {
+      // convert the ByteBuf to a WebSocketFrame
+      BinaryWebSocketFrame result = new BinaryWebSocketFrame();
+      result.content().writeBytes(bb);
+      out.add(result);
+    }
+  }
+
   private void initChannel(ChannelPipeline pipeline) {
 
     pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
@@ -164,5 +199,17 @@ public class MqttServerImpl implements MqttServer {
         }
       }
     });
+
+    if(options.isUseWebSocket()) {
+
+      pipeline.addBefore("mqttEncoder", "httpServerCodec", new HttpServerCodec());
+      pipeline.addAfter("httpServerCodec", "aggregator", new HttpObjectAggregator(65536));
+
+      pipeline.addAfter("aggregator", "webSocketHandler",
+        new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST));
+
+      pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());
+      pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new WebSocketFrameToByteBufDecoder());
+    }
   }
 }
