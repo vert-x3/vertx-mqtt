@@ -173,6 +173,9 @@ Set the timeout on CONNECT packet
 |[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[useAlpn]]`@useAlpn`|`Boolean`|-
 |[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|-
+|[[useWebsocket]]`@useWebsocket`|`Boolean`|+++
+enable mqtt over websocket
++++
 |===
 
 [[MqttWill]]
