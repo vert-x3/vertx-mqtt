@@ -96,7 +96,6 @@ Set the password
 |[[trustAll]]`@trustAll`|`Boolean`|-
 |[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[useAlpn]]`@useAlpn`|`Boolean`|-
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|-
 |[[username]]`@username`|`String`|+++
 Set the username
 +++
@@ -134,7 +133,6 @@ Set the topic on which the will message will be published
 Set if clientid should be auto-generated when it's "zero-bytes"
 +++
 |[[clientAuth]]`@clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|-
-|[[clientAuthRequired]]`@clientAuthRequired`|`Boolean`|-
 |[[crlPaths]]`@crlPaths`|`Array of String`|-
 |[[crlValues]]`@crlValues`|`Array of Buffer`|-
 |[[enabledCipherSuites]]`@enabledCipherSuites`|`Array of String`|-
@@ -172,7 +170,6 @@ Set the timeout on CONNECT packet
 |[[trafficClass]]`@trafficClass`|`Number (int)`|-
 |[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[useAlpn]]`@useAlpn`|`Boolean`|-
-|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|-
 |===
 
 [[MqttWill]]
