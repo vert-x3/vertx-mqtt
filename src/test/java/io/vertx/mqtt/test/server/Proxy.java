@@ -102,10 +102,10 @@ public class Proxy {
     });
 
     Future<NetServer> serverFuture = Future.future();
-    this.server.listen(SERVER_PORT, SERVER_HOST, serverFuture.completer());
+    this.server.listen(SERVER_PORT, SERVER_HOST, serverFuture);
 
     Future<NetSocket> clientFuture = Future.future();
-    this.client.connect(this.mqttServerPort, this.mqttServerHost, clientFuture.completer());
+    this.client.connect(this.mqttServerPort, this.mqttServerHost, clientFuture);
 
     CompositeFuture.all(serverFuture, clientFuture).setHandler(ar -> {
 
