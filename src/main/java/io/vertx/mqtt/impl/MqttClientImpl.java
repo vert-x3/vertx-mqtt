@@ -18,7 +18,6 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
@@ -36,12 +35,11 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribePayload;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
@@ -75,6 +73,9 @@ import static io.netty.handler.codec.mqtt.MqttQoS.*;
  */
 public class MqttClientImpl implements MqttClient {
 
+  public static final Future<Void> UNACKNOWLEDGE_PING = Future.failedFuture("Expired ping");
+  public static final Future<Void> CONNECTION_CLOSED = Future.failedFuture("Connection closed before receiving ping response");
+
   // patterns for topics validation
   private static final Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
   private static final Pattern validTopicFilterPattern = Pattern.compile("^(#|((\\+(?![^/]))?([^#+]*(/\\+(?![^/]))?)*(/#)?))$");
@@ -89,6 +90,7 @@ public class MqttClientImpl implements MqttClient {
 
   private final MqttClientOptions options;
   private final NetClient client;
+  private final long pingTimeout;
   private NetSocketInternal connection;
   private Context ctx;
 
@@ -127,6 +129,9 @@ public class MqttClientImpl implements MqttClient {
 
   private boolean isConnected;
 
+  private long timerID = -1;
+  private boolean pingSent;
+
   /**
    * Constructor
    *
@@ -141,6 +146,7 @@ public class MqttClientImpl implements MqttClient {
 
     this.client = vertx.createNetClient(netClientOptions);
     this.options = options;
+    this.pingTimeout = options.getKeepAliveTimeout() * 1000;
   }
 
   /**
@@ -185,7 +191,7 @@ public class MqttClientImpl implements MqttClient {
           options.setClientId(generateRandomClientId());
         }
 
-        initChannel(pipeline);
+        initChannel(soi, pipeline);
         this.connection = soi;
         this.ctx = Vertx.currentContext();
 
@@ -224,9 +230,27 @@ public class MqttClientImpl implements MqttClient {
         io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
         this.write(connect);
-      }
 
+        if (options.isAutoKeepAlive() && options.getKeepAliveTimeSeconds() > 0) {
+          pingCheck();
+        }
+      }
     });
+  }
+
+  private void pingCheck() {
+    if (this.timerID == -1) {
+      this.pingSent = false;
+      this.timerID = this.ctx.owner().setTimer(options.getKeepAliveTimeSeconds() * 1000, id -> pingCheck());
+    } else if (pingSent) {
+      this.pingSent = false;
+      this.timerID = -1;
+      this.connection.close();
+    } else {
+      this.pingSent = true;
+      this.timerID = this.ctx.owner().setTimer(pingTimeout, id -> pingCheck());
+      this.ping();
+    }
   }
 
   /**
@@ -539,14 +563,19 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public MqttClient ping() {
-
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0);
-
-    io.netty.handler.codec.mqtt.MqttMessage pingreq = MqttMessageFactory.newMessage(fixedHeader, null, null);
-
-    this.write(pingreq);
-
+    ctx.runOnContext(v -> {
+      MqttFixedHeader fixedHeader = new MqttFixedHeader(
+        MqttMessageType.PINGREQ,
+        false,
+        MqttQoS.AT_MOST_ONCE,
+        false,
+        0);
+      io.netty.handler.codec.mqtt.MqttMessage pingreq = MqttMessageFactory.newMessage(
+        fixedHeader,
+        null,
+        null);
+      this.write(pingreq);
+    });
     return this;
   }
 
@@ -638,7 +667,7 @@ public class MqttClientImpl implements MqttClient {
     this.write(pubrel);
   }
 
-  private void initChannel(ChannelPipeline pipeline) {
+  private void initChannel(NetSocketInternal soi, ChannelPipeline pipeline) {
 
     // add into pipeline netty's (en/de)coder
     pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
@@ -648,26 +677,6 @@ public class MqttClientImpl implements MqttClient {
     } else {
       // max message size not set, so the default from Netty MQTT codec is used
       pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
-    }
-
-    if (this.options.isAutoKeepAlive() &&
-      this.options.getKeepAliveTimeSeconds() != 0) {
-
-      pipeline.addBefore("handler", "idle",
-        new IdleStateHandler(0, this.options.getKeepAliveTimeSeconds(), 0));
-      pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
-
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-
-          if (evt instanceof IdleStateEvent) {
-            IdleStateEvent e = (IdleStateEvent) evt;
-            if (e.state() == IdleState.WRITER_IDLE) {
-              ping();
-            }
-          }
-        }
-      });
     }
   }
 
@@ -697,6 +706,11 @@ public class MqttClientImpl implements MqttClient {
    */
   private void handleClosed() {
     synchronized (this) {
+      // Cancel auto keep alive timer
+      if (this.timerID != -1L) {
+        ctx.owner().cancelTimer(this.timerID);
+        this.timerID = -1L;
+      }
       boolean isConnected = this.isConnected;
       this.isConnected = false;
       if (!isConnected) {
@@ -705,7 +719,11 @@ public class MqttClientImpl implements MqttClient {
     }
     Handler<Void> handler = closeHandler();
     if (handler != null) {
-      handler.handle(null);
+      try {
+        handler.handle(null);
+      } catch (Exception e) {
+        ((ContextInternal)ctx).reportException(e);
+      }
     }
   }
 
@@ -812,6 +830,14 @@ public class MqttClientImpl implements MqttClient {
   private void handlePingresp() {
 
     Handler<Void> handler = pingResponseHandler();
+
+    if (this.timerID != -1) {
+      ctx.owner().cancelTimer(this.timerID);
+      this.timerID = -1;
+      this.pingSent = false;
+    }
+    pingCheck();
+
     if (handler != null) {
       handler.handle(null);
     }

@@ -45,12 +45,23 @@ public class MqttServerImpl implements MqttServer {
   private final NetServer server;
   private Handler<MqttEndpoint> endpointHandler;
   private Handler<Throwable> exceptionHandler;
+  private volatile boolean keepAliveCheck;
 
   private MqttServerOptions options;
 
   public MqttServerImpl(Vertx vertx, MqttServerOptions options) {
     this.server = vertx.createNetServer(options);
     this.options = options;
+    this.keepAliveCheck = true;
+  }
+
+  public MqttServerImpl keepAliveCheck(boolean val) {
+    this.keepAliveCheck = val;
+    return this;
+  }
+
+  public boolean keepAliveCheck() {
+    return keepAliveCheck;
   }
 
   @Override
@@ -87,7 +98,7 @@ public class MqttServerImpl implements MqttServer {
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
 
       initChannel(pipeline);
-      MqttServerConnection conn = new MqttServerConnection(soi, options);
+      MqttServerConnection conn = new MqttServerConnection(soi, options, keepAliveCheck);
 
       soi.messageHandler(msg -> {
         synchronized (conn) {

@@ -60,16 +60,18 @@ public class MqttServerConnection {
   private MqttEndpointImpl endpoint;
   private final ChannelHandlerContext chctx;
   private final MqttServerOptions options;
+  private final boolean keepAliveCheck;
 
   void init(Handler<MqttEndpoint> endpointHandler, Handler<Throwable> rejectHandler) {
     this.endpointHandler = endpointHandler;
     this.exceptionHandler = rejectHandler;
   }
 
-  public MqttServerConnection(NetSocketInternal so, MqttServerOptions options) {
+  public MqttServerConnection(NetSocketInternal so, MqttServerOptions options, boolean keepAliveCheck) {
     this.so = so;
     this.chctx = so.channelHandlerContext();
     this.options = options;
+    this.keepAliveCheck = keepAliveCheck;
   }
 
   /**
@@ -247,7 +249,7 @@ public class MqttServerConnection {
         msg.variableHeader().keepAliveTimeSeconds() / 2;
 
       // modifying the channel pipeline for adding the idle state handler with previous timeout
-      chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(timeout, 0, 0));
+      chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(keepAliveCheck ? timeout : 0, 0, 0));
       chctx.pipeline().addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
 
         @Override
