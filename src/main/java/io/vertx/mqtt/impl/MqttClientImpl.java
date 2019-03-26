@@ -39,7 +39,6 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NetSocketInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
@@ -73,8 +72,29 @@ import static io.netty.handler.codec.mqtt.MqttQoS.*;
  */
 public class MqttClientImpl implements MqttClient {
 
+  private static MqttFixedHeader createHeaders(MqttMessageType msgType, MqttQoS qos) {
+    return new MqttFixedHeader(
+      msgType,
+      false,
+      qos,
+      false,
+      0
+    );
+  }
+
   public static final Future<Void> UNACKNOWLEDGE_PING = Future.failedFuture("Expired ping");
   public static final Future<Void> CONNECTION_CLOSED = Future.failedFuture("Connection closed before receiving ping response");
+
+  // Bunch of constant MQTT message headers
+  private static final MqttFixedHeader DISCONNECT_MSG = createHeaders(MqttMessageType.DISCONNECT, AT_MOST_ONCE);
+  private static final MqttFixedHeader SUBSCRIBE_MSG = createHeaders(MqttMessageType.SUBSCRIBE, AT_LEAST_ONCE);
+  private static final MqttFixedHeader UNSUBSCRIBE_MSG = createHeaders(MqttMessageType.UNSUBSCRIBE, AT_LEAST_ONCE);
+  private static final MqttFixedHeader CONNECT_MSG = createHeaders(MqttMessageType.CONNECT, AT_MOST_ONCE);
+  private static final MqttFixedHeader PUBACK_MSG = createHeaders(MqttMessageType.PUBACK, AT_MOST_ONCE);
+  private static final MqttFixedHeader PUCREC_MSG = createHeaders(MqttMessageType.PUBREC, AT_MOST_ONCE);
+  private static final MqttFixedHeader PUBCOMP_MSG = createHeaders(MqttMessageType.PUBCOMP, AT_MOST_ONCE);
+  private static final MqttFixedHeader PUBREL_MSG = createHeaders(MqttMessageType.PUBREL,  MqttQoS.AT_LEAST_ONCE);
+  private static final MqttFixedHeader PINGREQ_MSG = createHeaders(MqttMessageType.PINGREQ, MqttQoS.AT_MOST_ONCE);
 
   // patterns for topics validation
   private static final Pattern validTopicNamePattern = Pattern.compile("^[^#+\\u0000]+$");
@@ -201,12 +221,6 @@ public class MqttClientImpl implements MqttClient {
         // an exception at connection level
         soi.exceptionHandler(this::handleException);
 
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
-          false,
-          AT_MOST_ONCE,
-          false,
-          0);
-
         MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
           PROTOCOL_NAME,
           PROTOCOL_VERSION,
@@ -227,7 +241,7 @@ public class MqttClientImpl implements MqttClient {
           options.hasPassword() ? options.getPassword().getBytes() : null
         );
 
-        io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+        io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(CONNECT_MSG, variableHeader, payload);
 
         this.write(connect);
 
@@ -267,15 +281,7 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient disconnect(Handler<AsyncResult<Void>> disconnectHandler) {
 
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(
-      MqttMessageType.DISCONNECT,
-      false,
-      AT_MOST_ONCE,
-      false,
-      0
-    );
-
-    io.netty.handler.codec.mqtt.MqttMessage disconnect = MqttMessageFactory.newMessage(fixedHeader, null, null);
+    io.netty.handler.codec.mqtt.MqttMessage disconnect = MqttMessageFactory.newMessage(DISCONNECT_MSG, null, null);
 
     this.write(disconnect);
 
@@ -440,13 +446,6 @@ public class MqttClientImpl implements MqttClient {
       return this;
     }
 
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(
-      MqttMessageType.SUBSCRIBE,
-      false,
-      AT_LEAST_ONCE,
-      false,
-      0);
-
     MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
     List<MqttTopicSubscription> subscriptions = topics.entrySet()
       .stream()
@@ -455,7 +454,7 @@ public class MqttClientImpl implements MqttClient {
 
     MqttSubscribePayload payload = new MqttSubscribePayload(subscriptions);
 
-    io.netty.handler.codec.mqtt.MqttMessage subscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+    io.netty.handler.codec.mqtt.MqttMessage subscribe = MqttMessageFactory.newMessage(SUBSCRIBE_MSG, variableHeader, payload);
 
     this.write(subscribe);
 
@@ -486,18 +485,11 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient unsubscribe(String topic, Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
 
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(
-      MqttMessageType.UNSUBSCRIBE,
-      false,
-      AT_LEAST_ONCE,
-      false,
-      0);
-
     MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
 
     MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Stream.of(topic).collect(Collectors.toList()));
 
-    io.netty.handler.codec.mqtt.MqttMessage unsubscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+    io.netty.handler.codec.mqtt.MqttMessage unsubscribe = MqttMessageFactory.newMessage(UNSUBSCRIBE_MSG, variableHeader, payload);
 
     this.write(unsubscribe);
 
@@ -564,14 +556,8 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient ping() {
     ctx.runOnContext(v -> {
-      MqttFixedHeader fixedHeader = new MqttFixedHeader(
-        MqttMessageType.PINGREQ,
-        false,
-        MqttQoS.AT_MOST_ONCE,
-        false,
-        0);
       io.netty.handler.codec.mqtt.MqttMessage pingreq = MqttMessageFactory.newMessage(
-        fixedHeader,
+        PINGREQ_MSG,
         null,
         null);
       this.write(pingreq);
@@ -596,13 +582,10 @@ public class MqttClientImpl implements MqttClient {
    */
   private void publishAcknowledge(int publishMessageId) {
 
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PUBACK, false, AT_MOST_ONCE, false, 0);
-
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(publishMessageId);
 
-    io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(PUBACK_MSG, variableHeader, null);
 
     this.write(puback);
   }
@@ -614,13 +597,10 @@ public class MqttClientImpl implements MqttClient {
    */
   private void publishReceived(MqttPublishMessage publishMessage) {
 
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PUBREC, false, AT_MOST_ONCE, false, 0);
-
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(publishMessage.messageId());
 
-    io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(PUCREC_MSG, variableHeader, null);
 
     synchronized (this) {
       qos2inbound.put(publishMessage.messageId(), publishMessage);
@@ -635,13 +615,10 @@ public class MqttClientImpl implements MqttClient {
    */
   private void publishComplete(int publishMessageId) {
 
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PUBCOMP, false, AT_MOST_ONCE, false, 0);
-
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(publishMessageId);
 
-    io.netty.handler.codec.mqtt.MqttMessage pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    io.netty.handler.codec.mqtt.MqttMessage pubcomp = MqttMessageFactory.newMessage(PUBCOMP_MSG, variableHeader, null);
 
     this.write(pubcomp);
   }
@@ -653,13 +630,10 @@ public class MqttClientImpl implements MqttClient {
    */
   private void publishRelease(int publishMessageId) {
 
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(publishMessageId);
 
-    io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(PUBREL_MSG, variableHeader, null);
 
     synchronized (this) {
       qos2outbound.put(publishMessageId, pubrel);
