@@ -734,21 +734,46 @@ public class MqttClientImpl implements MqttClient {
     if (this.options.isAutoKeepAlive() &&
       this.options.getKeepAliveTimeSeconds() != 0) {
 
+      int keepAliveInterval = this.options.getKeepAliveTimeSeconds();
+
+      // handler for sending PINGREQ (keepAlive) if reader- or writer-channel become idle
       pipeline.addBefore("handler", "idle",
-        new IdleStateHandler(0, this.options.getKeepAliveTimeSeconds(), 0));
+        new IdleStateHandler(keepAliveInterval, keepAliveInterval, 0));
       pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
 
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-
+        @Override public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
           if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
-            if (e.state() == IdleState.WRITER_IDLE) {
+            switch (e.state()) {
+            case READER_IDLE:
+              // verify that server is still connected (e.g. when using QoS-0)
               ping();
+              break;
+            case WRITER_IDLE:
+              // send ping or broker will close connection
+              ping();
+              break;
             }
           }
         }
       });
+
+      if(this.options.getKeepAliveTimeout() > 0) {
+        int keepAliveTimeout = keepAliveInterval + this.options.getKeepAliveTimeout();
+        // handler for ping-response timeout. connection will be closed if broker READER_IDLE extends timeout
+        pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0, 0));
+        pipeline.addBefore("handler", "idleTimeoutHandler", new ChannelDuplexHandler() {
+
+          @Override public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            if (evt instanceof IdleStateEvent) {
+              IdleStateEvent e = (IdleStateEvent) evt;
+              if (e.state() == IdleState.READER_IDLE) {
+                ctx.close();
+              }
+            }
+          }
+        });
+      }
     }
   }
 
