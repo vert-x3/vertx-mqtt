@@ -75,6 +75,6 @@ public class MqttServerKeepAliveTest {
         async.complete();
       });
     }));
-    async.await(4000);
+    async.await();
   }
 }
