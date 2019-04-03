@@ -145,7 +145,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this.protocolVersion;
   }
 
-  public String protocolName() { return this.protocolName; }
+  public String protocolName() {
+    return this.protocolName;
+  }
 
   public int keepAliveTimeSeconds() {
     return this.keepAliveTimeoutSeconds;
@@ -438,11 +440,19 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   @Override
   public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, this.nextMessageId(), publishSentHandler);
+  }
+
+  @Override
+  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler) {
+    if (messageId > MAX_MESSAGE_ID || messageId < 0) {
+      throw new IllegalArgumentException("messageId must be non-negative integer not larger than " + MAX_MESSAGE_ID);
+    }
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
     MqttPublishVariableHeader variableHeader =
-      new MqttPublishVariableHeader(topic, this.nextMessageId());
+      new MqttPublishVariableHeader(topic, messageId);
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
 
@@ -451,7 +461,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.write(publish);
 
     if (publishSentHandler != null) {
-      publishSentHandler.handle(Future.succeededFuture(variableHeader.messageId()));
+      publishSentHandler.handle(Future.succeededFuture(variableHeader.packetId()));
     }
 
     return this;
