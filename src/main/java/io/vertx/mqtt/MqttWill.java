@@ -19,6 +19,8 @@ package io.vertx.mqtt;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
+import java.nio.charset.Charset;
+
 /**
  * Will information from the remote MQTT client
  */
@@ -27,20 +29,20 @@ public class MqttWill {
 
   private final boolean isWillFlag;
   private final String willTopic;
-  private final String willMessage;
+  private final byte[] willMessage;
   private final int willQos;
   private final boolean isWillRetain;
 
   /**
    * Constructor
    *
-   * @param isWillFlag  indicates will message presence
+   * @param isWillFlag   indicates will message presence
    * @param willTopic    topic to publish the will
    * @param willMessage  payload of the will
    * @param willQos      qos level for the will
    * @param isWillRetain if the will message must be retained
    */
-  public MqttWill(boolean isWillFlag, String willTopic, String willMessage, int willQos, boolean isWillRetain) {
+  public MqttWill(boolean isWillFlag, String willTopic, byte[] willMessage, int willQos, boolean isWillRetain) {
     this.isWillFlag = isWillFlag;
     this.willTopic = willTopic;
     this.willMessage = willMessage;
@@ -51,12 +53,12 @@ public class MqttWill {
   /**
    * Create instance from JSON
    *
-   * @param json  the JSON
+   * @param json the JSON
    */
   public MqttWill(JsonObject json) {
     this.isWillFlag = json.getBoolean("isWillFlag");
     this.willTopic = json.getString("willTopic");
-    this.willMessage = json.getString("willMessage");
+    this.willMessage = json.getString("willMessage").getBytes(Charset.forName("UTF-8"));
     this.willQos = json.getInteger("willMessage");
     this.isWillRetain = json.getBoolean("isWillRetain");
   }
@@ -77,8 +79,17 @@ public class MqttWill {
 
   /**
    * @return the payload for the will as provided by the remote MQTT client
+   * @deprecated use {@link #getWillMessageBytes()} instead
    */
+  @Deprecated
   public String getWillMessage() {
+    return new String(this.willMessage, Charset.forName("UTF-8"));
+  }
+
+  /**
+   * @return the payload for the will as provided by the remote MQTT client
+   */
+  public byte[] getWillMessageBytes() {
     return this.willMessage;
   }
 
@@ -106,12 +117,12 @@ public class MqttWill {
   }
 
   /**
-   * @deprecated use {@link #willMessage()} instead
    * @return the payload for the will as provided by the remote MQTT client
+   * @deprecated use {@link #getWillMessageBytes()} instead
    */
   @Deprecated
   public String willMessage() {
-    return this.willMessage;
+    return this.getWillMessage();
   }
 
   /**
@@ -126,7 +137,7 @@ public class MqttWill {
   /**
    * Convert instance in JSON
    *
-   * @return  JSON representation
+   * @return JSON representation
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();

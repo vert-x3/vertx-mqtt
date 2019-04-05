@@ -199,7 +199,7 @@ public class MqttServerConnection {
     MqttWill will =
       new MqttWill(msg.variableHeader().isWillFlag(),
         msg.payload().willTopic(),
-        msg.payload().willMessage(),
+        msg.payload().willMessageInBytes(),
         msg.variableHeader().willQos(),
         msg.variableHeader().isWillRetain());
 
