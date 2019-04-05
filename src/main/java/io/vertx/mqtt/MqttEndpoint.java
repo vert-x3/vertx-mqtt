@@ -377,16 +377,31 @@ public interface MqttEndpoint {
   /**
    * Sends the PUBLISH message to the remote MQTT server
    *
-   * @param topic    topic on which the message is published
-   * @param payload  message payload
-   * @param qosLevel QoS level
-   * @param isDup    if the message is a duplicate
-   * @param isRetain if the message needs to be retained
+   * @param topic              topic on which the message is published
+   * @param payload            message payload
+   * @param qosLevel           QoS level
+   * @param isDup              if the message is a duplicate
+   * @param isRetain           if the message needs to be retained
    * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
    * @return current MQTT client instance
    */
   @Fluent
   MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
+
+  /**
+   * Sends the PUBLISH message to the remote MQTT server explicitly specifying the messageId
+   *
+   * @param topic              topic on which the message is published
+   * @param payload            message payload
+   * @param qosLevel           QoS level
+   * @param isDup              if the message is a duplicate
+   * @param isRetain           if the message needs to be retained
+   * @param messageId          message ID
+   * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
    * Sends the PINGRESP message to the remote MQTT client
