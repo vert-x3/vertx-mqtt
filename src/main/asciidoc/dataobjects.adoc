@@ -87,6 +87,8 @@ Set the password
 |[[sendBufferSize]]`@sendBufferSize`|`Number (int)`|-
 |[[soLinger]]`@soLinger`|`Number (int)`|-
 |[[ssl]]`@ssl`|`Boolean`|-
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|-
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
 |[[tcpCork]]`@tcpCork`|`Boolean`|-
 |[[tcpFastOpen]]`@tcpFastOpen`|`Boolean`|-
 |[[tcpKeepAlive]]`@tcpKeepAlive`|`Boolean`|-
@@ -161,6 +163,8 @@ Set max MQTT message size
 |[[sni]]`@sni`|`Boolean`|-
 |[[soLinger]]`@soLinger`|`Number (int)`|-
 |[[ssl]]`@ssl`|`Boolean`|-
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|-
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
 |[[tcpCork]]`@tcpCork`|`Boolean`|-
 |[[tcpFastOpen]]`@tcpFastOpen`|`Boolean`|-
 |[[tcpKeepAlive]]`@tcpKeepAlive`|`Boolean`|-
