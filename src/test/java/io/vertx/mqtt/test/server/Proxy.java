@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -101,20 +102,20 @@ public class Proxy {
       });
     });
 
-    Future<NetServer> serverFuture = Future.future();
-    this.server.listen(SERVER_PORT, SERVER_HOST, serverFuture);
+    Promise<NetServer> serverPromise = Promise.promise();
+    this.server.listen(SERVER_PORT, SERVER_HOST, serverPromise);
 
-    Future<NetSocket> clientFuture = Future.future();
-    this.client.connect(this.mqttServerPort, this.mqttServerHost, clientFuture);
+    Promise<NetSocket> clientPromise = Promise.promise();
+    this.client.connect(this.mqttServerPort, this.mqttServerHost, clientPromise);
 
-    CompositeFuture.all(serverFuture, clientFuture).setHandler(ar -> {
+    CompositeFuture.all(serverPromise.future(), clientPromise.future()).setHandler(ar -> {
 
       // server started and client connected successfully
       if (ar.succeeded()) {
 
-        log.info(String.format("Proxy server started on port %d", serverFuture.result().actualPort()));
+        log.info(String.format("Proxy server started on port %d", serverPromise.future().result().actualPort()));
 
-        this.clientSocket = clientFuture.result();
+        this.clientSocket = clientPromise.future().result();
 
         log.info(String.format("Proxy client connected to %s:%d",
           this.clientSocket.remoteAddress().host(),
@@ -141,11 +142,11 @@ public class Proxy {
 
       } else {
 
-        if (!serverFuture.succeeded())
-          log.info("Error starting proxy server", serverFuture.cause());
+        if (!serverPromise.future().succeeded())
+          log.info("Error starting proxy server", serverPromise.future().cause());
 
-        if (!clientFuture.succeeded())
-          log.info("Error connecting proxy client", clientFuture.cause());
+        if (!clientPromise.future().succeeded())
+          log.info("Error connecting proxy client", clientPromise.future().cause());
 
         startHandler.handle(Future.failedFuture(ar.cause()));
       }
