@@ -10,8 +10,8 @@ before_install:
 jobs:
   include:
     - stage: test
-      name: "OracleJDK 8"
-      jdk: oraclejdk8
+      name: "OpenJDK 8"
+      jdk: openjdk8
       script: mvn -q clean verify -Dmqtt.server.host=localhost -Dmqtt.server.port=1884 -B
     - if: type != pull_request
       name: "OpenJDK 11"
