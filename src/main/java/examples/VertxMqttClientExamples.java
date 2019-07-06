@@ -34,7 +34,7 @@ public class VertxMqttClientExamples {
   public void example1(Vertx vertx) {
     MqttClient client = MqttClient.create(vertx);
 
-    client.connect(1883, "iot.eclipse.org", s -> {
+    client.connect(1883, "mqtt.eclipse.org", s -> {
       client.disconnect();
     });
   }

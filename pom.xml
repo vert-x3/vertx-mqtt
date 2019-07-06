@@ -27,7 +27,7 @@
     <fabric8-docker-plugin.version>0.21.0</fabric8-docker-plugin.version>
 
     <!-- Depending on profile property for testing on CI server using broker provided by Eclipse-->
-    <mqtt.server.host>iot.eclipse.org</mqtt.server.host>
+    <mqtt.server.host>mqtt.eclipse.org</mqtt.server.host>
     <mqtt.server.port>1883</mqtt.server.port>
   </properties>
 
