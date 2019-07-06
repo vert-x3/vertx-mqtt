@@ -18,7 +18,7 @@ Some examples are available for getting started with the server under the [vertx
 
 ## Running tests
 
-Run all tests. The client is tested with the `iot.eclipse.org` server.
+Run all tests. The client is tested with the `mqtt.eclipse.org` server.
 
 ```
 > mvn verify
