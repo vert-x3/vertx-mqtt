@@ -311,11 +311,11 @@ public class MqttClientImpl implements MqttClient {
       publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
       switch (qosLevel) {
         case AT_LEAST_ONCE:
-          qos1outbound.put(variableHeader.messageId(), publish);
+          qos1outbound.put(variableHeader.packetId(), publish);
           countInflightQueue++;
           break;
         case EXACTLY_ONCE:
-          qos2outbound.put(variableHeader.messageId(), publish);
+          qos2outbound.put(variableHeader.packetId(), publish);
           countInflightQueue++;
           break;
       }
@@ -323,7 +323,7 @@ public class MqttClientImpl implements MqttClient {
 
     this.write(publish);
     if (publishSentHandler != null) {
-      publishSentHandler.handle(Future.succeededFuture(variableHeader.messageId()));
+      publishSentHandler.handle(Future.succeededFuture(variableHeader.packetId()));
     }
 
     return this;
@@ -751,7 +751,7 @@ public class MqttClientImpl implements MqttClient {
           ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), chctx.alloc());
 
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
-            publish.variableHeader().messageId(),
+            publish.variableHeader().packetId(),
             publish.fixedHeader().qosLevel(),
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
