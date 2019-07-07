@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.CountDownLatch;
 
 
 /**

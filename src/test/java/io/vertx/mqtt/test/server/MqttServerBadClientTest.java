@@ -46,7 +46,6 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClientOptions;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
