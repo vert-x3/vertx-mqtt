@@ -59,7 +59,8 @@ import io.vertx.mqtt.messages.MqttSubAckMessage;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -110,14 +111,14 @@ public class MqttClientImpl implements MqttClient {
   private Handler<Void> closeHandler;
 
   // storage of PUBLISH QoS=1 messages which was not responded with PUBACK
-  private LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos1outbound = new LinkedHashMap<>();
+  private HashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos1outbound = new HashMap<>();
 
   // storage of PUBLISH QoS=2 messages which was not responded with PUBREC
   // and PUBREL messages which was not responded with PUBCOMP
-  private LinkedHashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos2outbound = new LinkedHashMap<>();
+  private HashMap<Integer, io.netty.handler.codec.mqtt.MqttMessage> qos2outbound = new HashMap<>();
 
   // storage of PUBLISH messages which was responded with PUBREC
-  private LinkedHashMap<Integer, MqttMessage> qos2inbound = new LinkedHashMap<>();
+  private HashMap<Integer, MqttMessage> qos2inbound = new HashMap<>();
 
   // counter for the message identifier
   private int messageIdCounter;
@@ -940,7 +941,7 @@ public class MqttClientImpl implements MqttClient {
   private void handlePubrel(int pubrelMessageId) {
     MqttMessage message;
     synchronized (this) {
-      message = qos2inbound.get(pubrelMessageId);
+      message = qos2inbound.remove(pubrelMessageId);
 
       if (message == null) {
         log.warn("Received PUBREL packet without having related PUBREC packet in storage");
