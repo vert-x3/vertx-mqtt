@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttUnacceptableProtocolVersionException;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -87,7 +88,13 @@ public class MqttServerConnection {
 
       DecoderResult result = mqttMessage.decoderResult();
       if (result.isFailure()) {
-        chctx.pipeline().fireExceptionCaught(result.cause());
+        Throwable cause = result.cause();
+        if (cause instanceof MqttUnacceptableProtocolVersionException) {
+          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0);
+          endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION);
+        } else {
+          chctx.pipeline().fireExceptionCaught(result.cause());
+        }
         return;
       }
       if (!result.isFinished()) {
