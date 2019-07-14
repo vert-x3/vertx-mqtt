@@ -17,8 +17,10 @@
 package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -107,6 +109,41 @@ public class MqttServerSubscribeTest extends MqttServerBaseTest {
       e.printStackTrace();
     }
   }
+
+  @Test
+  public void subscribeUnsupportedQos(TestContext context) {
+
+    Async async = context.async();
+
+    NetClient client = vertx.createNetClient();
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(so -> {
+      so.write(Buffer.buffer(new byte[]{
+        0x10,                         // HEADER
+        0x11,                         // MSG LEN
+        0x00, 0x04,                   // PROTOCOL NAME LENGTH
+        0x4D, 0x51, 0x54, 0x54,       // MQTT
+        0x05,                         // VERSION
+        0x02,                         // QOS
+        0x00, 0x3C,                   // KEEP ALIVE
+        0x00, 0x05,                   // CLIENT ID LENGTH
+        0x31, 0x32, 0x33, 0x34, 0x35, // CLIENT ID (12345)
+      }));
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.exceptionHandler(context::fail);
+      so.closeHandler(v -> {
+        Buffer expected = Buffer.buffer(new byte[] {
+          0x20, // CONN ACK
+          0X02, // MSG LEN
+          0x00, // FLAGS
+          0x01  // REASON CODE : unacceptable protocol level
+        });
+        context.assertEquals(expected, received);
+        async.complete();
+      });
+    }));
+  }
+
 
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
