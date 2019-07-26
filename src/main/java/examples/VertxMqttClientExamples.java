@@ -83,13 +83,13 @@ public class VertxMqttClientExamples {
   public void example5(MqttClient client) {
     client.publishCompletionHandler(id -> {
       System.out.println("Id of just received PUBACK or PUBCOMP packet is " + id);
-    })
+    });
       // The line of code below will trigger publishCompletionHandler (QoS 2)
-      .publish("hello", Buffer.buffer("hello"), MqttQoS.EXACTLY_ONCE, false, false)
+    client.publish("hello", Buffer.buffer("hello"), MqttQoS.EXACTLY_ONCE, false, false);
       // The line of code below will trigger publishCompletionHandler (QoS is 1)
-      .publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false)
+    client.publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false);
       // The line of code below does not trigger because QoS value is 0
-      .publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false);
+    client.publish("hello", Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false);
 
   }
 
@@ -108,9 +108,9 @@ public class VertxMqttClientExamples {
           System.out.println("Success. Maximum QoS is " + s);
         }
       }
-    })
-      .subscribe("temp", 1)
-      .subscribe("temp2", 2);
+    });
+    client.subscribe("temp", 1);
+    client.subscribe("temp2", 2);
   }
 
   /**
@@ -122,9 +122,9 @@ public class VertxMqttClientExamples {
     client
       .unsubscribeCompletionHandler(id -> {
         System.out.println("Id of just received UNSUBACK packet is " + id);
-      })
-      .subscribe("temp", 1)
-      .unsubscribe("temp");
+      });
+    client.subscribe("temp", 1);
+    client.unsubscribe("temp");
   }
 
   /**
@@ -133,9 +133,8 @@ public class VertxMqttClientExamples {
    * @param client
    */
   public void example8(MqttClient client) {
-    client
-      .subscribe("temp", 1)
-      .unsubscribe("temp", id -> {
+    client.subscribe("temp", 1);
+    client.unsubscribe("temp", id -> {
         System.out.println("Id of just sent UNSUBSCRIBE packet is " + id);
       });
   }

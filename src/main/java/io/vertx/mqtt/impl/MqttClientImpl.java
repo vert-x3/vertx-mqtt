@@ -60,7 +60,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -144,6 +143,14 @@ public class MqttClientImpl implements MqttClient {
     this.options = options;
   }
 
+  @Override
+  public Future<MqttConnAckMessage> connect(int port, String host) {
+
+    Promise<MqttConnAckMessage> promise = Promise.promise();
+    connect(port, host, promise);
+    return promise.future();
+  }
+
   /**
    * See {@link MqttClient#connect(int, String, Handler)} for more details
    */
@@ -152,6 +159,14 @@ public class MqttClientImpl implements MqttClient {
 
     this.doConnect(port, host, null, connectHandler);
     return this;
+  }
+
+  @Override
+  public Future<MqttConnAckMessage> connect(int port, String host, String serverName) {
+
+    Promise<MqttConnAckMessage> promise = Promise.promise();
+    connect(port, host, serverName, promise);
+    return promise.future();
   }
 
   /**
@@ -234,8 +249,10 @@ public class MqttClientImpl implements MqttClient {
    * See {@link MqttClient#disconnect()} for more details
    */
   @Override
-  public MqttClient disconnect() {
-    return disconnect(null);
+  public Future<Void> disconnect() {
+    Promise<Void> promise = Promise.promise();
+    disconnect(promise);
+    return promise.future();
   }
 
   /**
@@ -267,8 +284,10 @@ public class MqttClientImpl implements MqttClient {
    * See {@link MqttClient#publish(String, Buffer, MqttQoS, boolean, boolean)} for more details
    */
   @Override
-  public MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
-    return publish(topic, payload, qosLevel, isDup, isRetain, null);
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    Promise<Integer> promise = Promise.promise();
+    publish(topic, payload, qosLevel, isDup, isRetain, promise);
+    return promise.future();
   }
 
   /**
@@ -376,8 +395,10 @@ public class MqttClientImpl implements MqttClient {
    * See {@link MqttClient#subscribe(String, int)} for more details
    */
   @Override
-  public MqttClient subscribe(String topic, int qos) {
-    return subscribe(topic, qos, null);
+  public Future<Integer> subscribe(String topic, int qos) {
+    Promise<Integer> promise = Promise.promise();
+    subscribe(topic, qos, promise);
+    return promise.future();
   }
 
   /**
@@ -392,8 +413,10 @@ public class MqttClientImpl implements MqttClient {
    * See {@link MqttClient#subscribe(Map)} for more details
    */
   @Override
-  public MqttClient subscribe(Map<String, Integer> topics) {
-    return subscribe(topics, null);
+  public Future<Integer> subscribe(Map<String, Integer> topics) {
+    Promise<Integer> promise = Promise.promise();
+    subscribe(topics, promise);
+    return promise.future();
   }
 
   /**
@@ -492,8 +515,10 @@ public class MqttClientImpl implements MqttClient {
    * See {@link MqttClient#unsubscribe(String)} )} for more details
    */
   @Override
-  public MqttClient unsubscribe(String topic) {
-    return this.unsubscribe(topic, null);
+  public Future<Integer> unsubscribe(String topic) {
+    Promise<Integer> promise = Promise.promise();
+    this.unsubscribe(topic, promise);
+    return promise.future();
   }
 
   /**

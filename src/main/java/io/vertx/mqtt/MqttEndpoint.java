@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
@@ -369,10 +370,9 @@ public interface MqttEndpoint {
    * @param qosLevel quality of service level
    * @param isDup    if the message is a duplicate
    * @param isRetain if the message needs to be retained
-   * @return a reference to this, so the API can be used fluently
+   * @return a {@code Future} completed after PUBLISH packet sent with a packetId
    */
-  @Fluent
-  MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server
@@ -387,6 +387,11 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
+
+  /**
+   * Like {@link #publish(String, Buffer, MqttQoS, boolean, boolean, int, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server explicitly specifying the messageId

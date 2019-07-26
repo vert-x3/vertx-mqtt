@@ -25,7 +25,9 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -54,18 +56,24 @@ public class MqttServerImpl implements MqttServer {
   }
 
   @Override
-  public MqttServer listen() {
-    return listen(ar -> {});
+  public Future<MqttServer> listen() {
+    Promise<MqttServer> promise = Promise.promise();
+    listen(promise);
+    return promise.future();
   }
 
   @Override
-  public MqttServer listen(int port, String host) {
-    return listen(port, host, ar -> {});
+  public Future<MqttServer> listen(int port, String host) {
+    Promise<MqttServer> promise = Promise.promise();
+    listen(port, host, promise);
+    return promise.future();
   }
 
   @Override
-  public MqttServer listen(int port) {
-    return listen(port, ar -> {});
+  public Future<MqttServer> listen(int port) {
+    Promise<MqttServer> promise = Promise.promise();
+    listen(port, promise);
+    return promise.future();
   }
 
   @Override
@@ -120,8 +128,8 @@ public class MqttServerImpl implements MqttServer {
   }
 
   @Override
-  public void close() {
-    server.close();
+  public Future<Void> close() {
+    return server.close();
   }
 
   @Override

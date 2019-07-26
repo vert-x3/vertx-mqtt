@@ -19,6 +19,7 @@ package io.vertx.mqtt;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.mqtt.impl.MqttServerImpl;
@@ -59,20 +60,18 @@ public interface MqttServer {
    * Start the server listening for incoming connections using the specified options
    * through the constructor
    *
-   * @return a reference to this, so the API can be used fluently
+   * @return a {@code Future} completed with this server instance
    */
-  @Fluent
-  MqttServer listen();
+  Future<MqttServer> listen();
 
   /**
    * Start the server listening for incoming connections on the port and host specified
    *
    * @param port the port to listen on
    * @param host the host to listen on
-   * @return a reference to this, so the API can be used fluently
+   * @return a {@code Future} completed with this server instance
    */
-  @Fluent
-  MqttServer listen(int port, String host);
+  Future<MqttServer> listen(int port, String host);
 
   /**
    * Start the server listening for incoming connections on the port and host specified
@@ -91,10 +90,9 @@ public interface MqttServer {
    * "0.0.0.0" as host. It ignores any options specified through the constructor
    *
    * @param port the port to listen on
-   * @return a reference to this, so the API can be used fluently
+   * @return a {@code Future} completed with this server instance
    */
-  @Fluent
-  MqttServer listen(int port);
+  Future<MqttServer> listen(int port);
 
   /**
    * Start the server listening for incoming connections on the port specified but on
@@ -149,8 +147,10 @@ public interface MqttServer {
    * Close the server.
    * <p>
    * The close happens asynchronously and the server may not be closed until some time after the call has returned.
+   *
+   * @return a {@code Future} completed with this server is closed
    */
-  void close();
+  Future<Void> close();
 
   /**
    * Close the server supplying an handler that will be called when the server is actually closed (or has failed).

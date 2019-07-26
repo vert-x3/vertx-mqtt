@@ -30,6 +30,7 @@ import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -431,13 +432,22 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   @Override
-  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
-    return publish(topic, payload, qosLevel, isDup, isRetain, null);
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    Promise<Integer> promise = Promise.promise();
+    publish(topic, payload, qosLevel, isDup, isRetain, promise);
+    return promise.future();
   }
 
   @Override
   public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
     return publish(topic, payload, qosLevel, isDup, isRetain, this.nextMessageId(), publishSentHandler);
+  }
+
+  @Override
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId) {
+    Promise<Integer> promise = Promise.promise();
+    publish(topic, payload, qosLevel, isDup, isRetain, messageId, promise);
+    return promise.future();
   }
 
   @Override

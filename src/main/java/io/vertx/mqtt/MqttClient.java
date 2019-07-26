@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -69,6 +70,11 @@ public interface MqttClient {
   MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
 
   /**
+   * Like {@link #connect(int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<MqttConnAckMessage> connect(int port, String host);
+
+  /**
    * Connects to an MQTT server calling connectHandler after connection
    *
    * @param port  port of the MQTT server
@@ -81,12 +87,16 @@ public interface MqttClient {
   MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
 
   /**
+   * Like {@link #connect(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<MqttConnAckMessage> connect(int port, String host, String serverName);
+
+  /**
    * Disconnects from the MQTT server
    *
-   * @return current MQTT client instance
+   * @return a {@code Future} of the asynchronous result
    */
-  @Fluent
-  MqttClient disconnect();
+  Future<Void> disconnect();
 
   /**
    * Disconnects from the MQTT server calling disconnectHandler after disconnection
@@ -105,10 +115,9 @@ public interface MqttClient {
    * @param qosLevel QoS level
    * @param isDup    if the message is a duplicate
    * @param isRetain if the message needs to be retained
-   * @return current MQTT client instance
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
    */
-  @Fluent
-  MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server
@@ -156,10 +165,9 @@ public interface MqttClient {
    *
    * @param topic topic you subscribe on
    * @param qos   QoS level
-   * @return current MQTT client instance
+   * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
    */
-  @Fluent
-  MqttClient subscribe(String topic, int qos);
+  Future<Integer> subscribe(String topic, int qos);
 
   /**
    * Subscribes to the topic with a specified QoS level
@@ -176,10 +184,9 @@ public interface MqttClient {
    * Subscribes to the topics with related QoS levels
    *
    * @param topics topics and related QoS levels to subscribe to
-   * @return current MQTT client instance
+   * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
    */
-  @Fluent
-  MqttClient subscribe(Map<String, Integer> topics);
+  Future<Integer> subscribe(Map<String, Integer> topics);
 
 
   /**
@@ -206,10 +213,9 @@ public interface MqttClient {
    * Unsubscribe from receiving messages on given topic
    *
    * @param topic Topic you want to unsubscribe from
-   * @return current MQTT client instance
+   * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
-  @Fluent
-  MqttClient unsubscribe(String topic);
+  Future<Integer> unsubscribe(String topic);
 
   /**
    * Unsubscribe from receiving messages on given topic
