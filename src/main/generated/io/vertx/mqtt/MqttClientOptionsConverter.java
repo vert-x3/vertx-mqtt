@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter and Codec for {@link io.vertx.mqtt.MqttClientOptions}.
+ * Converter and mapper for {@link io.vertx.mqtt.MqttClientOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.mqtt.MqttClientOptions} original class using Vert.x codegen.
  */
-public class MqttClientOptionsConverter implements JsonCodec<MqttClientOptions, JsonObject> {
+public class MqttClientOptionsConverter {
 
-  public static final MqttClientOptionsConverter INSTANCE = new MqttClientOptionsConverter();
-
-  @Override public JsonObject encode(MqttClientOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public MqttClientOptions decode(JsonObject value) { return (value != null) ? new MqttClientOptions(value) : null; }
-
-  @Override public Class<MqttClientOptions> getTargetClass() { return MqttClientOptions.class; }
 
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, MqttClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
