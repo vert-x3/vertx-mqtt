@@ -27,7 +27,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -57,37 +56,11 @@ public class MqttServerImpl implements MqttServer {
 
   @Override
   public Future<MqttServer> listen() {
-    Promise<MqttServer> promise = Promise.promise();
-    listen(promise);
-    return promise.future();
+    return listen(this.options.getPort());
   }
 
   @Override
   public Future<MqttServer> listen(int port, String host) {
-    Promise<MqttServer> promise = Promise.promise();
-    listen(port, host, promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<MqttServer> listen(int port) {
-    Promise<MqttServer> promise = Promise.promise();
-    listen(port, promise);
-    return promise.future();
-  }
-
-  @Override
-  public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
-    return listen(port, this.options.getHost(), listenHandler);
-  }
-
-  @Override
-  public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
-    return listen(this.options.getPort(), listenHandler);
-  }
-
-  @Override
-  public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
     Handler<MqttEndpoint> h1 = endpointHandler;
     Handler<Throwable> h2 = exceptionHandler;
     server.connectHandler(so -> {
@@ -106,7 +79,31 @@ public class MqttServerImpl implements MqttServer {
       conn.init(h1, h2);
 
     });
-    server.listen(port, host, ar -> listenHandler.handle(ar.map(this)));
+    return server.listen(port, host).map(this);
+  }
+
+  @Override
+  public Future<MqttServer> listen(int port) {
+    return listen(port, this.options.getHost());
+  }
+
+  @Override
+  public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
+    return listen(port, this.options.getHost(), listenHandler);
+  }
+
+  @Override
+  public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
+    return listen(this.options.getPort(), listenHandler);
+  }
+
+  @Override
+  public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
+
+    Future<MqttServer> fut = listen(port, host);
+    if (listenHandler != null) {
+      fut.setHandler(listenHandler);
+    }
     return this;
   }
 

@@ -433,9 +433,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
-    Promise<Integer> promise = Promise.promise();
-    publish(topic, payload, qosLevel, isDup, isRetain, promise);
-    return promise.future();
+    return publish(topic, payload, qosLevel, isDup, isRetain, this.nextMessageId());
   }
 
   @Override
@@ -445,13 +443,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId) {
-    Promise<Integer> promise = Promise.promise();
-    publish(topic, payload, qosLevel, isDup, isRetain, messageId, promise);
-    return promise.future();
-  }
-
-  @Override
-  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler) {
     if (messageId > MAX_MESSAGE_ID || messageId < 0) {
       throw new IllegalArgumentException("messageId must be non-negative integer not larger than " + MAX_MESSAGE_ID);
     }
@@ -465,12 +456,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
 
-    this.write(publish);
+    return this.write(publish).map(variableHeader.packetId());
+  }
 
+  @Override
+  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler) {
+    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId);
     if (publishSentHandler != null) {
-      publishSentHandler.handle(Future.succeededFuture(variableHeader.packetId()));
+      fut.setHandler(publishSentHandler);
     }
-
     return this;
   }
 
@@ -716,12 +710,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  private void write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
+  private Future<Void> write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
       if (mqttMessage.fixedHeader().messageType() != MqttMessageType.CONNACK) {
         this.checkConnected();
       }
-      this.conn.writeMessage(mqttMessage);
+      return this.conn.writeMessage(mqttMessage);
     }
   }
 
