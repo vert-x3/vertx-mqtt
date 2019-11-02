@@ -23,7 +23,7 @@
   <properties>
     <stack.version>4.0.0-SNAPSHOT</stack.version>
     <junit.version>4.12</junit.version>
-    <paho.version>1.1.0</paho.version>
+    <paho.version>1.2.1</paho.version>
     <fabric8-docker-plugin.version>0.21.0</fabric8-docker-plugin.version>
 
     <!-- Depending on profile property for testing on CI server using broker provided by Eclipse-->
