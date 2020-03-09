@@ -108,7 +108,7 @@ public class Proxy {
     Promise<NetSocket> clientPromise = Promise.promise();
     this.client.connect(this.mqttServerPort, this.mqttServerHost, clientPromise);
 
-    CompositeFuture.all(serverPromise.future(), clientPromise.future()).setHandler(ar -> {
+    CompositeFuture.all(serverPromise.future(), clientPromise.future()).onComplete(ar -> {
 
       // server started and client connected successfully
       if (ar.succeeded()) {

@@ -161,7 +161,7 @@ public class MqttClientImpl implements MqttClient {
 
     Future<MqttConnAckMessage> fut = connect(port, host);
     if (connectHandler != null) {
-      fut.setHandler(connectHandler);
+      fut.onComplete(connectHandler);
     }
     return this;
   }
@@ -180,7 +180,7 @@ public class MqttClientImpl implements MqttClient {
 
     Future<MqttConnAckMessage> fut = this.doConnect(port, host, serverName);
     if (connectHandler != null) {
-      fut.setHandler(connectHandler);
+      fut.onComplete(connectHandler);
     }
     return this;
   }
@@ -285,7 +285,7 @@ public class MqttClientImpl implements MqttClient {
 
     Future<Void> fut = disconnect();
     if (disconnectHandler != null) {
-      fut.setHandler(disconnectHandler);
+      fut.onComplete(disconnectHandler);
     }
     return this;
   }
@@ -346,7 +346,7 @@ public class MqttClientImpl implements MqttClient {
 
     Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain);
     if (publishSentHandler != null) {
-      fut.setHandler(publishSentHandler);
+      fut.onComplete(publishSentHandler);
     }
     return this;
   }
@@ -455,7 +455,7 @@ public class MqttClientImpl implements MqttClient {
 
     Future<Integer> fut = subscribe(topics);
     if (subscribeSentHandler != null) {
-      fut.setHandler(subscribeSentHandler);
+      fut.onComplete(subscribeSentHandler);
     }
     return this;
   }
@@ -483,7 +483,7 @@ public class MqttClientImpl implements MqttClient {
 
     Future<Integer> fut = unsubscribe(topic);
     if (unsubscribeSentHandler != null) {
-      fut.setHandler(unsubscribeSentHandler);
+      fut.onComplete(unsubscribeSentHandler);
     }
     return this;
   }

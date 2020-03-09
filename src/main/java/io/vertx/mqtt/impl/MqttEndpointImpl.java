@@ -463,7 +463,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler) {
     Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId);
     if (publishSentHandler != null) {
-      fut.setHandler(publishSentHandler);
+      fut.onComplete(publishSentHandler);
     }
     return this;
   }
