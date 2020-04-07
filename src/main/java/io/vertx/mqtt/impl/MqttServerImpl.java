@@ -102,7 +102,7 @@ public class MqttServerImpl implements MqttServer {
 
     Future<MqttServer> fut = listen(port, host);
     if (listenHandler != null) {
-      fut.setHandler(listenHandler);
+      fut.onComplete(listenHandler);
     }
     return this;
   }
