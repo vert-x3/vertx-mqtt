@@ -14,7 +14,7 @@ See the in-source docs for more details:
 - [Website](http://vertx.io/docs/#mqtt).
 - [Sources](src/main/asciidoc/index.adoc).
 
-Some examples are available for getting started with the server under the [vertx-examples](https://github.com/vert-x3/vertx-examples/tree/master/mqtt-server-examples) project.
+Some examples are available for getting started with the server under the [vertx-examples](https://github.com/vert-x3/vertx-examples/tree/master/mqtt-examples) project.
 
 ## Running tests
 
