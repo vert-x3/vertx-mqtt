@@ -138,6 +138,8 @@ Set if clientid should be auto-generated when it's "zero-bytes"
 Set max MQTT message size
 +++
 |[[port]]`@port`|`Number (int)`|-
+|[[proxyProtocolTimeout]]`@proxyProtocolTimeout`|`Number (long)`|-
+|[[proxyProtocolTimeoutUnit]]`@proxyProtocolTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|-
 |[[reuseAddress]]`@reuseAddress`|`Boolean`|-
 |[[reusePort]]`@reusePort`|`Boolean`|-
@@ -157,6 +159,7 @@ Set the timeout on CONNECT packet
 +++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|-
 |[[useAlpn]]`@useAlpn`|`Boolean`|-
+|[[useProxyProtocol]]`@useProxyProtocol`|`Boolean`|-
 |===
 
 [[MqttWill]]
