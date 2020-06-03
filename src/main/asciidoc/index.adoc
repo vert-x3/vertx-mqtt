@@ -337,6 +337,3 @@ IMPORTANT: to enable this feature, you need to add dependency `netty-codec-hapro
 ----
 compile io.netty:netty-codec-haproxy:${maven.version}
 ----
-
-
-
