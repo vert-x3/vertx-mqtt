@@ -26,7 +26,6 @@ import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.MqttTopicSubscription;
-
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -285,5 +284,37 @@ public class VertxMqttServerExamples {
       .setUseWebSocket(true);
 
     MqttServer mqttServer = MqttServer.create(vertx, options);
+  }
+
+  /**
+   * Example for server use proxy protocol<br/>
+   * <p>
+   * You need to set the port of <code>haproxy</code> or <code>nginx</code> to proxy port 1883 and
+   * enable the <code>proxy protocol</code> function
+   *
+   * @param vertx
+   */
+  public void example13(Vertx vertx) {
+    MqttServer mqttServer = MqttServer
+      .create(vertx, new MqttServerOptions()
+        // set true to use proxy protocol
+        .setUseProxyProtocol(true));
+    mqttServer.endpointHandler(endpoint -> {
+      // remote address is origin real address， not proxy's address
+      System.out.println(endpoint.remoteAddress());
+      endpoint.accept(false);
+
+    })
+      .listen(ar -> {
+
+        if (ar.succeeded()) {
+
+          System.out.println("MQTT server is listening on port " + ar.result().actualPort());
+        } else {
+
+          System.out.println("Error on starting the server");
+          ar.cause().printStackTrace();
+        }
+      });
   }
 }
