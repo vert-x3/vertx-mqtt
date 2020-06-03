@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.test.server;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -64,7 +63,7 @@ public class MqttServerWithProxyConnectionTest extends MqttServerBaseTest {
   private void createHaproxy(HaproxyVersion version) throws Exception {
     haProxy = new HAProxy(
       SocketAddress.inetSocketAddress(MQTT_SERVER_PORT, MQTT_SERVER_HOST), version.header);
-    haProxy.start(Vertx.vertx());
+    haProxy.start(vertx);
     System.out.println(String.format("haproxy server with %s started", version.name()));
   }
 
