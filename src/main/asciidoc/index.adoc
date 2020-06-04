@@ -325,7 +325,7 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 
 [source,$lang]
 ----
-{@link examples.VertxMqttClientExamples#example12}
+{@link examples.VertxMqttServerExamples#example13}
 ----
 
 If your servers are behind haproxy or nginx and you want to get the client's original ip and port, then you need to set `setUseProxyProtocol` to `true`
