@@ -24,7 +24,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
-import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
@@ -39,12 +39,10 @@ import org.junit.runner.RunWith;
 public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
 
   private static final Logger log = LoggerFactory.getLogger(MqttServerMaxMessageSizeTest.class);
-
-  private Async async;
-
   private static final String MQTT_TOPIC = "/my_topic";
   private static final int MQTT_MAX_MESSAGE_SIZE = 50;
   private static final int MQTT_BIG_MESSAGE_SIZE = MQTT_MAX_MESSAGE_SIZE + 1;
+  private Async async;
 
   @Before
   public void before(TestContext context) {
@@ -59,12 +57,11 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
   public void publishBigMessage(TestContext context) {
 
     this.async = context.async();
-
     try {
 
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.connect();
+      MqttAsyncClient client = new MqttAsyncClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect().waitForCompletion();
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
