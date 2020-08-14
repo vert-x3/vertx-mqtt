@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test.client;
+package io.vertx.mqtt.it;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
@@ -35,9 +35,9 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(VertxUnitRunner.class)
-public class MqttClientTopicValidationTest {
+public class MqttClientTopicValidationIT {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttClientTopicValidationTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttClientTopicValidationIT.class);
   private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Client";
   private static final int MAX_TOPIC_LEN = 65535;
 

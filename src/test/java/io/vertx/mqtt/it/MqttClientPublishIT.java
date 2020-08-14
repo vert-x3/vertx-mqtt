@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test.client;
+package io.vertx.mqtt.it;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
@@ -34,9 +34,9 @@ import static org.junit.Assert.assertTrue;
  * MQTT client testing on publishing messages
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientPublishTest {
+public class MqttClientPublishIT {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttClientPublishTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttClientPublishIT.class);
 
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Client";
