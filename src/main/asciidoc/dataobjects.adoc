@@ -47,6 +47,9 @@ Set to start with a clean session (or not)
 Set the client identifier
 +++
 |[[connectTimeout]]`@connectTimeout`|`Number (int)`|-
+|[[connectionTimeout]]`@connectionTimeout`|`Number (long)`|+++
+Set the connection timeout in milliseconds
++++
 |[[crlPaths]]`@crlPaths`|`Array of String`|-
 |[[crlValues]]`@crlValues`|`Array of Buffer`|-
 |[[enabledCipherSuites]]`@enabledCipherSuites`|`Array of String`|-

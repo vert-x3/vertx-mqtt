@@ -22,20 +22,8 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessageFactory;
-import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttSubscribePayload;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -43,11 +31,11 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
@@ -60,16 +48,13 @@ import io.vertx.mqtt.messages.MqttSubAckMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttQoS.*;
 
 /**
@@ -130,10 +115,12 @@ public class MqttClientImpl implements MqttClient {
 
   private boolean isConnected;
 
+  private Long timeoutTimer = null;
+
   /**
    * Constructor
    *
-   * @param vertx Vert.x instance
+   * @param vertx   Vert.x instance
    * @param options MQTT client options
    */
   public MqttClientImpl(Vertx vertx, MqttClientOptions options) {
@@ -246,8 +233,14 @@ public class MqttClientImpl implements MqttClient {
           io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
           this.write(connect);
-        }
 
+          this.timeoutTimer = this.vertx.setTimer(options.getConnectionTimeout(), (id) -> {
+            if (!this.isConnected) {
+              log.error(String.format("Server did not sent CONNACK within %d ms.", options.getConnectionTimeout()));
+              connectPromise().fail(new MqttConnectionException(CONNECTION_REFUSED_SERVER_UNAVAILABLE));
+            }
+          });
+        }
       });
     });
 
@@ -641,7 +634,7 @@ public class MqttClientImpl implements MqttClient {
   /**
    * Sends the PUBREL message to server
    *
-   * @param publishMessageId  identifier of the PUBLISH message to acknowledge
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
    */
   private void publishRelease(int publishMessageId) {
 
@@ -757,6 +750,11 @@ public class MqttClientImpl implements MqttClient {
       switch (mqttMessage.fixedHeader().messageType()) {
 
         case CONNACK:
+
+          if (this.timeoutTimer != null) {
+            this.vertx.cancelTimer(this.timeoutTimer);
+            this.timeoutTimer = null;
+          }
 
           io.netty.handler.codec.mqtt.MqttConnAckMessage connack = (io.netty.handler.codec.mqtt.MqttConnAckMessage) mqttMessage;
 
@@ -978,7 +976,7 @@ public class MqttClientImpl implements MqttClient {
   /**
    * Used for calling the connect handler when the server replies to the request
    *
-   * @param msg  connection response message
+   * @param msg connection response message
    */
   private void handleConnack(MqttConnAckMessage msg) {
 
@@ -1023,7 +1021,7 @@ public class MqttClientImpl implements MqttClient {
    * @return true - valid, otherwise - false
    */
   private boolean isValidTopicName(String topicName) {
-    if(!isValidStringSizeInUTF8(topicName)){
+    if (!isValidStringSizeInUTF8(topicName)) {
       return false;
     }
 
@@ -1038,7 +1036,7 @@ public class MqttClientImpl implements MqttClient {
    * @return true - valid, otherwise - false
    */
   private boolean isValidTopicFilter(String topicFilter) {
-    if(!isValidStringSizeInUTF8(topicFilter)){
+    if (!isValidStringSizeInUTF8(topicFilter)) {
       return false;
     }
 
@@ -1048,6 +1046,7 @@ public class MqttClientImpl implements MqttClient {
 
   /**
    * Check either given string has size more then 65535 bytes in UTF-8 Encoding
+   *
    * @param string given string
    * @return true - size is lower or equal than 65535, otherwise - false
    */
