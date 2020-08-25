@@ -143,6 +143,32 @@ public interface MqttClient {
   MqttClient publishCompletionHandler(Handler<Integer> publishCompletionHandler);
 
   /**
+   * Sets a handler which will be called when the client does not receive a PUBACK or
+   * PUBREC/PUBCOMP for a message published using QoS 1 or 2 respectively.
+   * <p>
+   * The time to wait for an acknowledgement message can be configured using
+   * {@link MqttClientOptions#setAckTimeout(int)}.
+   * If the client receives a PUBACK/PUBREC/PUBCOMP for a message after its completion
+   * has expired, the handler registered using {@link #publishCompletionPhantomHandler(Handler)}
+   * will be invoked.
+   *
+   * @param publishCompletionExpirationHandler the handler to call with the ID of the expired packet
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient publishCompletionExpirationHandler(Handler<Integer> publishCompletionExpirationHandler);
+
+  /**
+   * Sets a handler which will be called when the client receives a PUBACK/PUBREC/PUBCOMP with an unknown
+   * packet ID.
+   *
+   * @param publishCompletionPhantomHandler the handler to call with the unknown packet ID
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient publishCompletionPhantomHandler(Handler<Integer> publishCompletionPhantomHandler);
+
+  /**
    * Sets handler which will be called each time server publish something to client
    *
    * @param publishHandler handler to call
