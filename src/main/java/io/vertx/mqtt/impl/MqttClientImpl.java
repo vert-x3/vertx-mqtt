@@ -270,11 +270,13 @@ public class MqttClientImpl implements MqttClient {
 
     io.netty.handler.codec.mqtt.MqttMessage disconnect = MqttMessageFactory.newMessage(fixedHeader, null, null);
 
-    this.write(disconnect);
-
-    connection().close();
-
-    return ctx.succeededFuture();
+    Promise<Void> result = Promise.promise();
+    this.write(disconnect)
+      .onComplete(r -> {
+        this.connection = null;
+        this.client.close(result);
+      });
+    return result.future();
   }
 
   /**
