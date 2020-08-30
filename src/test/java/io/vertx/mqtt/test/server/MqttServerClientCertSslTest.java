@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,8 @@ public class MqttServerClientCertSslTest extends MqttServerBaseTest {
   @Before
   public void before(TestContext context) {
     MqttServerOptions options = new MqttServerOptions()
-      .setPort(MQTT_SERVER_TLS_PORT)
+      .setHost(MQTT_SERVER_HOST)
+      .setPort(0)
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
       .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get())
       .setSsl(true)
@@ -86,7 +87,7 @@ public class MqttServerClientCertSslTest extends MqttServerBaseTest {
     try {
 
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("ssl://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_TLS_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("ssl://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
 
       MqttConnectOptions options = new MqttConnectOptions();
       options.setSocketFactory(this.getSocketFactory("/tls/client-truststore-root-ca.jks", "/tls/client-keystore-root-ca.jks"));
@@ -131,7 +132,7 @@ public class MqttServerClientCertSslTest extends MqttServerBaseTest {
     try {
 
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("ssl://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_TLS_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("ssl://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
 
       MqttConnectOptions options = new MqttConnectOptions();
       options.setSocketFactory(this.getSocketFactory("/tls/client-truststore-root-ca.jks", "/tls/client-keystore-other-ca.jks"));

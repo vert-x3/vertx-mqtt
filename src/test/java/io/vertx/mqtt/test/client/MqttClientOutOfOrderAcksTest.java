@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat Inc.
+ * Copyright 2017, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,14 @@
 
 package io.vertx.mqtt.test.client;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -25,16 +33,9 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
-import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.LinkedList;
-import java.util.Queue;
+import io.vertx.mqtt.MqttServerOptions;
 
 
 /**
@@ -46,6 +47,7 @@ public class MqttClientOutOfOrderAcksTest {
 
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Client";
+  private static final String MQTT_HOST = "127.0.0.1";
 
   Vertx vertx = Vertx.vertx();
   MqttServer server;
@@ -76,7 +78,7 @@ public class MqttClientOutOfOrderAcksTest {
       async.countDown();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, c -> {
+    client.connect(server.actualPort(), MQTT_HOST, c -> {
 
       // publish QoS = 1 message three times
       for (int i = 0; i < 3; i++)
@@ -93,7 +95,7 @@ public class MqttClientOutOfOrderAcksTest {
 
   @Before
   public void before(TestContext context) {
-    server = MqttServer.create(vertx);
+    server = MqttServer.create(vertx, new MqttServerOptions().setHost(MQTT_HOST).setPort(0));
     server.exceptionHandler(t -> context.fail());
     server.endpointHandler(MqttClientOutOfOrderAcksTest::serverLogic).listen(context.asyncAssertSuccess());
   }

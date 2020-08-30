@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import javax.net.ssl.*;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.util.Optional;
 
 /**
  * Base class for MQTT server unit tests
@@ -39,9 +40,7 @@ public abstract class MqttServerBaseTest {
 
   private static final Logger log = LoggerFactory.getLogger(MqttServerBaseTest.class);
 
-  protected static final String MQTT_SERVER_HOST = "localhost";
-  protected static final int MQTT_SERVER_PORT = 1883;
-  protected static final int MQTT_SERVER_TLS_PORT = 8883;
+  protected static final String MQTT_SERVER_HOST = "127.0.0.1";
 
   protected Vertx vertx;
   protected MqttServer mqttServer;
@@ -57,7 +56,7 @@ public abstract class MqttServerBaseTest {
 
     this.vertx = Vertx.vertx();
     if (options == null) {
-      this.mqttServer = MqttServer.create(this.vertx);
+      this.mqttServer = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(0));
     } else {
       this.mqttServer = MqttServer.create(this.vertx, options);
     }
@@ -93,6 +92,10 @@ public abstract class MqttServerBaseTest {
 
     this.mqttServer.close(context.asyncAssertSuccess());
     this.vertx.close(context.asyncAssertSuccess());
+  }
+
+  protected int serverPort() {
+    return Optional.ofNullable(mqttServer).map(MqttServer::actualPort).orElseThrow(IllegalStateException::new);
   }
 
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class MqttServerClientIdentifierTest extends MqttServerBaseTest {
   public void testInvalidClientIdentifier(TestContext context) throws Exception {
 
     MemoryPersistence persistence = new MemoryPersistence();
-    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "invalid-id-with-24-chars", persistence);
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "invalid-id-with-24-chars", persistence);
     MqttConnectOptions options = new MqttConnectOptions();
     options.setMqttVersion(MQTT_VERSION_3_1);
 
@@ -68,7 +68,7 @@ public class MqttServerClientIdentifierTest extends MqttServerBaseTest {
   public void testValidClientIdentifier(TestContext context) throws Exception {
 
     MemoryPersistence persistence = new MemoryPersistence();
-    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "id-madeof-23-characters", persistence);
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "id-madeof-23-characters", persistence);
     MqttConnectOptions options = new MqttConnectOptions();
     options.setMqttVersion(MQTT_VERSION_3_1);
 

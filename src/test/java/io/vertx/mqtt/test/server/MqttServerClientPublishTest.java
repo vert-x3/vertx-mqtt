@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class MqttServerClientPublishTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect();
 
       client.publish(topic, message.getBytes(), qos, false);

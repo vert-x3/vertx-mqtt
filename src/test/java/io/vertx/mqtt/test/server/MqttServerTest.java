@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,24 @@
 
 package io.vertx.mqtt.test.server;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -25,21 +43,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * MQTT server testing
@@ -48,9 +51,6 @@ import java.util.concurrent.TimeUnit;
 public class MqttServerTest {
 
   private static final Logger log = LoggerFactory.getLogger(MqttServerTest.class);
-
-  protected static final String MQTT_SERVER_HOST = "localhost";
-  protected static final int MQTT_SERVER_PORT = 1883;
 
   private Vertx vertx;
 
@@ -78,12 +78,22 @@ public class MqttServerTest {
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
     Map<MqttServer, Integer> connectCount = new ConcurrentHashMap<>();
+    int serverPort = 0;
+
+    try {
+      ServerSocket socket = new ServerSocket(0);
+      serverPort = socket.getLocalPort();
+      socket.close();
+    } catch (IOException e) {
+      context.fail(e);
+      return;
+    }
 
     try {
 
       for (int i = 0; i < numServers; i++) {
 
-        MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
+        MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MqttServerBaseTest.MQTT_SERVER_HOST).setPort(serverPort));
         servers.add(server);
 
         server.endpointHandler(endpoint -> {
@@ -101,7 +111,7 @@ public class MqttServerTest {
         }).listen(ar -> {
 
           if (ar.succeeded()) {
-            log.info("MQTT server listening on port " + ar.result().actualPort());
+            log.info("MQTT server listening on port " +ar.result().actualPort());
             latchListen.countDown();
           } else {
             log.error("Error starting MQTT server", ar.cause());
@@ -118,7 +128,7 @@ public class MqttServerTest {
         try {
 
           MemoryPersistence persistence = new MemoryPersistence();
-          MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), clientId, persistence);
+          MqttClient client = new MqttClient(String.format("tcp://%s:%d", MqttServerBaseTest.MQTT_SERVER_HOST, serverPort), clientId, persistence);
           client.connect();
           log.info("Client connected " + clientId);
 

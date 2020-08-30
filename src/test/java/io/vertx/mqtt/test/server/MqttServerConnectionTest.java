@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,8 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
   public void before(TestContext context) {
 
     MqttServerOptions options = new MqttServerOptions();
+    options.setHost(MQTT_SERVER_HOST);
+    options.setPort(0);
     options.setTimeoutOnConnect(MQTT_TIMEOUT_ON_CONNECT);
 
     this.setUp(context, options);
@@ -72,7 +74,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect();
     } catch (MqttException e) {
       context.fail(e);
@@ -86,7 +88,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "", persistence);
       client.connect();
     } catch (MqttException e) {
       context.fail(e);
@@ -100,7 +102,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect();
       context.fail();
     } catch (MqttException e) {
@@ -115,7 +117,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect();
       context.fail();
     } catch (MqttException e) {
@@ -133,7 +135,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
       MqttConnectOptions options = new MqttConnectOptions();
       options.setUserName("wrong_username");
       options.setPassword("wrong_password".toCharArray());
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect(options);
       context.fail();
     } catch (MqttException e) {
@@ -148,7 +150,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect();
       context.fail();
     } catch (MqttException e) {
@@ -166,7 +168,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
       MqttConnectOptions options = new MqttConnectOptions();
       // trying the old 3.1
       options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1);
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect(options);
       context.fail();
     } catch (MqttException e) {
@@ -180,7 +182,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
     this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
 
     MemoryPersistence persistence = new MemoryPersistence();
-    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
     client.connect();
 
     try {
@@ -202,7 +204,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
       MqttConnectOptions options = new MqttConnectOptions();
       options.setCleanSession(false);
       options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "", persistence);
       client.connect(options);
       context.fail();
     } catch (MqttException e) {
@@ -217,7 +219,7 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
     NetClient client = this.vertx.createNetClient();
     Async async = context.async();
 
-    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
+    client.connect(serverPort(), MQTT_SERVER_HOST, done -> {
 
       if (done.succeeded()) {
 

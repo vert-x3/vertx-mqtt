@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,11 +84,11 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
     this.topic = topic;
     this.message = message;
 
-    this.async = context.async(2);
+    this.async = context.async(qos + 1);
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, serverPort()), "12345", persistence);
       client.connect();
 
       client.subscribe(topic, qos, new IMqttMessageListener() {
@@ -97,21 +97,16 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
         public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
 
           log.info("Just received message [" + mqttMessage.toString() + "] on topic [" + topic + "] with QoS [" + mqttMessage.getQos() + "]");
-
-          if (mqttMessage.getQos() == 0)
-            async.complete();
+          async.countDown();
         }
       });
 
-      this.async.await();
-
-      context.assertTrue(true);
-
     } catch (MqttException e) {
 
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail(e);
     }
+
+    this.async.await();
   }
 
   @Override
@@ -127,19 +122,22 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
 
       endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false, publishSent -> {
         context.assertTrue(publishSent.succeeded());
-        this.async.complete();
       });
     }).publishAcknowledgeHandler(messageId -> {
 
-      log.info("Message [" + messageId + "] acknowledged");
-      this.async.complete();
+      log.info("QoS 1 Message [" + messageId + "] acknowledged");
+      this.async.countDown();
+
     }).publishReceivedHandler(messageId -> {
 
       endpoint.publishRelease(messageId);
+      this.async.countDown();
+
     }).publishCompletionHandler(messageId -> {
 
-      log.info("Message [" + messageId + "] acknowledged");
-      this.async.complete();
+      log.info("QoS 2 Message [" + messageId + "] acknowledged");
+      this.async.countDown();
+
     });
 
     endpoint.accept(false);

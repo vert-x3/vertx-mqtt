@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
         });
 
       // Start the client.
-      ChannelFuture f = bootstrap.connect(MQTT_SERVER_HOST, MQTT_SERVER_PORT).sync();
+      ChannelFuture f = bootstrap.connect(MQTT_SERVER_HOST, serverPort()).sync();
       long tick = System.currentTimeMillis();
 
       MqttClientOptions options = new MqttClientOptions();
@@ -138,7 +138,7 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
         });
 
       // Start the client.
-      ChannelFuture f = bootstrap.connect(MQTT_SERVER_HOST, MQTT_SERVER_PORT).sync();
+      ChannelFuture f = bootstrap.connect(MQTT_SERVER_HOST, serverPort()).sync();
 
       f.channel().writeAndFlush(createPublishMessage());
 
@@ -159,7 +159,7 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
     NetClient client = this.vertx.createNetClient();
     Async async = context.async();
 
-    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
+    client.connect(serverPort(), MQTT_SERVER_HOST, done -> {
 
       if (done.succeeded()) {
 

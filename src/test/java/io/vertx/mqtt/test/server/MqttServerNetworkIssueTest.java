@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat Inc.
+ * Copyright 2016, 2020 Red Hat Inc. and others
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class MqttServerNetworkIssueTest extends MqttServerBaseTest {
 
     this.setUp(context);
 
-    this.proxy = new Proxy(this.vertx, MQTT_SERVER_HOST, MQTT_SERVER_PORT);
+    this.proxy = new Proxy(this.vertx, MQTT_SERVER_HOST, serverPort());
     this.proxy.start(context.asyncAssertSuccess());
   }
 
