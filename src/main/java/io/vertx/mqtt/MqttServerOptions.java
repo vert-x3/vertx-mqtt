@@ -253,9 +253,19 @@ public class MqttServerOptions extends NetServerOptions {
   }
 
   /**
+   * Do the same thing as {@link MqttServerOptions#setTimeoutOnConnect(int)}. Use it instead.
+   */
+  @Deprecated
+  @Override
+  public MqttServerOptions setIdleTimeout(int idleTimeout) {
+    return setTimeoutOnConnect(idleTimeout);
+  }
+  
+  /**
    * @return  timeout on CONNECT before closing connection
    */
   public int timeoutOnConnect() {
     return this.timeoutOnConnect;
   }
+
 }
