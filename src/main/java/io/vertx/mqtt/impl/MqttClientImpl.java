@@ -568,7 +568,7 @@ public class MqttClientImpl implements MqttClient {
       false,
       0);
 
-    MqttMessageIdAndPropertiesVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), new MqttProperties());
+    MqttMessageIdVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), MqttProperties.NO_PROPERTIES);
     List<MqttTopicSubscription> subscriptions = topics.entrySet()
       .stream()
       .map(e -> new MqttTopicSubscription(e.getKey(), valueOf(e.getValue())))
@@ -635,7 +635,7 @@ public class MqttClientImpl implements MqttClient {
       false,
       0);
 
-    MqttMessageIdAndPropertiesVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), new MqttProperties());
+    MqttMessageIdVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), MqttProperties.NO_PROPERTIES);
 
     MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Stream.of(topic).collect(Collectors.toList()));
 
