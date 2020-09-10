@@ -367,8 +367,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
       new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
     MqttMessageIdVariableHeader variableHeader =
       MqttMessageIdVariableHeader.from(unsubscribeMessageId);
+    MqttUnsubAckPayload payload = new MqttUnsubAckPayload();
 
-    io.netty.handler.codec.mqtt.MqttMessage unsuback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, new MqttUnsubAckPayload());
+    io.netty.handler.codec.mqtt.MqttMessage unsuback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
     this.write(unsuback);
 
