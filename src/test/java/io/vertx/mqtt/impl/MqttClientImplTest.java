@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,6 +95,40 @@ public class MqttClientImplTest {
   }
 
   /**
+   * Verifies that the client does not expire a PUBLISH packet if no ackTimeout is set.
+   */
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testPublishQos1DoesNotTimeOutByDefault() {
+
+    // GIVEN an MQTT client with expiration and unknown packet ID handlers set
+    Handler<Integer> expirationHandler = mock(Handler.class);
+    Handler<Integer> unknownPacketIdHandler = mock(Handler.class);
+    // but configured to NOT time out any ACKs
+    MqttClientImpl client = givenAConnectedClient(-1);
+    client.publishCompletionExpirationHandler(expirationHandler);
+    client.publishCompletionUnknownPacketIdHandler(unknownPacketIdHandler);
+    ArgumentCaptor<Handler<Object>> messageHandler = ArgumentCaptor.forClass(Handler.class);
+    verify(netSocket).messageHandler(messageHandler.capture());
+
+    // WHEN the client publishes a message using QoS 1
+    Promise<Integer> sendHandler = Promise.promise();
+    client.publish("topic", Buffer.buffer("Hello"), MqttQoS.AT_LEAST_ONCE, false, false, sendHandler);
+
+    // THEN no timer is set for expiring the PUBACK
+    assertTrue(sendHandler.future().succeeded());
+    verify(vertx, never()).setTimer(anyLong(), any(Handler.class));
+
+    // and neither the expiration handler
+    verify(expirationHandler, never()).handle(anyInt());
+    // nor the unknown packet ID handler are invoked
+    verify(unknownPacketIdHandler, never()).handle(anyInt());
+
+    // and the message is not removed from the outbound queue
+    assertEquals(1, client.getInFlightMessagesCount());
+  }
+
+  /**
    * Verifies that the client invokes the registered completion expiration handler
    * if no PUBACK is received from the server for a QoS 1 message.
    */
@@ -101,12 +136,13 @@ public class MqttClientImplTest {
   @Test
   public void testPublishQos1InvokesHandlerOnPubackTimeout() {
 
-    // GIVEN an MQTT client with expiration and phantom handlers set
+      // GIVEN an MQTT client with expiration and unknown packet ID handlers set
     Handler<Integer> expirationHandler = mock(Handler.class);
-    Handler<Integer> phantomHandler = mock(Handler.class);
-    MqttClientImpl client = givenAConnectedClient();
+    Handler<Integer> unknownPacketIdHandler = mock(Handler.class);
+    // configured to time out any ACKs after 5s
+    MqttClientImpl client = givenAConnectedClient(5);
     client.publishCompletionExpirationHandler(expirationHandler);
-    client.publishCompletionPhantomHandler(phantomHandler);
+    client.publishCompletionUnknownPacketIdHandler(unknownPacketIdHandler);
     ArgumentCaptor<Handler<Object>> messageHandler = ArgumentCaptor.forClass(Handler.class);
     verify(netSocket).messageHandler(messageHandler.capture());
 
@@ -128,7 +164,7 @@ public class MqttClientImplTest {
     // and when a PUBACK for the message arrives
     messageHandler.getValue().handle(createAckMessage(MqttMessageType.PUBACK, sendHandler.future().result()));
     // THEN the phantom handler is invoked
-    verify(phantomHandler).handle(eq(sendHandler.future().result()));
+    verify(unknownPacketIdHandler).handle(eq(sendHandler.future().result()));
   }
 
   /**
@@ -139,12 +175,13 @@ public class MqttClientImplTest {
   @Test
   public void testPublishQos2InvokesHandlerOnPubrecTimeout() {
 
-    // GIVEN an MQTT client with expiration and phantom handlers set
+      // GIVEN an MQTT client with expiration and unknown packet ID handlers set
     Handler<Integer> expirationHandler = mock(Handler.class);
-    Handler<Integer> phantomHandler = mock(Handler.class);
-    MqttClientImpl client = givenAConnectedClient();
+    Handler<Integer> unknownPacketIdHandler = mock(Handler.class);
+    // configured to time out any ACKs after 5s
+    MqttClientImpl client = givenAConnectedClient(5);
     client.publishCompletionExpirationHandler(expirationHandler);
-    client.publishCompletionPhantomHandler(phantomHandler);
+    client.publishCompletionUnknownPacketIdHandler(unknownPacketIdHandler);
     ArgumentCaptor<Handler<Object>> messageHandler = ArgumentCaptor.forClass(Handler.class);
     verify(netSocket).messageHandler(messageHandler.capture());
 
@@ -166,7 +203,7 @@ public class MqttClientImplTest {
     // and when a PUBREC for the message arrives
     messageHandler.getValue().handle(createAckMessage(MqttMessageType.PUBREC, sendHandler.future().result()));
     // THEN the phantom handler is invoked
-    verify(phantomHandler).handle(eq(sendHandler.future().result()));
+    verify(unknownPacketIdHandler).handle(eq(sendHandler.future().result()));
   }
 
   /**
@@ -177,12 +214,13 @@ public class MqttClientImplTest {
   @Test
   public void testPublishQos2InvokesHandlerOnPubcompTimeout() {
 
-    // GIVEN an MQTT client with expiration and phantom handlers set
+      // GIVEN an MQTT client with expiration and unknown packet ID handlers set
     Handler<Integer> expirationHandler = mock(Handler.class);
-    Handler<Integer> phantomHandler = mock(Handler.class);
-    MqttClientImpl client = givenAConnectedClient();
+    Handler<Integer> unknownPacketIdHandler = mock(Handler.class);
+    // configured to time out any ACKs after 5s
+    MqttClientImpl client = givenAConnectedClient(5);
     client.publishCompletionExpirationHandler(expirationHandler);
-    client.publishCompletionPhantomHandler(phantomHandler);
+    client.publishCompletionUnknownPacketIdHandler(unknownPacketIdHandler);
     ArgumentCaptor<Handler<Object>> messageHandler = ArgumentCaptor.forClass(Handler.class);
     verify(netSocket).messageHandler(messageHandler.capture());
 
@@ -207,12 +245,15 @@ public class MqttClientImplTest {
     // and when a PUBCOMP for the message arrives
     messageHandler.getValue().handle(createAckMessage(MqttMessageType.PUBCOMP, sendHandler.future().result()));
     // THEN the phantom handler is invoked
-    verify(phantomHandler).handle(eq(sendHandler.future().result()));
+    verify(unknownPacketIdHandler).handle(eq(sendHandler.future().result()));
   }
 
   @SuppressWarnings("unchecked")
-  private MqttClientImpl givenAConnectedClient() {
-    MqttClientImpl client = new MqttClientImpl(vertx, new MqttClientOptions());
+  private MqttClientImpl givenAConnectedClient(final int timeout) {
+
+    MqttClientOptions options = new MqttClientOptions();
+    options.setAckTimeout(timeout);
+    MqttClientImpl client = new MqttClientImpl(vertx, options);
     PromiseInternal<Object> promise = mock(PromiseInternal.class);
     when(promise.future()).thenReturn(Future.succeededFuture(mock(MqttConnAckMessage.class)));
     when(context.promise()).thenReturn(promise);

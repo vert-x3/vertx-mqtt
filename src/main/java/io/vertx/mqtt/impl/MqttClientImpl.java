@@ -400,13 +400,13 @@ public class MqttClientImpl implements MqttClient {
    * {@inheritDoc}
    */
   @Override
-  public MqttClient publishCompletionPhantomHandler(Handler<Integer> publishCompletionPhantomHandler) {
+  public MqttClient publishCompletionUnknownPacketIdHandler(Handler<Integer> publishCompletionPhantomHandler) {
 
     this.publishCompletionPhantomHandler = publishCompletionPhantomHandler;
     return this;
   }
 
-  private synchronized Handler<Integer> publishCompletionPhantomHandler() {
+  private synchronized Handler<Integer> publishCompletionUnknownPacketIdHandler() {
     return this.publishCompletionPhantomHandler;
   }
 
@@ -910,7 +910,7 @@ public class MqttClientImpl implements MqttClient {
       if (removedPacket == null) {
         log.debug("Received PUBACK packet without having related PUBLISH packet in storage");
         // PUBACK has been received after timer has already fired
-        Handler<Integer> handler = publishCompletionPhantomHandler();
+        Handler<Integer> handler = publishCompletionUnknownPacketIdHandler();
         if (handler != null) {
           handler.handle(pubackMessageId);
         }
@@ -955,7 +955,7 @@ public class MqttClientImpl implements MqttClient {
 
       if (removedPacket == null) {
         log.debug("Received PUBCOMP packet without having related PUBREL packet in storage");
-        Handler<Integer> handler = publishCompletionPhantomHandler();
+        Handler<Integer> handler = publishCompletionUnknownPacketIdHandler();
         if (handler != null) {
           handler.handle(pubcompMessageId);
         }
@@ -999,7 +999,7 @@ public class MqttClientImpl implements MqttClient {
 
       if (removedPacket == null) {
         log.debug("Received PUBREC packet without having related PUBLISH packet in storage");
-        Handler<Integer> handler = publishCompletionPhantomHandler();
+        Handler<Integer> handler = publishCompletionUnknownPacketIdHandler();
         if (handler != null) {
           handler.handle(pubrecMessageId);
         }
@@ -1167,6 +1167,7 @@ public class MqttClientImpl implements MqttClient {
 
   /**
    * Check either given string has size more then 65535 bytes in UTF-8 Encoding
+   *
    * @param string given string
    * @return true - size is lower or equal than 65535, otherwise - false
    */
@@ -1181,15 +1182,39 @@ public class MqttClientImpl implements MqttClient {
     return false;
   }
 
+  /**
+   * A wrapper around a packet ID for which the client will wait a limited time
+   * for the server's ACK to arrive.
+   */
   private class ExpiringPacket {
     private final int packetId;
     private final long timerId;
 
+    /**
+     * Creates a new expiring packet.
+     *
+     * @param timeoutHandler The handler to invoke once the client stops waiting for the server's ACK.
+     * @param packetId The packet ID.
+     */
     ExpiringPacket(Handler<Integer> timeoutHandler, final int packetId) {
       this.packetId = packetId;
-      this.timerId = vertx.setTimer(options.getAckTimeout() * 1000L, tid -> timeoutHandler.handle(packetId));
+      if (options.getAckTimeout() > -1) {
+          this.timerId = vertx.setTimer(options.getAckTimeout() * 1000L, tid -> timeoutHandler.handle(packetId));
+      } else {
+          // default MQTT client behavior,
+          // don't start a timer for expiring the publish
+          this.timerId = -1;
+      }
     }
 
+    /**
+     * Cancels the timer created for expiring the ACK.
+     * <p>
+     * This method should be invoked once the server's ACK for the packet ID has arrived
+     * in order to prevent the client from timing out while waiting for an ACK.
+     *
+     * @return {@code true} if the timer has been canceled.
+     */
     boolean cancelTimer() {
         return vertx.cancelTimer(timerId);
     }

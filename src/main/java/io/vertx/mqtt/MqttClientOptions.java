@@ -44,7 +44,7 @@ public class MqttClientOptions extends NetClientOptions {
   public static final boolean DEFAULT_WILL_FLAG = false;
   public static final boolean DEFAULT_WILL_RETAIN = false;
   public static final int DEFAULT_MAX_MESSAGE_SIZE = -1;
-  public static final int DEFAULT_ACK_TIMEOUT = 10;
+  public static final int DEFAULT_ACK_TIMEOUT = -1;
 
   private String clientId;
   private String username;
@@ -298,8 +298,8 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   /**
-   * Sets the time after which the client stops waiting for a PUBACK or PUBREC
-   * packet from the server in response to a packet it has sent.
+   * Gets the time in seconds after which the client stops waiting for a PUBACK, PUBREC
+   * or PUBCOMP packet from the server in response to a packet it has sent.
    * <p>
    * The default value of this property is 10s.
    *
@@ -310,18 +310,19 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   /**
-   * Sets the time after which the client will stop waiting for a PUBACK, PUBREC
+   * Sets the time in seconds after which the client will stop waiting for a PUBACK, PUBREC
    * or PUBCOMP packet from the server in response to a packet it has sent.
    * <p>
-   * The default value of this property is 10s.
+   * The default value of this property is -1 which indicates that the client should wait
+   * an unlimited time for the server's acknowledgement.
    *
    * @param ackTimeoutSeconds timeout in seconds
    * @return current options instance
-   * @throws IllegalArgumentException if the timeout is &lt;= 0.
+   * @throws IllegalArgumentException if the timeout is 0 or &lt; -1.
    */
   public MqttClientOptions setAckTimeout(int ackTimeoutSeconds) {
-    if (ackTimeoutSeconds <= 0) {
-      throw new IllegalArgumentException("timeout must be > 0");
+    if (ackTimeoutSeconds == 0 || ackTimeoutSeconds < -1) {
+      throw new IllegalArgumentException("timeout must be > 0 or equal to -1");
     }
     this.ackTimeout = ackTimeoutSeconds;
     return this;
