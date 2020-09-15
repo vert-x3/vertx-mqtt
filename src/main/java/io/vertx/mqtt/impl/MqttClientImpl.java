@@ -88,7 +88,6 @@ public class MqttClientImpl implements MqttClient {
   private static final int DEFAULT_IDLE_TIMEOUT = 0;
 
   private final MqttClientOptions options;
-  private final NetClient client;
   private final Vertx vertx;
   private NetSocketInternal connection;
   private Context ctx;
@@ -139,16 +138,8 @@ public class MqttClientImpl implements MqttClient {
    * @param options MQTT client options
    */
   public MqttClientImpl(Vertx vertx, MqttClientOptions options) {
-
-
     this.vertx = vertx;
-
-    // copy given options
-    NetClientOptions netClientOptions = new NetClientOptions(options);
-    netClientOptions.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
-
-    this.client = vertx.createNetClient(netClientOptions);
-    this.options = options;
+    this.options = new MqttClientOptions(options);
   }
 
   int getInFlightMessagesCount() {
@@ -180,10 +171,13 @@ public class MqttClientImpl implements MqttClient {
   private void doConnect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
 
     log.debug(String.format("Trying to connect with %s:%d", host, port));
-    this.client.connect(port, host, serverName, done -> {
+
+    NetClient client = vertx.createNetClient(new NetClientOptions(options).setIdleTimeout(DEFAULT_IDLE_TIMEOUT));
+    client.connect(port, host, serverName, done -> {
 
       // the TCP connection fails
       if (done.failed()) {
+        client.close();
         log.error(String.format("Can't connect to %s:%d", host, port), done.cause());
         if (connectHandler != null) {
           connectHandler.handle(Future.failedFuture(done.cause()));
@@ -200,11 +194,20 @@ public class MqttClientImpl implements MqttClient {
         }
 
         initChannel(pipeline);
-        this.connection = soi;
-        this.ctx = Vertx.currentContext();
+        synchronized (MqttClientImpl.this) {
+          this.connection = soi;
+          this.ctx = Vertx.currentContext();
+        }
 
         soi.messageHandler(msg -> this.handleMessage(soi.channelHandlerContext(), msg));
-        soi.closeHandler(v -> handleClosed());
+        soi.closeHandler(v -> {
+          synchronized (MqttClientImpl.this) {
+            this.connection = null;
+            this.ctx = null;
+          }
+          client.close();
+          handleClosed();
+        });
 
         // an exception at connection level
         soi.exceptionHandler(this::handleException);
