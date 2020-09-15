@@ -134,13 +134,49 @@ public interface MqttClient {
   MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
-   * Sets handler which will be called each time publish is completed
+   * Sets a handler which will be called each time the publishing of a message has been completed.
+   * <p>
+   * For a message that has been published using
+   * <ul>
+   * <li>QoS 0 this means that the client has successfully sent the corresponding PUBLISH packet,</li>
+   * <li>QoS 1 this means that a corresponding PUBACK has been received from the server,</li>
+   * <li>QoS 2 this means that a corresponding PUBCOMP has been received from the server.</li>
+   * </ul>
    *
    * @param publishCompletionHandler handler called with the packetId
    * @return current MQTT client instance
    */
   @Fluent
   MqttClient publishCompletionHandler(Handler<Integer> publishCompletionHandler);
+
+  /**
+   * Sets a handler which will be called when the client does not receive a PUBACK or
+   * PUBREC/PUBCOMP for a message published using QoS 1 or 2 respectively.
+   * <p>
+   * The time to wait for an acknowledgement message can be configured using
+   * {@link MqttClientOptions#setAckTimeout(int)}.
+   * If the client receives a PUBACK/PUBREC/PUBCOMP for a message after its completion
+   * has expired, the handler registered using {@link #publishCompletionUnknownPacketIdHandler(Handler)}
+   * will be invoked.
+   * <p>
+   * Note that this behavior is outside the scope of the MQTT 3.1.1 specification. The client's default
+   * behavior is therefore to wait forever for the server's corresponding acknowledgement.
+   *
+   * @param publishCompletionExpirationHandler the handler to call with the ID of the expired packet
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient publishCompletionExpirationHandler(Handler<Integer> publishCompletionExpirationHandler);
+
+  /**
+   * Sets a handler which will be called when the client receives a PUBACK/PUBREC/PUBCOMP with an unknown
+   * packet ID.
+   *
+   * @param publishCompletionPhantomHandler the handler to call with the unknown packet ID
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient publishCompletionUnknownPacketIdHandler(Handler<Integer> publishCompletionPhantomHandler);
 
   /**
    * Sets handler which will be called each time server publish something to client
