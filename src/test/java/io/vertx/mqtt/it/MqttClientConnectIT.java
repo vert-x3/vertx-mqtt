@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test.client;
+package io.vertx.mqtt.it;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Vertx;
@@ -26,6 +26,7 @@ import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertTrue;
  * MQTT client testing about connection
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientConnectTest {
+public class MqttClientConnectIT {
 
   @Test
   public void connectDisconnect(TestContext context) throws InterruptedException {
