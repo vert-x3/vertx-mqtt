@@ -41,6 +41,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.NetSocketInternal;
@@ -91,7 +92,6 @@ public class MqttClientImpl implements MqttClient {
 
   private final VertxInternal vertx;
   private final MqttClientOptions options;
-  private final NetClient client;
   private NetSocketInternal connection;
   private ContextInternal ctx;
 
@@ -143,8 +143,7 @@ public class MqttClientImpl implements MqttClient {
     netClientOptions.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
 
     this.vertx = (VertxInternal) vertx;
-    this.client = vertx.createNetClient(netClientOptions);
-    this.options = options;
+    this.options = new MqttClientOptions(options);
   }
 
   @Override
@@ -187,17 +186,28 @@ public class MqttClientImpl implements MqttClient {
 
   private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
 
-    ctx = vertx.getOrCreateContext();
-    connectPromise = ctx.promise();
+    synchronized (this) {
+      ctx = vertx.getOrCreateContext();
+      connectPromise = ctx.promise();
+    }
 
     ctx.runOnContext(v -> {
       log.debug(String.format("Trying to connect with %s:%d", host, port));
-      this.client.connect(port, host, serverName, done -> {
+
+      NetClient client = vertx.createNetClient(options, new CloseFuture());
+      client.connect(port, host, serverName, done -> {
 
         // the TCP connection fails
         if (done.failed()) {
           log.error(String.format("Can't connect to %s:%d", host, port), done.cause());
-          connectPromise.fail(done.cause());
+          Promise<?> promise;
+          synchronized (this) {
+            promise = connectPromise;
+            connectPromise = null;
+            ctx = null;
+          }
+          client.close();
+          promise.fail(done.cause());
         } else {
           log.info(String.format("Connection with %s:%d established successfully", host, port));
 
@@ -209,10 +219,19 @@ public class MqttClientImpl implements MqttClient {
           }
 
           initChannel(pipeline);
-          this.connection = soi;
+          synchronized (MqttClientImpl.this) {
+            this.connection = soi;
+          }
 
           soi.messageHandler(msg -> this.handleMessage(soi.channelHandlerContext(), msg));
-          soi.closeHandler(v2 -> handleClosed());
+          soi.closeHandler(v2 -> {
+            synchronized (MqttClientImpl.this) {
+              connection = null;
+              ctx = null;
+            }
+            client.close();
+            handleClosed();
+          });
 
           // an exception at connection level
           soi.exceptionHandler(this::handleException);
@@ -486,10 +505,6 @@ public class MqttClientImpl implements MqttClient {
       fut.onComplete(unsubscribeSentHandler);
     }
     return this;
-  }
-
-  private synchronized Promise<MqttConnAckMessage> connectPromise() {
-    return this.connectPromise;
   }
 
   /**
@@ -982,11 +997,13 @@ public class MqttClientImpl implements MqttClient {
    */
   private void handleConnack(MqttConnAckMessage msg) {
 
+    Promise<MqttConnAckMessage> promise;
     synchronized (this) {
+      promise = connectPromise;
+      this.connectPromise = null;
       this.isConnected = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED;
     }
 
-    Promise<MqttConnAckMessage> promise = connectPromise();
     if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
       promise.complete(msg);
     } else {
