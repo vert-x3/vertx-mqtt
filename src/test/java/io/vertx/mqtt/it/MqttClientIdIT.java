@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test.client;
+package io.vertx.mqtt.it;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
@@ -24,6 +24,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -36,9 +37,9 @@ import static org.junit.Assert.*;
  * MQTT client testing on client identifier
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientIdTest {
+public class MqttClientIdIT {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttClientIdTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttClientIdIT.class);
 
   @Test
   public void afterConnectClientIdGenerated(TestContext context) throws InterruptedException {

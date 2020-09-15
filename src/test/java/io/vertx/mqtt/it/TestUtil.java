@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test.client;
+package io.vertx.mqtt.it;
 
 class TestUtil {
 

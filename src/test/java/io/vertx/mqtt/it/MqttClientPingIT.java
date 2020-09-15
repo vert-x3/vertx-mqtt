@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.test.client;
+package io.vertx.mqtt.it;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
@@ -24,6 +24,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,9 +34,9 @@ import static org.junit.Assert.assertTrue;
  * MQTT client testing on keep alive mechanism
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientPingTest {
+public class MqttClientPingIT {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttClientPingTest.class);
+  private static final Logger log = LoggerFactory.getLogger(MqttClientPingIT.class);
 
   private static final int PING_NUMBER = 3;
   private static final int KEEPALIVE_TIMEOUT = 2; // seconds
