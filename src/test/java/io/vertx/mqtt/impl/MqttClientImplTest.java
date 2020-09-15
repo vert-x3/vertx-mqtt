@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Bosch.IO GmbH
+ * Copyright 2020 Kai Hudalla
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
