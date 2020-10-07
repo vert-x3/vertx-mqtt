@@ -752,7 +752,7 @@ public class MqttClientImpl implements MqttClient {
         }
       });
 
-      if(this.options.getKeepAliveTimeout() > 0) {
+      if (this.options.getKeepAliveTimeout() > 0) {
         int keepAliveTimeout = keepAliveInterval + this.options.getKeepAliveTimeout();
         // handler for ping-response timeout. connection will be closed if broker READER_IDLE extends timeout
         pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0, 0));

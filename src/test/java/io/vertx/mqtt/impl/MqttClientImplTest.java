@@ -31,6 +31,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.vertx.core.impl.CloseFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -91,7 +92,7 @@ public class MqttClientImplTest {
       return null;
     }).when(context).runOnContext(any(Handler.class));
     when(vertx.getOrCreateContext()).thenReturn(context);
-    when(vertx.createNetClient(any(NetClientOptions.class))).thenReturn(netClient);
+    when(vertx.createNetClient(any(NetClientOptions.class), any(CloseFuture.class))).thenReturn(netClient);
   }
 
   /**
