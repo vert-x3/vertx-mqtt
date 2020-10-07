@@ -99,9 +99,10 @@ public class MqttClientOutOfOrderAcksTest {
   }
 
   @After
-  public void after() {
-    this.server.close();
-    this.vertx.close();
+  public void after(TestContext ctx) {
+    this.server.close(ctx.asyncAssertSuccess(v -> {
+      this.vertx.close(ctx.asyncAssertSuccess());
+    }));
   }
 
   private static void serverLogic(MqttEndpoint mqttEndpoint) {
