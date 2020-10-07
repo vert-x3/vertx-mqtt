@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 /**
- * MQTT client keep alive tests using a Vert.x MQTT server to accomodate testing.
+ * MQTT server keep alive tests using a Vert.x MQTT server to accommodate testing.
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttServerKeepAliveTest {
@@ -43,7 +43,7 @@ public class MqttServerKeepAliveTest {
 
   private void startServer(TestContext ctx) {
     Async async = ctx.async();
-    server.listen(1884, "localhost", ctx.asyncAssertSuccess(server -> async.complete()));
+    server.listen(ctx.asyncAssertSuccess(server -> async.complete()));
     async.awaitSuccess(10000);
   }
 
@@ -55,12 +55,13 @@ public class MqttServerKeepAliveTest {
 
   @After
   public void after(TestContext ctx) {
-    vertx.close(ctx.asyncAssertSuccess());
+    server.close(ctx.asyncAssertSuccess(v -> {
+      vertx.close(ctx.asyncAssertSuccess());
+    }));
   }
 
   @Test
   public void serverWillDisconnectOnTimeout(TestContext ctx) {
-    Async async = ctx.async();
     server.endpointHandler(endpoint -> {
       endpoint.accept(false);
       endpoint.pingHandler(v -> ctx.fail());
@@ -70,11 +71,11 @@ public class MqttServerKeepAliveTest {
     options.setAutoKeepAlive(false);    // The client will manage pings manually
     options.setKeepAliveTimeSeconds(2); // Tell the server to disconnects the client after 3 seconds of inactivity
     MqttClient client = MqttClient.create(vertx, options);
-    client.connect(1884, "localhost", ctx.asyncAssertSuccess(ack -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
+      Async async = ctx.async();
       client.closeHandler(v -> {
         async.complete();
       });
     }));
-    async.await();
   }
 }
