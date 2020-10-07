@@ -27,15 +27,10 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageFactory;
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
@@ -57,8 +52,6 @@ import java.nio.charset.StandardCharsets;
 @RunWith(VertxUnitRunner.class)
 public class MqttServerBadClientTest extends MqttServerBaseTest {
 
-  private static final String PROTOCOL_NAME = "MQTT";
-  private static final int PROTOCOL_VERSION = 4;
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "I'm a bad client";
 
@@ -182,45 +175,32 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
   private final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
   private MqttPublishMessage createPublishMessage() {
-
-    MqttFixedHeader mqttFixedHeader =
-      new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, true, 0);
-
-    MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(MQTT_TOPIC, 1);
-
     ByteBuf payload =  ALLOCATOR.buffer();
     payload.writeBytes(MQTT_MESSAGE.getBytes(CharsetUtil.UTF_8));
 
-    return new MqttPublishMessage(mqttFixedHeader, mqttPublishVariableHeader, payload);
+    return MqttMessageBuilders.publish()
+      .qos(MqttQoS.AT_LEAST_ONCE)
+      .retained(true)
+      .topicName(MQTT_TOPIC)
+      .messageId(1)
+      .payload(payload)
+      .build();
   }
 
   private MqttMessage createConnectPacket(MqttClientOptions options) {
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
-      false,
-      MqttQoS.AT_MOST_ONCE,
-      false,
-      0);
-
-    MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
-      PROTOCOL_NAME,
-      PROTOCOL_VERSION,
-      options.hasUsername(),
-      options.hasPassword(),
-      options.isWillRetain(),
-      options.getWillQoS(),
-      options.isWillFlag(),
-      options.isCleanSession(),
-      options.getKeepAliveTimeSeconds()
-    );
-
-    MqttConnectPayload payload = new MqttConnectPayload(
-      options.getClientId() == null ? "" : options.getClientId(),
-      options.getWillTopic(),
-      options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
-      options.hasUsername() ? options.getUsername() : null,
-      options.hasPassword() ? options.getPassword().getBytes(StandardCharsets.UTF_8) : null
-    );
-
-    return MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+    return MqttMessageBuilders.connect()
+      .hasUser(options.hasUsername())
+      .hasPassword(options.hasPassword())
+      .willRetain(options.isWillRetain())
+      .willQoS(MqttQoS.valueOf(options.getWillQoS()))
+      .willFlag(options.isWillFlag())
+      .willTopic(options.getWillTopic())
+      .willMessage(options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null)
+      .cleanSession(options.isCleanSession())
+      .keepAlive(options.getKeepAliveTimeSeconds())
+      .clientId(options.getClientId() == null ? "" : options.getClientId())
+      .username(options.hasUsername() ? options.getUsername() : null)
+      .password(options.hasPassword() ? options.getPassword().getBytes() : null)
+      .build();
   }
 }

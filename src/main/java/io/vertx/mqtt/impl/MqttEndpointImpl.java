@@ -18,9 +18,10 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
@@ -30,7 +31,6 @@ import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -298,12 +298,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   private MqttEndpointImpl connack(MqttConnectReturnCode returnCode, boolean sessionPresent) {
 
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttConnAckVariableHeader variableHeader =
-      new MqttConnAckVariableHeader(returnCode, sessionPresent);
-
-    io.netty.handler.codec.mqtt.MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    MqttConnAckMessage connack = MqttMessageBuilders.connAck()
+      .returnCode(returnCode)
+      .sessionPresent(sessionPresent)
+      .build();
 
     this.write(connack);
 

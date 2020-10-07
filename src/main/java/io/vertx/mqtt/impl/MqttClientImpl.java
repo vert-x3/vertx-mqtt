@@ -22,20 +22,19 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttSubscribePayload;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -63,13 +62,11 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.netty.handler.codec.mqtt.MqttQoS.*;
 
@@ -86,8 +83,6 @@ public class MqttClientImpl implements MqttClient {
   private static final int MAX_MESSAGE_ID = 65535;
   private static final int MAX_TOPIC_LEN = 65535;
   private static final int MIN_TOPIC_LEN = 1;
-  private static final String PROTOCOL_NAME = "MQTT";
-  private static final int PROTOCOL_VERSION = 4;
   private static final int DEFAULT_IDLE_TIMEOUT = 0;
 
   private final VertxInternal vertx;
@@ -246,33 +241,20 @@ public class MqttClientImpl implements MqttClient {
           // an exception at connection level
           soi.exceptionHandler(this::handleException);
 
-          MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
-            false,
-            AT_MOST_ONCE,
-            false,
-            0);
-
-          MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
-            PROTOCOL_NAME,
-            PROTOCOL_VERSION,
-            options.hasUsername(),
-            options.hasPassword(),
-            options.isWillRetain(),
-            options.getWillQoS(),
-            options.isWillFlag(),
-            options.isCleanSession(),
-            options.getKeepAliveTimeSeconds()
-          );
-
-          MqttConnectPayload payload = new MqttConnectPayload(
-            options.getClientId() == null ? "" : options.getClientId(),
-            options.getWillTopic(),
-            options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
-            options.hasUsername() ? options.getUsername() : null,
-            options.hasPassword() ? options.getPassword().getBytes() : null
-          );
-
-          io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+          final MqttConnectMessage connect = MqttMessageBuilders.connect()
+            .hasUser(options.hasUsername())
+            .hasPassword(options.hasPassword())
+            .willRetain(options.isWillRetain())
+            .willQoS(MqttQoS.valueOf(options.getWillQoS()))
+            .willFlag(options.isWillFlag())
+            .willTopic(options.getWillTopic())
+            .willMessage(options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null)
+            .cleanSession(options.isCleanSession())
+            .keepAlive(options.getKeepAliveTimeSeconds())
+            .clientId(options.getClientId() == null ? "" : options.getClientId())
+            .username(options.hasUsername() ? options.getUsername() : null)
+            .password(options.hasPassword() ? options.getPassword().getBytes() : null)
+            .build();
 
           this.write(connect);
         }
@@ -491,24 +473,12 @@ public class MqttClientImpl implements MqttClient {
       return ctx.failedFuture(exception);
     }
 
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(
-      MqttMessageType.SUBSCRIBE,
-      false,
-      AT_LEAST_ONCE,
-      false,
-      0);
+    final MqttMessageBuilders.SubscribeBuilder subscribeBuilder = MqttMessageBuilders.subscribe()
+      .messageId(nextMessageId());
+    topics.forEach((topic, qos) -> subscribeBuilder.addSubscription(MqttQoS.valueOf(qos), topic));
+    final MqttSubscribeMessage subscribe = subscribeBuilder.build();
 
-    MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
-    List<MqttTopicSubscription> subscriptions = topics.entrySet()
-      .stream()
-      .map(e -> new MqttTopicSubscription(e.getKey(), valueOf(e.getValue())))
-      .collect(Collectors.toList());
-
-    MqttSubscribePayload payload = new MqttSubscribePayload(subscriptions);
-
-    io.netty.handler.codec.mqtt.MqttMessage subscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
-
-    return this.write(subscribe).map(variableHeader.messageId());
+    return this.write(subscribe).map(subscribe.variableHeader().messageId());
   }
 
   /**
@@ -558,22 +528,14 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public Future<Integer> unsubscribe(String topic) {
 
-    MqttFixedHeader fixedHeader = new MqttFixedHeader(
-      MqttMessageType.UNSUBSCRIBE,
-      false,
-      AT_LEAST_ONCE,
-      false,
-      0);
-
-    MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
-
-    MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Stream.of(topic).collect(Collectors.toList()));
-
-    io.netty.handler.codec.mqtt.MqttMessage unsubscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+    final MqttUnsubscribeMessage unsubscribe = MqttMessageBuilders.unsubscribe()
+      .addTopicFilter(topic)
+      .messageId(nextMessageId())
+      .build();
 
     this.write(unsubscribe);
 
-    return ctx.succeededFuture(variableHeader.messageId());
+    return ctx.succeededFuture(unsubscribe.variableHeader().messageId());
   }
 
   /**
