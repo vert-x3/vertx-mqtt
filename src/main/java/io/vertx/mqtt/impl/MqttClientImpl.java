@@ -705,32 +705,24 @@ public class MqttClientImpl implements MqttClient {
 
       // handler for sending PINGREQ (keepAlive) if reader- or writer-channel become idle
       pipeline.addBefore("handler", "idle",
-        new IdleStateHandler(0, 0, keepAliveInterval));
-      pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
-
-        @Override public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-          if (evt instanceof IdleStateEvent) {
-            IdleStateEvent e = (IdleStateEvent) evt;
-            if (e.state() == IdleState.ALL_IDLE) {
+        new IdleStateHandler(0, 0, keepAliveInterval) {
+          @Override
+          protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
+            if (evt.state() == IdleState.ALL_IDLE) {
               // verify that server is still connected (e.g. when using QoS-0)
               ping();
             }
           }
-        }
-      });
+        });
 
       if (this.options.getKeepAliveTimeout() > 0) {
         int keepAliveTimeout = keepAliveInterval + this.options.getKeepAliveTimeout();
         // handler for ping-response timeout. connection will be closed if broker READER_IDLE extends timeout
-        pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0, 0));
-        pipeline.addBefore("handler", "idleTimeoutHandler", new ChannelDuplexHandler() {
-
-          @Override public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-            if (evt instanceof IdleStateEvent) {
-              IdleStateEvent e = (IdleStateEvent) evt;
-              if (e.state() == IdleState.READER_IDLE) {
-                ctx.close();
-              }
+        pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0, 0) {
+          @Override
+          protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
+            if (evt.state() == IdleState.READER_IDLE) {
+              ctx.close();
             }
           }
         });
