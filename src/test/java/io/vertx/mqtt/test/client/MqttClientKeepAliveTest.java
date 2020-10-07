@@ -78,7 +78,7 @@ public class MqttClientKeepAliveTest {
     MqttClient client = MqttClient.create(vertx, options);
     client.connect(1884, "localhost", ctx.asyncAssertSuccess(ack -> {
       client.closeHandler(v -> {
-        assertEquals(2, pings.get()); // READER & WRITER idle
+        assertEquals(1, pings.get());
         async.complete();
       });
     }));
