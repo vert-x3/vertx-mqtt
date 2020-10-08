@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -715,18 +716,17 @@ public class MqttClientImpl implements MqttClient {
           }
         });
 
-      if (this.options.getKeepAliveTimeout() > 0) {
-        int keepAliveTimeout = keepAliveInterval + this.options.getKeepAliveTimeout();
-        // handler for ping-response timeout. connection will be closed if broker READER_IDLE extends timeout
-        pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0, 0) {
-          @Override
-          protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
-            if (evt.state() == IdleState.READER_IDLE) {
-              ctx.close();
-            }
+
+      long keepAliveTimeout = (keepAliveInterval * 1000) * 3 / 2;
+      // handler for ping-response timeout. connection will be closed if broker READER_IDLE extends timeout
+      pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0L, 0L, TimeUnit.MILLISECONDS) {
+        @Override
+        protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
+          if (evt.state() == IdleState.READER_IDLE) {
+            ctx.close();
           }
-        });
-      }
+        }
+      });
     }
   }
 
