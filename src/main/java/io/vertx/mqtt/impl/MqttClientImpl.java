@@ -130,6 +130,7 @@ public class MqttClientImpl implements MqttClient {
   // total number of unacknowledged packets
   private int countInflightQueue;
 
+  private boolean isConnecting;
   private boolean isConnected;
 
   /**
@@ -173,11 +174,28 @@ public class MqttClientImpl implements MqttClient {
 
     log.debug(String.format("Trying to connect with %s:%d", host, port));
 
+    boolean doConnect;
+    synchronized (this) {
+      if (isConnecting) {
+        doConnect = false;
+      } else {
+        doConnect = true;
+        isConnecting = true;
+      }
+    }
+    if (!doConnect) {
+      connectHandler.handle(Future.failedFuture(new IllegalStateException("Already connecting")));
+      return;
+    }
+
     NetClient client = vertx.createNetClient(new NetClientOptions(options).setIdleTimeout(DEFAULT_IDLE_TIMEOUT));
     client.connect(port, host, serverName, done -> {
 
       // the TCP connection fails
       if (done.failed()) {
+        synchronized (MqttClientImpl.this) {
+          isConnecting = false;
+        }
         client.close();
         log.error(String.format("Can't connect to %s:%d", host, port), done.cause());
         if (connectHandler != null) {
@@ -196,6 +214,7 @@ public class MqttClientImpl implements MqttClient {
 
         initChannel(pipeline);
         synchronized (MqttClientImpl.this) {
+          this.isConnecting = false;
           this.connection = soi;
           this.ctx = Vertx.currentContext();
         }

@@ -16,7 +16,9 @@
 
 package io.vertx.mqtt.test.client;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -32,7 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Server connect tests
+ * Client connect tests
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttConnectTest {
@@ -54,6 +56,27 @@ public class MqttConnectTest {
       server.close(ctx.asyncAssertSuccess(v2 -> {
         vertx.close(ctx.asyncAssertSuccess());
       }));
+    }));
+  }
+
+  @Test
+  public void concurrentConnect(TestContext ctx) {
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.publish("test", Buffer.buffer(), MqttQoS.AT_LEAST_ONCE, false, false);
+    });
+    Async serverLatch = ctx.async();
+    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10000);
+    MqttClient client = MqttClient.create(vertx);
+    Async msglatch = ctx.async();
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack -> {
+      client.publishHandler(msg -> {
+        msglatch.complete();
+      });
+    }));
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+      ctx.assertEquals(IllegalStateException.class, err.getClass());
     }));
   }
 
