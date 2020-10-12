@@ -28,6 +28,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -43,6 +44,7 @@ public class MqttServerImpl implements MqttServer {
 
   private static final Logger log = LoggerFactory.getLogger(MqttServerImpl.class);
 
+  private final VertxInternal vertx;
   private final NetServer server;
   private Handler<MqttEndpoint> endpointHandler;
   private Handler<Throwable> exceptionHandler;
@@ -50,6 +52,7 @@ public class MqttServerImpl implements MqttServer {
   private MqttServerOptions options;
 
   public MqttServerImpl(Vertx vertx, MqttServerOptions options) {
+    this.vertx = (VertxInternal) vertx;
     this.server = vertx.createNetServer(options);
     this.options = options;
   }
@@ -63,21 +66,21 @@ public class MqttServerImpl implements MqttServer {
   public Future<MqttServer> listen(int port, String host) {
     Handler<MqttEndpoint> h1 = endpointHandler;
     Handler<Throwable> h2 = exceptionHandler;
+    if (h1 == null) {
+      return vertx.getOrCreateContext().failedFuture(new IllegalStateException("Please set handler before server is listening"));
+    }
     server.connectHandler(so -> {
       NetSocketInternal soi = (NetSocketInternal) so;
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
 
       initChannel(pipeline);
-      MqttServerConnection conn = new MqttServerConnection(soi, options);
+      MqttServerConnection conn = new MqttServerConnection(soi, h1, h2, options);
 
       soi.messageHandler(msg -> {
         synchronized (conn) {
           conn.handleMessage(msg);
         }
       });
-
-      conn.init(h1, h2);
-
     });
     return server.listen(port, host).map(this);
   }

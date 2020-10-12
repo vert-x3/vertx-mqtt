@@ -62,13 +62,13 @@ public class MqttServerConnection {
   private final ChannelHandlerContext chctx;
   private final MqttServerOptions options;
 
-  void init(Handler<MqttEndpoint> endpointHandler, Handler<Throwable> rejectHandler) {
-    this.endpointHandler = endpointHandler;
-    this.exceptionHandler = rejectHandler;
-  }
-
-  public MqttServerConnection(NetSocketInternal so, MqttServerOptions options) {
+  public MqttServerConnection(NetSocketInternal so,
+                              Handler<MqttEndpoint> endpointHandler,
+                              Handler<Throwable> exceptionHandler,
+                              MqttServerOptions options) {
     this.so = so;
+    this.endpointHandler = endpointHandler;
+    this.exceptionHandler = exceptionHandler;
     this.chctx = so.channelHandlerContext();
     this.options = options;
   }
