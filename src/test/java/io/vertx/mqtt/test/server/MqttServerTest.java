@@ -67,6 +67,14 @@ public class MqttServerTest {
   }
 
   @Test
+  public void listenWithoutEndpointHandler(TestContext context) {
+    MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
+    server.listen(context.asyncAssertFailure(err -> {
+      context.assertEquals(IllegalStateException.class, err.getClass());
+    }));
+  }
+
+  @Test
   public void sharedServersRoundRobin(TestContext context) {
 
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
