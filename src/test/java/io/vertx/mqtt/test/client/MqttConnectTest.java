@@ -17,9 +17,6 @@
 package io.vertx.mqtt.test.client;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
@@ -36,12 +33,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertEquals;
-
 /**
- * MQTT client keep alive tests using a Vert.x MQTT server to accommodate testing.
+ * Client connect tests.
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttConnectTest {
