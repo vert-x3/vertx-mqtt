@@ -67,6 +67,27 @@ public class MqttConnectTest {
   }
 
   @Test
+  public void concurrentConnect(TestContext ctx) {
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.publish("test", Buffer.buffer(), MqttQoS.AT_LEAST_ONCE, false, false);
+    });
+    Async serverLatch = ctx.async();
+    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10000);
+    MqttClient client = MqttClient.create(vertx);
+    Async msglatch = ctx.async();
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack -> {
+      client.publishHandler(msg -> {
+        msglatch.complete();
+      });
+    }));
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+      ctx.assertEquals(IllegalStateException.class, err.getClass());
+    }));
+  }
+
+  @Test
   public void reconnectInCloseHandler(TestContext ctx) {
     server.endpointHandler(endpoint -> {
       endpoint.accept(false);

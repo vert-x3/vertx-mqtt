@@ -197,9 +197,15 @@ public class MqttClientImpl implements MqttClient {
 
   private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
 
+    Future<MqttConnAckMessage> fut;
     synchronized (this) {
-      ctx = vertx.getOrCreateContext();
-      connectPromise = ctx.promise();
+      if (connectPromise == null) {
+        ctx = vertx.getOrCreateContext();
+        connectPromise = ctx.promise();
+        fut = connectPromise.future();
+      } else {
+        return vertx.getOrCreateContext().failedFuture(new IllegalStateException("Client already connecting"));
+      }
     }
 
     ctx.runOnContext(v -> {
@@ -281,7 +287,7 @@ public class MqttClientImpl implements MqttClient {
       });
     });
 
-    return connectPromise.future();
+    return fut;
   }
 
   /**
