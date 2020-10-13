@@ -20,6 +20,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Will information from the remote MQTT client
@@ -83,7 +84,7 @@ public class MqttWill {
    */
   @Deprecated
   public String getWillMessage() {
-    return new String(this.willMessage, Charset.forName("UTF-8"));
+    return this.willMessage != null ? new String(this.willMessage, StandardCharsets.UTF_8) : null;
   }
 
   /**
