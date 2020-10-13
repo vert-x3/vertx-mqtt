@@ -59,7 +59,7 @@ public class MqttWill {
     this.isWillFlag = json.getBoolean("isWillFlag");
     this.willTopic = json.getString("willTopic");
     this.willMessage = json.getString("willMessage").getBytes(Charset.forName("UTF-8"));
-    this.willQos = json.getInteger("willMessage");
+    this.willQos = json.getInteger("willQos");
     this.isWillRetain = json.getBoolean("isWillRetain");
   }
 
