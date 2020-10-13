@@ -57,27 +57,9 @@ public class MqttAuth {
   }
 
   /**
-   * @deprecated use instead {@link #getUsername()} ()}
-   * @return the username provided by the remote MQTT client
-   */
-  @Deprecated
-  public String userName() {
-    return this.username;
-  }
-
-  /**
    * @return the password provided by the remote MQTT client
    */
   public String getPassword() {
-    return this.password;
-  }
-
-  /**
-   * @deprecated use instead {@link #getPassword()}
-   * @return the password provided by the remote MQTT client
-   */
-  @Deprecated
-  public String password() {
     return this.password;
   }
 

@@ -109,33 +109,6 @@ public class MqttWill {
   }
 
   /**
-   * @deprecated use {@link #getWillTopic()} instead
-   * @return the topic for the will as provided by the remote MQTT client
-   */
-  @Deprecated
-  public String willTopic() {
-    return this.willTopic;
-  }
-
-  /**
-   * @return the payload for the will as provided by the remote MQTT client
-   * @deprecated use {@link #getWillMessageBytes()} instead
-   */
-  @Deprecated
-  public String willMessage() {
-    return this.getWillMessage();
-  }
-
-  /**
-   * @deprecated use {@link #willQos()} instead
-   * @return the QoS level for the will as provided by the remote MQTT client
-   */
-  @Deprecated
-  public int willQos() {
-    return this.willQos;
-  }
-
-  /**
    * Convert instance in JSON
    *
    * @return JSON representation
