@@ -17,6 +17,7 @@
 package io.vertx.mqtt.test.server;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
@@ -90,7 +91,7 @@ public class MqttServerWillTest {
     server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
     server.endpointHandler(endpoint -> {
       MqttWill will = endpoint.will();
-      context.assertEquals("the-message", will.getWillMessage());
+      context.assertEquals(Buffer.buffer("the-message"), will.getWillMessage());
       context.assertEquals(2, will.getWillQos());
       context.assertEquals("the-message", new String(will.getWillMessageBytes()));
       endpoint.accept(false);

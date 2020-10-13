@@ -17,6 +17,7 @@
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.nio.charset.Charset;
@@ -30,7 +31,7 @@ public class MqttWill {
 
   private final boolean isWillFlag;
   private final String willTopic;
-  private final byte[] willMessage;
+  private final Buffer willMessage;
   private final int willQos;
   private final boolean isWillRetain;
 
@@ -43,7 +44,7 @@ public class MqttWill {
    * @param willQos      qos level for the will
    * @param isWillRetain if the will message must be retained
    */
-  public MqttWill(boolean isWillFlag, String willTopic, byte[] willMessage, int willQos, boolean isWillRetain) {
+  public MqttWill(boolean isWillFlag, String willTopic, Buffer willMessage, int willQos, boolean isWillRetain) {
     this.isWillFlag = isWillFlag;
     this.willTopic = willTopic;
     this.willMessage = willMessage;
@@ -59,7 +60,7 @@ public class MqttWill {
   public MqttWill(JsonObject json) {
     this.isWillFlag = json.getBoolean("isWillFlag");
     this.willTopic = json.getString("willTopic");
-    this.willMessage = json.getString("willMessage").getBytes(Charset.forName("UTF-8"));
+    this.willMessage = json.getBuffer("willMessage");
     this.willQos = json.getInteger("willQos");
     this.isWillRetain = json.getBoolean("isWillRetain");
   }
@@ -80,18 +81,16 @@ public class MqttWill {
 
   /**
    * @return the payload for the will as provided by the remote MQTT client
-   * @deprecated use {@link #getWillMessageBytes()} instead
    */
-  @Deprecated
-  public String getWillMessage() {
-    return this.willMessage != null ? new String(this.willMessage, StandardCharsets.UTF_8) : null;
+  public Buffer getWillMessage() {
+    return this.willMessage;
   }
 
   /**
    * @return the payload for the will as provided by the remote MQTT client
    */
   public byte[] getWillMessageBytes() {
-    return this.willMessage;
+    return this.willMessage != null ? this.willMessage.getBytes() : null;
   }
 
   /**

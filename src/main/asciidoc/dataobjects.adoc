@@ -184,7 +184,7 @@ Set the timeout on CONNECT packet
 |[[willFlag]]`@willFlag`|`Boolean`|+++
 
 +++
-|[[willMessage]]`@willMessage`|`String`|+++
+|[[willMessage]]`@willMessage`|`Buffer`|+++
 
 +++
 |[[willQos]]`@willQos`|`Number (int)`|+++
