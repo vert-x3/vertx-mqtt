@@ -17,8 +17,6 @@
 package io.vertx.mqtt.test.server;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -62,7 +60,10 @@ public class MqttServerWillTest {
     MqttClient client = this.client;
     if (client != null) {
       this.client = null;
-      client.disconnect(context.asyncAssertSuccess(v -> async.countDown()));
+      try {
+        client.disconnect(context.asyncAssertSuccess(v -> async.countDown()));
+      } catch (Exception ignore) {
+      }
     }
     async.await(20_000);
     this.vertx.close(context.asyncAssertSuccess(v2 -> {
