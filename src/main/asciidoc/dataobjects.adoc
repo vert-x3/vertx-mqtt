@@ -60,11 +60,11 @@ Set the client identifier
 |[[enabledSecureTransportProtocols]]`@enabledSecureTransportProtocols`|`Array of String`|-
 |[[hostnameVerificationAlgorithm]]`@hostnameVerificationAlgorithm`|`String`|-
 |[[idleTimeout]]`@idleTimeout`|`Number (int)`|+++
-Do the same thing as link. Use it instead.
+Do the same thing as link (int)}. Use it instead.
 +++
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
-|[[keepAliveTimeSeconds]]`@keepAliveTimeSeconds`|`Number (int)`|+++
-Set the keep alive timeout in seconds
+|[[keepAliveInterval]]`@keepAliveInterval`|`Number (int)`|+++
+Set the keep alive interval in seconds
 +++
 |[[localAddress]]`@localAddress`|`String`|-
 |[[logActivity]]`@logActivity`|`Boolean`|-
