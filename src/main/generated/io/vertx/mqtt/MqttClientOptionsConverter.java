@@ -41,6 +41,11 @@ public class MqttClientOptionsConverter {
             obj.setClientId((String)member.getValue());
           }
           break;
+        case "keepAliveInterval":
+          if (member.getValue() instanceof Number) {
+            obj.setKeepAliveInterval(((Number)member.getValue()).intValue());
+          }
+          break;
         case "keepAliveTimeSeconds":
           if (member.getValue() instanceof Number) {
             obj.setKeepAliveTimeSeconds(((Number)member.getValue()).intValue());
@@ -107,6 +112,7 @@ public class MqttClientOptionsConverter {
     if (obj.getClientId() != null) {
       json.put("clientId", obj.getClientId());
     }
+    json.put("keepAliveInterval", obj.getKeepAliveInterval());
     json.put("keepAliveTimeSeconds", obj.getKeepAliveTimeSeconds());
     json.put("maxInflightQueue", obj.getMaxInflightQueue());
     json.put("maxMessageSize", obj.getMaxMessageSize());

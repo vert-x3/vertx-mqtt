@@ -85,7 +85,7 @@ public class MqttClientPingIT {
 
     Async async = context.async();
     MqttClientOptions options = new MqttClientOptions();
-    options.setKeepAliveTimeSeconds(KEEPALIVE_TIMEOUT);
+    options.setKeepAliveInterval(KEEPALIVE_TIMEOUT);
 
     log.info("Auto ping ... " + PING_NUMBER + " times timeout " + KEEPALIVE_TIMEOUT);
 

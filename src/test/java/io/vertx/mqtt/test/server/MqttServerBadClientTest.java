@@ -210,7 +210,7 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
       options.getWillQoS(),
       options.isWillFlag(),
       options.isCleanSession(),
-      options.getKeepAliveTimeSeconds()
+      options.getKeepAliveInterval()
     );
 
     MqttConnectPayload payload = new MqttConnectPayload(
