@@ -16,7 +16,9 @@
 
 package io.vertx.mqtt.test.client;
 
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
@@ -32,6 +34,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Client connect tests.
@@ -124,6 +128,78 @@ public class MqttConnectTest {
           });
         }));
       });
+    }));
+  }
+
+  @Test
+  public void disconnectThenReconnect(TestContext ctx) {
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+    });
+    Async serverLatch = ctx.async();
+    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10000);
+    MqttClient client = MqttClient.create(vertx);
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack1 -> {
+      client.disconnect(ctx.asyncAssertSuccess(v -> {
+        ctx.assertFalse(client.isConnected());
+        client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack2 -> {
+          ctx.assertTrue(client.isConnected());
+        }));
+      }));
+    }));
+  }
+
+  @Test
+  public void disconnectBeforeConnAck(TestContext ctx) {
+    MqttClient client = MqttClient.create(vertx);
+    Async async = ctx.async();
+    server.endpointHandler(endpoint -> client.disconnect(ctx.asyncAssertSuccess(v -> async.complete())));
+    Async serverLatch = ctx.async();
+    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10000);
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+    }));
+  }
+
+  @Test
+  public void disconnectWhenConnecting(TestContext ctx) {
+    MqttClient client = MqttClient.create(vertx);
+    AtomicBoolean accept = new AtomicBoolean();
+    server.endpointHandler(endpoint -> {
+      if (accept.get()) {
+        endpoint.accept(false);
+      }
+    });
+    Async serverLatch = ctx.async();
+    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10000);
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+    }));
+    client.disconnect(ctx.asyncAssertSuccess(v -> {
+      accept.set(true);
+      client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(err -> {
+      }));
+    }));
+  }
+
+  @Test
+  public void rejectThenAccept(TestContext ctx) {
+    MqttClient client = MqttClient.create(vertx);
+    AtomicBoolean rejectedOnce = new AtomicBoolean();
+    server.endpointHandler(endpoint -> {
+      if (rejectedOnce.getAndSet(true)) {
+        endpoint.accept(false);
+      } else {
+        endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+      }
+    });
+    Async serverLatch = ctx.async();
+    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10000);
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+      client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(msg -> {
+      }));
     }));
   }
 }
