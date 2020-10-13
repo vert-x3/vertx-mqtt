@@ -66,11 +66,6 @@ Do the same thing as link. Use it instead.
 |[[keepAliveTimeSeconds]]`@keepAliveTimeSeconds`|`Number (int)`|+++
 Set the keep alive timeout in seconds
 +++
-|[[keepAliveTimeout]]`@keepAliveTimeout`|`Number (int)`|+++
-Set the time period in seconds after which unacknowledged pings will close the connection.
- <p/>
- Setting <code>0</code> will simply expire pings but won't close the connection.
-+++
 |[[localAddress]]`@localAddress`|`String`|-
 |[[logActivity]]`@logActivity`|`Boolean`|-
 |[[maxInflightQueue]]`@maxInflightQueue`|`Number (int)`|+++
