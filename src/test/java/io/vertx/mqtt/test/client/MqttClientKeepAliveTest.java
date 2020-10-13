@@ -74,7 +74,7 @@ public class MqttClientKeepAliveTest {
     });
     startServer(ctx);
     MqttClientOptions options = new MqttClientOptions();
-    options.setKeepAliveTimeSeconds(2);
+    options.setKeepAliveInterval(2);
     MqttClient client = MqttClient.create(vertx, options);
     client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
       Async async = ctx.async();

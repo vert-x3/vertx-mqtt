@@ -64,8 +64,11 @@ Do the same thing as link. Use it instead.
 +++
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|-
 |[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
+|[[keepAliveInterval]]`@keepAliveInterval`|`Number (int)`|+++
+Set the keep alive interval in seconds
++++
 |[[keepAliveTimeSeconds]]`@keepAliveTimeSeconds`|`Number (int)`|+++
-Set the keep alive timeout in seconds
+
 +++
 |[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
 |[[localAddress]]`@localAddress`|`String`|-

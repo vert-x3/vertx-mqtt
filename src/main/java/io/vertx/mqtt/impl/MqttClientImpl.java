@@ -247,7 +247,7 @@ public class MqttClientImpl implements MqttClient {
           options.getWillQoS(),
           options.isWillFlag(),
           options.isCleanSession(),
-          options.getKeepAliveTimeSeconds()
+          options.getKeepAliveInterval()
         );
 
         MqttConnectPayload payload = new MqttConnectPayload(
@@ -719,9 +719,9 @@ public class MqttClientImpl implements MqttClient {
     }
 
     if (this.options.isAutoKeepAlive() &&
-      this.options.getKeepAliveTimeSeconds() != 0) {
+      this.options.getKeepAliveInterval() != 0) {
 
-      int keepAliveInterval = this.options.getKeepAliveTimeSeconds();
+      int keepAliveInterval = this.options.getKeepAliveInterval();
 
       // handler for sending PINGREQ (keepAlive) if reader- or writer-channel become idle
       pipeline.addBefore("handler", "idle",
