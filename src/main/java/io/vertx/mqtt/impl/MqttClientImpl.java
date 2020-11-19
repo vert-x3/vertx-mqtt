@@ -331,7 +331,6 @@ public class MqttClientImpl implements MqttClient {
     Future<Void> fut;
     synchronized (this) {
       status = this.status;
-      fut = this.disconnectPromise.future();
       switch (this.status) {
         case CLOSED:
           return vertx.getOrCreateContext().succeededFuture();
@@ -349,6 +348,7 @@ public class MqttClientImpl implements MqttClient {
         default:
           throw new AssertionError();
       }
+      fut = this.disconnectPromise.future();
     }
 
     if (connection != null) {
