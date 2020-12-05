@@ -251,7 +251,8 @@ public class MqttServerConnection {
     if (msg.variableHeader().keepAliveTimeSeconds() != 0) {
 
       // the server waits for one and a half times the keep alive time period (MQTT spec)
-      int keepAliveTimeout = (int)(msg.variableHeader().keepAliveTimeSeconds() * 1.5);
+      // round to upper value to account for small keep-alive value (for testing)
+      int keepAliveTimeout = (int)Math.ceil(msg.variableHeader().keepAliveTimeSeconds() * 1.5D);
 
       // modifying the channel pipeline for adding the idle state handler with previous timeout
       chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(keepAliveTimeout, 0, 0));
