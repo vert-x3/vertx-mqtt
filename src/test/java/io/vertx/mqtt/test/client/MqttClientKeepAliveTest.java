@@ -16,22 +16,20 @@
 
 package io.vertx.mqtt.test.client;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttServer;
-import io.vertx.mqtt.impl.MqttServerImpl;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -65,6 +63,37 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
+  public void autoKeepAlive(TestContext ctx) {
+    AtomicInteger pings = new AtomicInteger();
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.autoKeepAlive(true);
+      endpoint.pingHandler(v -> {
+        pings.incrementAndGet();
+      });
+    });
+    startServer(ctx);
+    MqttClientOptions options = new MqttClientOptions();
+    options.setAutoKeepAlive(true);
+    options.setKeepAliveInterval(1);
+    MqttClient client = MqttClient.create(vertx, options);
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
+      Async async = ctx.async();
+      AtomicInteger pongs = new AtomicInteger();
+      client.pingResponseHandler(v -> {
+        if (pongs.incrementAndGet() == 4) {
+          client.disconnect();
+        }
+      });
+      client.closeHandler(v -> {
+        assertEquals(4, pings.get());
+        assertEquals(4, pongs.get());
+        async.complete();
+      });
+    }));
+  }
+
+  @Test
   public void clientWillDisconnectOnMissingPingResponse(TestContext ctx) {
     AtomicInteger pings = new AtomicInteger();
     server.endpointHandler(endpoint -> {
@@ -74,12 +103,76 @@ public class MqttClientKeepAliveTest {
     });
     startServer(ctx);
     MqttClientOptions options = new MqttClientOptions();
-    options.setKeepAliveInterval(2);
+    options.setKeepAliveInterval(1);
     MqttClient client = MqttClient.create(vertx, options);
     client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
       Async async = ctx.async();
       client.closeHandler(v -> {
+        assertEquals(2, pings.get());
+        async.complete();
+      });
+    }));
+  }
+
+  @Test
+  public void clientWillDisconnectOnMissingManualPingResponse(TestContext ctx) {
+    AtomicInteger pings = new AtomicInteger();
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.autoKeepAlive(false);
+      endpoint.pingHandler(v -> pings.incrementAndGet());
+    });
+    startServer(ctx);
+    MqttClientOptions options = new MqttClientOptions();
+    options.setKeepAliveInterval(2);
+    options.setAutoKeepAlive(false);
+    MqttClient client = MqttClient.create(vertx, options);
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
+      Async async = ctx.async();
+      AtomicInteger pongs = new AtomicInteger();
+      client.pingResponseHandler(v -> {
+        pongs.incrementAndGet();
+      });
+      client.ping();
+      client.closeHandler(v -> {
+        assertEquals(0, pongs.get());
         assertEquals(1, pings.get());
+        async.complete();
+      });
+    }));
+  }
+
+  @Test
+  public void sendingRegularMessagePreventSendingPingAndDoesNotDisconnectClient(TestContext ctx) {
+    AtomicInteger pings = new AtomicInteger();
+    AtomicInteger messages = new AtomicInteger();
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.pingHandler(v -> {
+        pings.incrementAndGet();
+      });
+      endpoint.publishHandler(msg -> {
+        if (messages.incrementAndGet() == 4) {
+          endpoint.close();
+        }
+      });
+    });
+    startServer(ctx);
+    MqttClientOptions options = new MqttClientOptions();
+    options.setKeepAliveInterval(2);
+    options.setAutoKeepAlive(true);
+    MqttClient client = MqttClient.create(vertx, options);
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
+      Async async = ctx.async();
+      long timerID = vertx.setPeriodic(500, id -> {
+        client.publish("greetings", Buffer.buffer("hello"), MqttQoS.AT_MOST_ONCE, false, false);
+      });
+      AtomicInteger pongs = new AtomicInteger();
+      client.pingResponseHandler(v -> pongs.incrementAndGet());
+      client.closeHandler(v -> {
+        vertx.cancelTimer(timerID);
+        ctx.assertEquals(0, pings.get());
+        ctx.assertEquals(0, pongs.get());
         async.complete();
       });
     }));

@@ -293,6 +293,9 @@ public class MqttClientOptions extends NetClientOptions {
    * @return current options instance
    */
   public MqttClientOptions setKeepAliveInterval(int keepAliveInterval) {
+    if (keepAliveInterval < 1) {
+      throw new IllegalArgumentException("Invalid keep alive interval " + keepAliveInterval);
+    }
     this.keepAliveInterval = keepAliveInterval;
     return this;
   }

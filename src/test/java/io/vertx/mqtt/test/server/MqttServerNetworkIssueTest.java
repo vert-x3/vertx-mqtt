@@ -67,7 +67,7 @@ public class MqttServerNetworkIssueTest extends MqttServerBaseTest {
   public void keepAliveTimeout(TestContext context) {
 
     Async async = context.async();
-    int keepAliveInterval = 5;
+    int keepAliveInterval = 6;
     // MQTT spec : server will wait half more then the keepAliveInterval
     int timeout = keepAliveInterval + keepAliveInterval / 2;
 
@@ -112,7 +112,8 @@ public class MqttServerNetworkIssueTest extends MqttServerBaseTest {
 
       long elapsed = ended - started;
       // consider a range of 500 ms
-      context.assertTrue(elapsed > (timeout * 1000 - 500) && elapsed < (timeout * 1000 + 500));
+      context.assertTrue(elapsed > (timeout * 1000 - 500) && elapsed < (timeout * 1000 + 500),
+        elapsed + " > " + ((timeout * 1000 - 500)) + " && " + elapsed + " < " + (timeout * 1000 + 500) + " != true");
 
     } catch (MqttException e) {
       context.fail(e);
