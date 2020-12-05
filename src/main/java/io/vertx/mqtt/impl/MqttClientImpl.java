@@ -18,7 +18,6 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
@@ -58,12 +57,13 @@ import io.vertx.mqtt.messages.MqttSubAckMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -127,6 +127,10 @@ public class MqttClientImpl implements MqttClient {
   // counter for the message identifier
   private int messageIdCounter;
 
+  // Keep alive management
+  private final long keepAliveTimeout;
+  private Deque<Ping> pings = new ArrayDeque<>();
+
   // total number of unacknowledged packets
   private int countInflightQueue;
 
@@ -142,6 +146,7 @@ public class MqttClientImpl implements MqttClient {
   public MqttClientImpl(Vertx vertx, MqttClientOptions options) {
     this.vertx = vertx;
     this.options = new MqttClientOptions(options);
+    this.keepAliveTimeout = ((options.getKeepAliveInterval() * 1000) * 3) / 2;
   }
 
   int getInFlightMessagesCount() {
@@ -602,19 +607,41 @@ public class MqttClientImpl implements MqttClient {
     return this.closeHandler;
   }
 
+  private class Ping {
+    final long id;
+    private Ping(long id) {
+      this.id = id;
+    }
+    void ack() {
+      vertx.cancelTimer(id);
+    }
+    void cancel() {
+      vertx.cancelTimer(id);
+    }
+  }
+
   /**
    * See {@link MqttClient#ping()} for more details
    */
   @Override
   public MqttClient ping() {
+    if (Vertx.currentContext() == ctx) {
 
-    MqttFixedHeader fixedHeader =
-      new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0);
+      MqttFixedHeader fixedHeader =
+        new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0);
 
-    io.netty.handler.codec.mqtt.MqttMessage pingreq = MqttMessageFactory.newMessage(fixedHeader, null, null);
+      io.netty.handler.codec.mqtt.MqttMessage pingreq = MqttMessageFactory.newMessage(fixedHeader, null, null);
 
-    this.write(pingreq);
+      long id = vertx.setTimer(keepAliveTimeout, _id -> {
+        disconnect();
+      });
 
+      pings.add(new Ping(id));
+
+      this.write(pingreq);
+    } else {
+      ctx.runOnContext(v -> ping());
+    }
     return this;
   }
 
@@ -734,18 +761,6 @@ public class MqttClientImpl implements MqttClient {
             }
           }
         });
-
-
-      long keepAliveTimeout = (keepAliveInterval * 1000) * 3 / 2;
-      // handler for ping-response timeout. connection will be closed if broker READER_IDLE extends timeout
-      pipeline.addBefore("handler", "idleTimeout", new IdleStateHandler(keepAliveTimeout, 0L, 0L, TimeUnit.MILLISECONDS) {
-        @Override
-        protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
-          if (evt.state() == IdleState.READER_IDLE) {
-            ctx.close();
-          }
-        }
-      });
     }
   }
 
@@ -780,6 +795,11 @@ public class MqttClientImpl implements MqttClient {
       if (!isConnected) {
         return;
       }
+    }
+    // Cleanup pending pings
+    Ping ping;
+    while ((ping = pings.poll()) != null) {
+      ping.cancel();
     }
     Handler<Void> handler = closeHandler();
     if (handler != null) {
@@ -888,6 +908,11 @@ public class MqttClientImpl implements MqttClient {
    * Used for calling the pingresp handler when the server replies to the ping
    */
   private void handlePingresp() {
+
+    Ping ping = pings.poll();
+    if (ping != null) {
+      ping.ack();
+    }
 
     Handler<Void> handler = pingResponseHandler();
     if (handler != null) {
