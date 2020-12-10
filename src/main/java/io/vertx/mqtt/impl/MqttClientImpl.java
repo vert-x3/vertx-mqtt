@@ -830,10 +830,10 @@ public class MqttClientImpl implements MqttClient {
 
       // handler for sending PINGREQ (keepAlive) if reader- or writer-channel become idle
       pipeline.addBefore("handler", "idle",
-        new IdleStateHandler(0, 0, keepAliveInterval) {
+        new IdleStateHandler(0, keepAliveInterval, 0) {
           @Override
           protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
-            if (evt.state() == IdleState.ALL_IDLE) {
+            if (evt.state() == IdleState.WRITER_IDLE) {
               // verify that server is still connected (e.g. when using QoS-0)
               ping();
             }
