@@ -25,12 +25,16 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttTopicSubscription;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -143,7 +147,7 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
-  public void sendingRegularMessagePreventSendingPingAndDoesNotDisconnectClient(TestContext ctx) {
+  public void clientSendingRegularMessageDoesNotPreventClientPings(TestContext ctx) {
     AtomicInteger pings = new AtomicInteger();
     AtomicInteger messages = new AtomicInteger();
     server.endpointHandler(endpoint -> {
@@ -173,6 +177,56 @@ public class MqttClientKeepAliveTest {
         vertx.cancelTimer(timerID);
         ctx.assertEquals(0, pings.get());
         ctx.assertEquals(0, pongs.get());
+        async.complete();
+      });
+    }));
+  }
+
+  @Test
+  public void serverSendingRegularMessageDoesNotPreventClientPings(TestContext ctx) {
+    AtomicInteger pings = new AtomicInteger();
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.subscribeHandler(subscribe -> {
+        List<MqttQoS> grantedQosLevels = subscribe
+          .topicSubscriptions()
+          .stream()
+          .map(MqttTopicSubscription::qualityOfService)
+          .collect(Collectors.toList());
+        endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);
+        long id = vertx.setPeriodic(500, handler -> {
+          endpoint.publish(subscribe.topicSubscriptions().get(0).topicName(),
+            Buffer.buffer("hello"),
+            subscribe.topicSubscriptions().get(0).qualityOfService(), false, false);
+        });
+        endpoint.unsubscribeHandler(unsub -> {
+          vertx.cancelTimer(id);
+          endpoint.close();
+        });
+      });
+      endpoint.pingHandler(v -> {
+        pings.incrementAndGet();
+      });
+    });
+    startServer(ctx);
+    MqttClientOptions options = new MqttClientOptions();
+    options.setKeepAliveInterval(1);
+    options.setAutoKeepAlive(true);
+    MqttClient client = MqttClient.create(vertx, options);
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
+      Async async = ctx.async();
+      AtomicInteger pongs = new AtomicInteger();
+      client.subscribe("topic/topic", 0);
+      AtomicInteger count = new AtomicInteger();
+      client.publishHandler(msg -> {
+        if (count.incrementAndGet() == 5) {
+          client.unsubscribe("topic/topic");
+        }
+      });
+      client.pingResponseHandler(v -> pongs.incrementAndGet());
+      client.closeHandler(v -> {
+        ctx.assertTrue(pings.get() > 0);
+        ctx.assertTrue(pongs.get() > 0);
         async.complete();
       });
     }));
