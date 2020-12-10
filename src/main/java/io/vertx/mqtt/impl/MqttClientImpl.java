@@ -701,8 +701,7 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public MqttClient ping() {
-    if (Vertx.currentContext() == ctx) {
-
+    ctx.execute(() -> {
       MqttFixedHeader fixedHeader =
         new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0);
 
@@ -715,9 +714,7 @@ public class MqttClientImpl implements MqttClient {
       pings.add(new Ping(id));
 
       this.write(pingreq);
-    } else {
-      ctx.runOnContext(v -> ping());
-    }
+    });
     return this;
   }
 
