@@ -81,7 +81,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
 
       System.out.println("PUBLISHING");
-      client.setTimeToWait(10_000);
+      client.setTimeToWait(30_000);
       client.publish(MQTT_TOPIC, message, 0, false);
       System.out.println("PUBLISHED");
     } catch (MqttException e) {
