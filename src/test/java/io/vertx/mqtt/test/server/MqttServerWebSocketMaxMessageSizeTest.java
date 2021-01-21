@@ -17,8 +17,6 @@
 package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.DecoderException;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -37,8 +35,6 @@ import org.junit.runner.RunWith;
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
-
-  private static final Logger log = LoggerFactory.getLogger(MqttServerWebSocketMaxMessageSizeTest.class);
 
   private Async async;
 
@@ -69,14 +65,12 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
+      // The client seems to fail when sending IO and block forever (see MqttOutputStream)
+      // that makes the test hang forever
+      client.setTimeToWait(1000);
       client.publish(MQTT_TOPIC, message, 0, false);
-
-      context.assertTrue(true);
-
-    } catch (MqttException e) {
-
-      context.assertTrue(false);
-      e.printStackTrace();
+    } catch (MqttException ignore) {
+      // Ignore timeout
     }
   }
 
@@ -90,12 +84,9 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.exceptionHandler(t -> {
-      log.error("Exception raised", t);
-
       if (t instanceof DecoderException) {
         this.async.complete();
       }
-
     });
 
     endpoint.accept(false);
