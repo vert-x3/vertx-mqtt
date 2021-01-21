@@ -70,30 +70,28 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
       client.publish(MQTT_TOPIC, message, 0, false);
-
-      context.assertTrue(true);
-
     } catch (MqttException e) {
-
-      context.assertTrue(false);
-      e.printStackTrace();
+      context.fail();
     }
   }
 
   @After
   public void after(TestContext context) {
-
+    System.out.println("AFTER TEST");
     this.tearDown(context);
   }
 
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
+    System.out.println("START");
     endpoint.exceptionHandler(t -> {
+      System.out.println("GOT ERR " + t.getClass());
       log.error("Exception raised", t);
 
       if (t instanceof DecoderException) {
         this.async.complete();
+        System.out.println("COMPLETE");
       }
 
     });
