@@ -26,6 +26,7 @@ import io.vertx.ext.unit.junit.RepeatRule;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
+import io.vertx.mqtt.it.CustomPahoLogger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -68,6 +69,8 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
     this.async = context.async();
 
+    org.eclipse.paho.client.mqttv3.logging.LoggerFactory.setLogger(CustomPahoLogger.class.getName());
+
     try {
 
       MemoryPersistence persistence = new MemoryPersistence();
@@ -75,6 +78,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
       client.connect();
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
+
 
       System.out.println("PUBLISHING");
       client.setTimeToWait(10_000);
@@ -98,7 +102,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
     System.out.println("START");
     endpoint.exceptionHandler(t -> {
       System.out.println("GOT ERR " + t.getClass());
-      log.error("Exception raised", t);
+      // log.error("Exception raised", t);
 
       if (t instanceof DecoderException) {
         this.async.complete();
