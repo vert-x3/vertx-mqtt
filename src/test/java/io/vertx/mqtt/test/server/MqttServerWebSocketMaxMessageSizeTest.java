@@ -77,6 +77,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
       System.out.println("PUBLISHING");
+      client.setTimeToWait(10_000);
       client.publish(MQTT_TOPIC, message, 0, false);
       System.out.println("PUBLISHED");
     } catch (MqttException e) {
