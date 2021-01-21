@@ -100,7 +100,9 @@ public class CustomPahoLogger implements Logger {
 
   @Override
   public void fine(String sourceClass, String sourceMethod, String msg, Object[] inserts, Throwable ex) {
-
+    if (sourceClass.equals(CommsSender.class.getName())) {
+      System.out.println(sourceClass + "." + sourceMethod);
+    }
   }
 
   @Override
