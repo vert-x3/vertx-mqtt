@@ -23,20 +23,17 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
-public class MqttClientTopicValidationIT {
+public class MqttClientTopicValidationIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientTopicValidationIT.class);
   private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Client";
@@ -94,7 +91,7 @@ public class MqttClientTopicValidationIT {
     Async async = context.async(2);
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
       Assert.assertTrue(c.succeeded());
 
       client.publish(
@@ -125,7 +122,7 @@ public class MqttClientTopicValidationIT {
     Async async = context.async(2);
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
       Assert.assertTrue(c.succeeded());
 
       client.subscribe(

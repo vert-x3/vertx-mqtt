@@ -23,12 +23,10 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 import static org.junit.Assert.assertTrue;
@@ -36,8 +34,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * MQTT client testing about the maximum message size
  */
-@RunWith(VertxUnitRunner.class)
-public class MqttClientMaxMessageSizeIT {
+public class MqttClientMaxMessageSizeIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientMaxMessageSizeIT.class);
 
@@ -71,7 +68,7 @@ public class MqttClientMaxMessageSizeIT {
     });
 
     log.info("CONNECT --->");
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
       assertTrue(c.succeeded());
       log.info("CONNACK <---");
       client.subscribe(MQTT_TOPIC, 0);

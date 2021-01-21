@@ -20,7 +20,6 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
@@ -28,7 +27,6 @@ import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,15 +35,14 @@ import static org.junit.Assert.assertTrue;
 /**
  * MQTT client testing about connection
  */
-@RunWith(VertxUnitRunner.class)
-public class MqttClientConnectIT {
+public class MqttClientConnectIT extends MqttClientBaseIT {
 
   @Test
   public void connectDisconnect(TestContext context) throws InterruptedException {
     Async async = context.async();
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
 
       assertTrue(c.succeeded());
 
@@ -66,7 +63,7 @@ public class MqttClientConnectIT {
     options.setKeepAliveInterval(100);
     MqttClient client = MqttClient.create(Vertx.vertx(),options);
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
 
       assertTrue(c.succeeded());
 
@@ -93,7 +90,7 @@ public class MqttClientConnectIT {
       async.countDown();
     });
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
       assertTrue(c.succeeded());
     });
 

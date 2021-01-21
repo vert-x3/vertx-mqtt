@@ -21,12 +21,10 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -36,8 +34,7 @@ import static org.junit.Assert.*;
 /**
  * MQTT client testing on client identifier
  */
-@RunWith(VertxUnitRunner.class)
-public class MqttClientIdIT {
+public class MqttClientIdIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientIdIT.class);
 
@@ -51,7 +48,7 @@ public class MqttClientIdIT {
 
     assertThat(options.getClientId(), nullValue());
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
 
       assertTrue(c.succeeded());
       assertTrue(client.clientId().length() == 36);
@@ -74,7 +71,7 @@ public class MqttClientIdIT {
     options.setClientId("myClient");
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
 
       assertTrue(c.succeeded());
       assertThat(client.clientId(), notNullValue());

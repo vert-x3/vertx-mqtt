@@ -21,20 +21,17 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertTrue;
 
 /**
  * MQTT client testing on keep alive mechanism
  */
-@RunWith(VertxUnitRunner.class)
-public class MqttClientPingIT {
+public class MqttClientPingIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientPingIT.class);
 
@@ -57,7 +54,7 @@ public class MqttClientPingIT {
 
     count = 0;
     MqttClient client = MqttClient.create(vertx, options);
-    client.connect(TestUtil.BROKER_PORT,  TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v ->{
 
@@ -92,7 +89,7 @@ public class MqttClientPingIT {
 
     count = 0;
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
-    client.connect(TestUtil.BROKER_PORT,  TestUtil.BROKER_ADDRESS, c -> {
+    client.connect(port, host, c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v -> {
 
