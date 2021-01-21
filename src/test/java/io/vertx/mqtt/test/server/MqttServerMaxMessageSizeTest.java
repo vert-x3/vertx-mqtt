@@ -68,14 +68,11 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
+      // The client seems to fail when sending IO and block forever (see MqttOutputStream)
+      // that makes the test hang forever
+      client.setTimeToWait(1000);
       client.publish(MQTT_TOPIC, message, 0, false);
-
-      context.assertTrue(true);
-
-    } catch (MqttException e) {
-
-      context.assertTrue(false);
-      e.printStackTrace();
+    } catch (MqttException ignore) {
     }
   }
 
@@ -89,12 +86,9 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
     endpoint.exceptionHandler(t -> {
-      log.error("Exception raised", t);
-
       if (t instanceof DecoderException) {
         this.async.complete();
       }
-
     });
 
     endpoint.accept(false);
