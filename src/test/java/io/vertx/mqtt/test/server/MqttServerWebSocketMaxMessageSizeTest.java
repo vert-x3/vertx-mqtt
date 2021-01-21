@@ -36,6 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -82,17 +83,18 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
-      Thread t = Thread.currentThread();
-
       System.out.println("PUBLISHING");
       new Thread(() -> {
         if (!done.get()) {
           // Print dump
-          Exception e = new Exception();
-          e.setStackTrace(t.getStackTrace());
-          System.out.println("<DUMP>");
-          e.printStackTrace(System.out);
-          System.out.println("</DUMP>");
+          Set<Thread> threads = Thread.getAllStackTraces().keySet();
+          threads.forEach(thread -> {
+            Exception e = new Exception();
+            e.setStackTrace(thread.getStackTrace());
+            System.out.println("<DUMP thread='" + thread.getName() +  "'>");
+            e.printStackTrace(System.out);
+            System.out.println("</DUMP>");
+          });
         }
       }).start();
       client.setTimeToWait(30_000);
