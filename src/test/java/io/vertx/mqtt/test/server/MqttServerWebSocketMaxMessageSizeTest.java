@@ -63,7 +63,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
   @Rule
   public RepeatRule rule = new RepeatRule();
 
-  @Repeat(1000)
+  @Repeat(100)
   @Test
   public void publishBigMessage(TestContext context) {
 
