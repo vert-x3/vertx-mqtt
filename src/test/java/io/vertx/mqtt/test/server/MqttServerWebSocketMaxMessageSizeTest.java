@@ -21,6 +21,8 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.Repeat;
+import io.vertx.ext.unit.junit.RepeatRule;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
@@ -29,6 +31,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,6 +59,10 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
     this.setUp(context, options);
   }
 
+  @Rule
+  public RepeatRule rule = new RepeatRule();
+
+  // @Repeat(1000)
   @Test
   public void publishBigMessage(TestContext context) {
 
@@ -69,10 +76,13 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
+      System.out.println("PUBLISHING");
       client.publish(MQTT_TOPIC, message, 0, false);
+      System.out.println("PUBLISHED");
     } catch (MqttException e) {
-      context.fail();
+      context.fail(e);
     }
+    System.out.println("EXIT");
   }
 
   @After
