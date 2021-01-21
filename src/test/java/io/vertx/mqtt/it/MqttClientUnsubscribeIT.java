@@ -22,18 +22,15 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertTrue;
 
 /**
  * MQTT client testing on unsubscribing topics
  */
-@RunWith(VertxUnitRunner.class)
-public class MqttClientUnsubscribeIT {
+public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientUnsubscribeIT.class);
 
@@ -82,7 +79,7 @@ public class MqttClientUnsubscribeIT {
       });
     });
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(port, host, ar -> {
       assertTrue(ar.succeeded());
 
       client.subscribe(MQTT_TOPIC, qos.value(), ar1 -> {

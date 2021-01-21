@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  * MQTT client testing on publishing messages
  */
 @RunWith(VertxUnitRunner.class)
-public class MqttClientPublishIT {
+public class MqttClientPublishIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientPublishIT.class);
 
@@ -67,7 +67,7 @@ public class MqttClientPublishIT {
       async.countDown();
     });
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(port, host, ar -> {
 
       assertTrue(ar.succeeded());
 

@@ -23,10 +23,8 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.nio.charset.Charset;
 
@@ -35,8 +33,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * MQTT client testing on subscribing topics
  */
-@RunWith(VertxUnitRunner.class)
-public class MqttClientSubscribeIT {
+public class MqttClientSubscribeIT extends MqttClientBaseIT {
 
   private static final Logger log = LoggerFactory.getLogger(MqttClientSubscribeIT.class);
 
@@ -86,7 +83,7 @@ public class MqttClientSubscribeIT {
     MqttClient publisher = MqttClient.create(Vertx.vertx());
 
     // subscriber1 connects, subscribe and then un-unsubscribe, it won't get the published message
-    subscriber1.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    subscriber1.connect(port, host, ar -> {
 
       assertTrue(ar.succeeded());
 
@@ -112,7 +109,7 @@ public class MqttClientSubscribeIT {
     });
 
     // subscriber2 connects and subscribe, it will get the published message
-    subscriber2.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    subscriber2.connect(port, host, ar -> {
 
       assertTrue(ar.succeeded());
 
@@ -133,7 +130,7 @@ public class MqttClientSubscribeIT {
     // waiting for subscribers to subscribe and then the first client to un-subscribe, before publishing a message
     publish.await();
 
-    publisher.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    publisher.connect(port, host, ar -> {
 
       publisher.publish(
         MQTT_TOPIC,
@@ -165,7 +162,7 @@ public class MqttClientSubscribeIT {
         async.countDown();
       });
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(port, host, ar -> {
       assertTrue(ar.succeeded());
       client.subscribe(MQTT_TOPIC, qos.value());
       client.publish(
@@ -196,7 +193,7 @@ public class MqttClientSubscribeIT {
       async.countDown();
     });
 
-    client.connect(TestUtil.BROKER_PORT, TestUtil.BROKER_ADDRESS, ar -> {
+    client.connect(port, host, ar -> {
       assertTrue(ar.succeeded());
 
       client.subscribe(MQTT_TOPIC, qos.value(), done -> {

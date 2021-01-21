@@ -18,6 +18,7 @@ package io.vertx.mqtt.it;
 
 class TestUtil {
 
+/*
   static final String BROKER_ADDRESS;
   static final int BROKER_PORT;
 
@@ -25,4 +26,5 @@ class TestUtil {
     BROKER_ADDRESS = System.getProperty("mqtt.server.host");
     BROKER_PORT = Integer.parseInt(System.getProperty("mqtt.server.port"));
   }
+*/
 }
