@@ -36,6 +36,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * MQTT server testing about the maximum message size
  */
@@ -71,6 +73,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
     org.eclipse.paho.client.mqttv3.logging.LoggerFactory.setLogger(CustomPahoLogger.class.getName());
 
+    AtomicBoolean done = new AtomicBoolean();
     try {
 
       MemoryPersistence persistence = new MemoryPersistence();
@@ -79,13 +82,26 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
       byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
 
+      Thread t = Thread.currentThread();
 
       System.out.println("PUBLISHING");
+      new Thread(() -> {
+        if (!done.get()) {
+          // Print dump
+          Exception e = new Exception();
+          e.setStackTrace(t.getStackTrace());
+          System.out.println("<DUMP>");
+          e.printStackTrace(System.out);
+          System.out.println("</DUMP>");
+        }
+      }).start();
       client.setTimeToWait(30_000);
       client.publish(MQTT_TOPIC, message, 0, false);
       System.out.println("PUBLISHED");
     } catch (MqttException e) {
       context.fail(e);
+    } finally {
+      done.set(true);
     }
     System.out.println("EXIT");
   }
