@@ -109,6 +109,7 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
       <version>1.15.1</version>
     </dependency>
   </dependencies>
