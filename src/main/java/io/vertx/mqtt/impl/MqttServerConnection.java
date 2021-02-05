@@ -132,7 +132,7 @@ public class MqttServerConnection {
         case PUBLISH:
 
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), this.chctx.alloc());
+          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload());
 
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),

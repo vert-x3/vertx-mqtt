@@ -938,7 +938,7 @@ public class MqttClientImpl implements MqttClient {
         case PUBLISH:
 
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload(), chctx.alloc());
+          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload());
 
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),
