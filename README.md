@@ -1,6 +1,6 @@
 # Vert.x MQTT
 
-[![Build Status](https://travis-ci.org/vert-x3/vertx-mqtt.svg?branch=master)](https://travis-ci.org/vert-x3/vertx-mqtt)
+[![Build Status](https://github.com/vert-x3/vertx-mqtt/workflows/CI/badge.svg?branch=3.9)](https://github.com/vert-x3/vertx-mqtt/actions?query=workflow%3ACI)
 
 This project provides the following two different components :
 
