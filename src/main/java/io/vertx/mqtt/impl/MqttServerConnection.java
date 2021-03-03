@@ -22,6 +22,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttUnacceptableProtocolVersionException;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -40,6 +42,7 @@ import io.vertx.mqtt.MqttWill;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 
 import java.util.UUID;
 
@@ -147,8 +150,14 @@ public class MqttServerConnection {
         case PUBACK:
 
           io.netty.handler.codec.mqtt.MqttPubAckMessage mqttPubackMessage = (io.netty.handler.codec.mqtt.MqttPubAckMessage) mqttMessage;
-          this.handlePuback(mqttPubackMessage.variableHeader().messageId());
+          if(mqttPubackMessage.variableHeader() instanceof MqttPubReplyMessageVariableHeader) {
+            MqttPubReplyMessageVariableHeader variableHeader = (MqttPubReplyMessageVariableHeader) mqttPubackMessage.variableHeader();
+            this.handlePuback(variableHeader.messageId(), MqttPubAckReasonCode.valueOf(variableHeader.reasonCode()), variableHeader.properties());
+          } else {
+            this.handlePuback(mqttPubackMessage.variableHeader().messageId(), MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+          }
           break;
+
 
         case PUBREC:
 
@@ -338,11 +347,11 @@ public class MqttServerConnection {
    *
    * @param pubackMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  void handlePuback(int pubackMessageId) {
+  void handlePuback(int pubackMessageId, MqttPubAckReasonCode code, MqttProperties properties) {
 
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePuback(pubackMessageId);
+        this.endpoint.handlePuback(pubackMessageId, code, properties);
       }
     }
   }

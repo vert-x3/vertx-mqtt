@@ -61,6 +61,8 @@ public class MqttClientOptionsConverter {
             obj.setPassword((String)member.getValue());
           }
           break;
+        case "protocolVersion":
+          break;
         case "username":
           if (member.getValue() instanceof String) {
             obj.setUsername((String)member.getValue());
@@ -112,6 +114,9 @@ public class MqttClientOptionsConverter {
     json.put("maxMessageSize", obj.getMaxMessageSize());
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
+    }
+    if (obj.getProtocolVersion() != null) {
+      json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     if (obj.getUsername() != null) {
       json.put("username", obj.getUsername());

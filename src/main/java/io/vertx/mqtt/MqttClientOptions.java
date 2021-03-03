@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
@@ -46,6 +47,7 @@ public class MqttClientOptions extends NetClientOptions {
   public static final int DEFAULT_MAX_MESSAGE_SIZE = -1;
   public static final int DEFAULT_ACK_TIMEOUT = -1;
 
+  private MqttVersion protocolVersion = MqttVersion.MQTT_3_1_1;
   private String clientId;
   private String username;
   private String password;
@@ -86,6 +88,7 @@ public class MqttClientOptions extends NetClientOptions {
    */
   public MqttClientOptions(MqttClientOptions other) {
     super(other);
+    this.protocolVersion = other.protocolVersion;
     this.clientId = other.clientId;
     this.username = other.username;
     this.password = other.password;
@@ -101,6 +104,10 @@ public class MqttClientOptions extends NetClientOptions {
     this.maxInflightQueue = other.maxInflightQueue;
     this.maxMessageSize = other.maxMessageSize;
     this.ackTimeout = other.ackTimeout;
+  }
+
+  public MqttVersion getProtocolVersion() {
+    return protocolVersion;
   }
 
   /**
@@ -515,7 +522,8 @@ public class MqttClientOptions extends NetClientOptions {
   @Override
   public String toString() {
     return "Options {" +
-      "clientId='" + clientId + '\'' +
+      "version=\'" + protocolVersion + "\'" +
+      ", clientId='" + clientId + '\'' +
       ", username='" + username + '\'' +
       ", password='" + password + '\'' +
       ", willTopic='" + willTopic + '\'' +

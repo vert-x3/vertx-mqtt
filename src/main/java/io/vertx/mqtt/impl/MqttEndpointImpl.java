@@ -24,6 +24,8 @@ import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
@@ -40,6 +42,8 @@ import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.MqttWill;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 
 import javax.net.ssl.SSLSession;
 import java.util.List;
@@ -74,6 +78,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private Handler<io.vertx.mqtt.messages.MqttPublishMessage> publishHandler;
   // handler to call when a puback message comes in
   private Handler<Integer> pubackHandler;
+  private Handler<MqttPubAckMessage> pubackHandlerWithMessage;
   // handler to call when a pubrec message comes in
   private Handler<Integer> pubrecHandler;
   // handler to call when a pubrel message comes in
@@ -242,6 +247,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
+  public MqttEndpointImpl publishAcknowledgeHandlerWithMessage(Handler<MqttPubAckMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.pubackHandlerWithMessage = handler;
+      return this;
+    }
+  }
+
+
   public MqttEndpointImpl publishReceivedHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
@@ -377,11 +391,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publishAcknowledge(int publishMessageId) {
+    return publishAcknowledge(publishMessageId, MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+  }
+
+  public MqttEndpointImpl publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties
+    properties) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(publishMessageId);
+    MqttPubReplyMessageVariableHeader variableHeader =
+      new MqttPubReplyMessageVariableHeader(publishMessageId, reasonCode.value(), properties);
 
     io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -553,12 +572,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * Used for calling the puback handler when the remote MQTT client acknowledge a QoS 1 message with puback
    *
    * @param pubackMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT properties
    */
-  void handlePuback(int pubackMessageId) {
+  void handlePuback(int pubackMessageId, MqttPubAckReasonCode code, MqttProperties properties) {
 
     synchronized (this.conn) {
       if (this.pubackHandler != null) {
         this.pubackHandler.handle(pubackMessageId);
+      }
+      if (this.pubackHandlerWithMessage != null) {
+        this.pubackHandlerWithMessage.handle(MqttPubAckMessage.create(pubackMessageId, code, properties));
       }
     }
   }

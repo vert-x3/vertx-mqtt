@@ -17,7 +17,9 @@
 package io.vertx.mqtt.messages;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.mqtt.messages.impl.MqttConnAckMessageImpl;
 
@@ -39,6 +41,19 @@ public interface MqttConnAckMessage {
   }
 
   /**
+   * Create a concrete instance of a Vert.x connack message
+   *
+   * @param code  return code from the connection request
+   * @param isSessionPresent  is an old session is present
+   * @param properties MQTT properties
+   * @return
+   */
+  @GenIgnore
+  static MqttConnAckMessage create(MqttConnectReturnCode code, boolean isSessionPresent, MqttProperties properties) {
+    return new MqttConnAckMessageImpl(code, isSessionPresent, properties);
+  }
+
+  /**
    * @return  return code from the connection request
    */
   @CacheReturn
@@ -49,4 +64,8 @@ public interface MqttConnAckMessage {
    */
   @CacheReturn
   boolean isSessionPresent();
+
+  @GenIgnore
+  @CacheReturn
+  MqttProperties properties();
 }

@@ -298,8 +298,8 @@ public class MqttClientImpl implements MqttClient {
             0);
 
           MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
-            PROTOCOL_NAME,
-            PROTOCOL_VERSION,
+            options.getProtocolVersion().protocolName(),
+            options.getProtocolVersion().protocolLevel(),
             options.hasUsername(),
             options.hasPassword(),
             options.isWillRetain(),
