@@ -17,6 +17,7 @@
 package io.vertx.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -27,9 +28,16 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.MqttPubCompMessage;
+import io.vertx.mqtt.messages.MqttPubRecMessage;
+import io.vertx.mqtt.messages.MqttPubRelMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 
 import javax.net.ssl.SSLSession;
 import java.util.List;
@@ -223,6 +231,16 @@ public interface MqttEndpoint {
   MqttEndpoint publishAcknowledgeHandler(Handler<Integer> handler);
 
   /**
+   * Set the puback handler on the MQTT endpoint. This handler is called when a PUBACK
+   * message is received by the remote MQTT client
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint publishAcknowledgeHandlerWithMessage(Handler<MqttPubAckMessage> handler);
+
+  /**
    * Set the pubrec handler on the MQTT endpoint. This handler is called when a PUBREC
    * message is received by the remote MQTT client
    *
@@ -231,6 +249,16 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publishReceivedHandler(Handler<Integer> handler);
+
+  /**
+   * Set the pubrec handler on the MQTT endpoint. This handler is called when a PUBREC
+   * message is received by the remote MQTT client
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint publishReceivedHandlerWithMessage(Handler<MqttPubRecMessage> handler);
 
   /**
    * Set the pubrel handler on the MQTT endpoint. This handler is called when a PUBREL
@@ -243,6 +271,17 @@ public interface MqttEndpoint {
   MqttEndpoint publishReleaseHandler(Handler<Integer> handler);
 
   /**
+   * Set the pubrel handler on the MQTT endpoint. This handler is called when a PUBREL
+   * message is received by the remote MQTT client
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint publishReleaseHandlerWithMessage(Handler<MqttPubRelMessage> handler);
+
+
+  /**
    * Set the pubcomp handler on the MQTT endpoint. This handler is called when a PUBCOMP
    * message is received by the remote MQTT client
    *
@@ -251,6 +290,16 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publishCompletionHandler(Handler<Integer> handler);
+
+  /**
+   * Set the pubcomp handler on the MQTT endpoint. This handler is called when a PUBCOMP
+   * message is received by the remote MQTT client
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint publishCompletionHandlerWithMessage(Handler<MqttPubCompMessage> handler);
 
   /**
    * Set the pingreq handler on the MQTT endpoint. This handler is called when a PINGREQ
@@ -345,6 +394,18 @@ public interface MqttEndpoint {
   MqttEndpoint publishReceived(int publishMessageId);
 
   /**
+   * Sends the PUBREC message to the remote MQTT client
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode code of the outcome
+   * @param properties MQTT properties
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  @Fluent
+  MqttEndpoint publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties);
+
+  /**
    * Sends the PUBREL message to the remote MQTT client
    *
    * @param publishMessageId identifier of the PUBLISH message to acknowledge
@@ -354,6 +415,18 @@ public interface MqttEndpoint {
   MqttEndpoint publishRelease(int publishMessageId);
 
   /**
+   * Sends the PUBREL message to the remote MQTT client
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode reason code
+   * @param properties MQTT message properties
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  @GenIgnore
+  MqttEndpoint publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties);
+
+  /**
    * Sends the PUBCOMP message to the remote MQTT client
    *
    * @param publishMessageId identifier of the PUBLISH message to acknowledge
@@ -361,6 +434,18 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publishComplete(int publishMessageId);
+
+  /**
+   * Sends the PUBCOMP message to the remote MQTT client
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode reason code
+   * @param properties MQTT message properties
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  @GenIgnore
+  MqttEndpoint publishComplete(int publishMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties);
 
   /**
    * Sends the PUBLISH message to the remote MQTT client

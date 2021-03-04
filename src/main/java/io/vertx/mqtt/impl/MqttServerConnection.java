@@ -43,6 +43,9 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 
 import java.util.UUID;
 
@@ -161,20 +164,20 @@ public class MqttServerConnection {
 
         case PUBREC:
 
-          int pubrecMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-          this.handlePubrec(pubrecMessageId);
+          MqttPubReplyMessageVariableHeader pubrecVariableHeader = ((io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader) mqttMessage.variableHeader());
+          this.handlePubrec(pubrecVariableHeader.messageId(), MqttPubRecReasonCode.valueOf(pubrecVariableHeader.reasonCode()), pubrecVariableHeader.properties());
           break;
 
         case PUBREL:
 
-          int pubrelMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-          this.handlePubrel(pubrelMessageId);
+          MqttPubReplyMessageVariableHeader pubrelVariableHeader = (io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader) mqttMessage.variableHeader();
+          this.handlePubrel(pubrelVariableHeader.messageId(), MqttPubRelReasonCode.valueOf(pubrelVariableHeader.reasonCode()), pubrelVariableHeader.properties());
           break;
 
         case PUBCOMP:
 
-          int pubcompMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-          this.handlePubcomp(pubcompMessageId);
+          MqttPubReplyMessageVariableHeader pubcompVariableHeader = (io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader) mqttMessage.variableHeader();
+          this.handlePubcomp(pubcompVariableHeader.messageId(), MqttPubCompReasonCode.valueOf(pubcompVariableHeader.reasonCode()), pubcompVariableHeader.properties());
           break;
 
         case PINGREQ:
@@ -360,12 +363,14 @@ public class MqttServerConnection {
    * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
    *
    * @param pubrecMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT properties
    */
-  void handlePubrec(int pubrecMessageId) {
+  void handlePubrec(int pubrecMessageId, MqttPubRecReasonCode code, MqttProperties properties) {
 
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePubrec(pubrecMessageId);
+        this.endpoint.handlePubrec(pubrecMessageId, code, properties);
       }
     }
   }
@@ -375,11 +380,10 @@ public class MqttServerConnection {
    *
    * @param pubrelMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  void handlePubrel(int pubrelMessageId) {
-
+  void handlePubrel(int pubrelMessageId, MqttPubRelReasonCode code, MqttProperties properties) {
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePubrel(pubrelMessageId);
+        this.endpoint.handlePubrel(pubrelMessageId, code, properties);
       }
     }
   }
@@ -388,12 +392,13 @@ public class MqttServerConnection {
    * Used for calling the pubcomp handler when the remote MQTT client acknowledge a QoS 2 message with pubcomp
    *
    * @param pubcompMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT message properties
    */
-  void handlePubcomp(int pubcompMessageId) {
-
+  void handlePubcomp(int pubcompMessageId, MqttPubCompReasonCode code, MqttProperties properties) {
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePubcomp(pubcompMessageId);
+        this.endpoint.handlePubcomp(pubcompMessageId, code, properties);
       }
     }
   }
