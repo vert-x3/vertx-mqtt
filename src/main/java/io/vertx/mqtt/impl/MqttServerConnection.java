@@ -42,6 +42,7 @@ import io.vertx.mqtt.MqttWill;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
@@ -187,7 +188,10 @@ public class MqttServerConnection {
 
         case DISCONNECT:
 
-          this.handleDisconnect();
+          io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader disconnectVariableHeader =
+            (io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader) mqttMessage.variableHeader();
+          this.handleDisconnect(MqttDisconnectReasonCode.valueOf(disconnectVariableHeader.reasonCode()),
+            disconnectVariableHeader.properties());
           break;
 
         default:
@@ -417,12 +421,14 @@ public class MqttServerConnection {
 
   /**
    * Used for calling the disconnect handler when the remote MQTT client disconnects
+   *
+   * @param code reason code
+   * @param properties MQTT message properties
    */
-  void handleDisconnect() {
-
+  void handleDisconnect(MqttDisconnectReasonCode code, MqttProperties properties) {
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handleDisconnect();
+        this.endpoint.handleDisconnect(code, properties);
       }
     }
   }

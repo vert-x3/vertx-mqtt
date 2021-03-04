@@ -14,38 +14,43 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt;
+package io.vertx.mqtt.messages;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.impl.MqttDisconnectMessageImpl;
 
 /**
- * Represents a subscription to a topic
+ * Represents an MQTT CONNACK message
  */
 @VertxGen
-public interface MqttTopicSubscription {
+public interface MqttDisconnectMessage {
 
   /**
-   * @return  Subscription topic name
-   */
-  @CacheReturn
-  String topicName();
-
-  /**
-   * @return  Quality of Service level for the subscription
-   */
-  @CacheReturn
-  MqttQoS qualityOfService();
-
-  /**
-   * Subscription option
+   * Create a concrete instance of a Vert.x disconnect message
+   *
+   * @param code  return code from the disconnect request
+   * @param properties MQTT properties of the disconnect message
    * @return
    */
   @GenIgnore
-  @CacheReturn
-  MqttSubscriptionOption subscriptionOption();
+  static MqttDisconnectMessage create(MqttDisconnectReasonCode code, MqttProperties properties) {
+    return new MqttDisconnectMessageImpl(code, properties);
+  }
 
+  /**
+   * @return  return code from the connection request
+   */
+  @CacheReturn
+  MqttDisconnectReasonCode code();
+
+  /**
+   * @return MQTT properties
+   */
+  @GenIgnore
+  @CacheReturn
+  MqttProperties properties();
 }

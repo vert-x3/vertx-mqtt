@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.messages.impl;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.impl.MqttTopicSubscriptionImpl;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
@@ -30,6 +31,7 @@ public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
 
   private final int messageId;
   private final List<MqttTopicSubscription> topicSubscriptions;
+  private final MqttProperties properties;
 
   /**
    * Constructor
@@ -37,15 +39,14 @@ public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
    * @param messageId          message identifier
    * @param topicSubscriptions list with topics and related quality of service levels (from Netty)
    */
-  public MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
-
+  public MqttSubscribeMessageImpl(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions, MqttProperties properties) {
     this.messageId = messageId;
     this.topicSubscriptions = topicSubscriptions.stream().map(ts -> {
-
-      return new MqttTopicSubscriptionImpl(ts.topicName(), ts.qualityOfService());
-
+      return new MqttTopicSubscriptionImpl(ts.topicName(), ts.option());
     }).collect(Collectors.toList());
+    this.properties = properties;
   }
+
 
   public int messageId() {
     return this.messageId;
@@ -53,5 +54,9 @@ public class MqttSubscribeMessageImpl implements MqttSubscribeMessage {
 
   public List<MqttTopicSubscription> topicSubscriptions() {
     return this.topicSubscriptions;
+  }
+
+  public MqttProperties properties() {
+    return this.properties;
   }
 }

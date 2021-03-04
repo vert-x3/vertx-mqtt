@@ -17,6 +17,7 @@
 package io.vertx.mqtt.impl;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
 import io.vertx.mqtt.MqttTopicSubscription;
 
 /**
@@ -25,7 +26,7 @@ import io.vertx.mqtt.MqttTopicSubscription;
 public class MqttTopicSubscriptionImpl implements MqttTopicSubscription {
 
   private final String topicName;
-  private final MqttQoS qualityOfService;
+  private final MqttSubscriptionOption subscriptionOption;
 
   /**
    * Constructor
@@ -34,15 +35,24 @@ public class MqttTopicSubscriptionImpl implements MqttTopicSubscription {
    * @param qualityOfService quality of service level
    */
   public MqttTopicSubscriptionImpl(String topicName, MqttQoS qualityOfService) {
-    this.topicName = topicName;
-    this.qualityOfService = qualityOfService;
+    this(topicName, MqttSubscriptionOption.onlyFromQos(qualityOfService));
   }
+
+  public MqttTopicSubscriptionImpl(String topicName, MqttSubscriptionOption subscriptionOption) {
+    this.topicName = topicName;
+    this.subscriptionOption = subscriptionOption;
+  }
+
 
   public String topicName() {
     return this.topicName;
   }
 
   public MqttQoS qualityOfService() {
-    return this.qualityOfService;
+    return subscriptionOption.qos();
+  }
+
+  public MqttSubscriptionOption subscriptionOption() {
+    return subscriptionOption;
   }
 }

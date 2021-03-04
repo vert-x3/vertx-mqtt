@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.messages;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
@@ -40,12 +41,33 @@ public interface MqttSubscribeMessage extends MqttMessage {
   @GenIgnore
   static MqttSubscribeMessage create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions) {
 
-    return new MqttSubscribeMessageImpl(messageId, topicSubscriptions);
+    return new MqttSubscribeMessageImpl(messageId, topicSubscriptions, MqttProperties.NO_PROPERTIES);
   }
+
+  /**
+   * Create a concrete instance of a Vert.x subscribe message
+   *
+   * @param messageId          message identifier
+   * @param topicSubscriptions list with topics and related quality of service levels (from Netty)
+   * @param properties MQTT message properties
+   * @return Vert.x subscribe message
+   */
+  @GenIgnore
+  static MqttSubscribeMessage create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions, MqttProperties properties) {
+    return new MqttSubscribeMessageImpl(messageId, topicSubscriptions, properties);
+  }
+
 
   /**
    * @return  List with topics and related quolity of service levels
    */
   @CacheReturn
   List<MqttTopicSubscription> topicSubscriptions();
+
+  /**
+   * @return MQTT properties
+   */
+  @GenIgnore
+  @CacheReturn
+  MqttProperties properties();
 }

@@ -28,6 +28,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.mqtt.messages.MqttDisconnectMessage;
 import io.vertx.mqtt.messages.MqttPubAckMessage;
 import io.vertx.mqtt.messages.MqttPubCompMessage;
 import io.vertx.mqtt.messages.MqttPubRecMessage;
@@ -35,9 +36,12 @@ import io.vertx.mqtt.messages.MqttPubRelMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttUnsubAckReasonCode;
 
 import javax.net.ssl.SSLSession;
 import java.util.List;
@@ -189,6 +193,16 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint disconnectHandler(Handler<Void> handler);
+
+  /**
+   * Set a disconnect handler on the MQTT endpoint. This handler is called when a DISCONNECT
+   * message is received by the remote MQTT client
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint disconnectHandlerWithMessage(Handler<MqttDisconnectMessage> handler);
 
   /**
    * Set a subscribe handler on the MQTT endpoint. This handler is called when a SUBSCRIBE
@@ -347,6 +361,18 @@ public interface MqttEndpoint {
   MqttEndpoint accept(boolean sessionPresent);
 
   /**
+   * Sends the CONNACK message to the remote MQTT client with "connection accepted"
+   * return code. See {@link #reject(MqttConnectReturnCode)} for refusing connection
+   *
+   * @param sessionPresent  if a previous session is present
+   * @param properties CONNACK message properties (MQTT5)
+   * @return  a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  @Fluent
+  MqttEndpoint accept(boolean sessionPresent, MqttProperties properties);
+
+  /**
    * Sends the CONNACK message to the remote MQTT client rejecting the connection
    * request with specified return code. See {@link #accept(boolean)} for accepting connection
    *
@@ -367,6 +393,18 @@ public interface MqttEndpoint {
   MqttEndpoint subscribeAcknowledge(int subscribeMessageId, List<MqttQoS> grantedQoSLevels);
 
   /**
+   * Sends the SUBACK message to the remote MQTT client
+   *
+   * @param subscribeMessageId identifier of the SUBSCRIBE message to acknowledge
+   * @param reasonCodes reason codes
+   * @param properties MQTT message properties
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  @GenIgnore
+  MqttEndpoint subscribeAcknowledge(int subscribeMessageId, List<MqttSubAckReasonCode> reasonCodes, MqttProperties properties);
+
+  /**
    * Sends the UNSUBACK message to the remote MQTT client
    *
    * @param unsubscribeMessageId identifier of the UNSUBSCRIBE message to acknowledge
@@ -374,6 +412,18 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint unsubscribeAcknowledge(int unsubscribeMessageId);
+
+  /**
+   * Sends the UNSUBACK message to the remote MQTT client
+   *
+   * @param unsubscribeMessageId identifier of the UNSUBSCRIBE message to acknowledge
+   * @param reasonCodes reason codes
+   * @param properties MQTT message properties
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  @GenIgnore
+  MqttEndpoint unsubscribeAcknowledge(int unsubscribeMessageId, List<MqttUnsubAckReasonCode> reasonCodes, MqttProperties properties);
 
   /**
    * Sends the PUBACK message to the remote MQTT client
@@ -500,4 +550,16 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint pong();
+
+
+  /**
+   * Sends the DISCONNECT message to the remote MQTT client
+   *
+   * @param code reason code
+   * @param properties MQTT message properties
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  @Fluent
+  MqttEndpoint disconnect(MqttDisconnectReasonCode code, MqttProperties properties);
 }
