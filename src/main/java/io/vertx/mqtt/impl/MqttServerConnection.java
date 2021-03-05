@@ -25,6 +25,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttUnacceptableProtocolVersionException;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -292,7 +293,11 @@ public class MqttServerConnection {
       if (this.exceptionHandler != null) {
         this.exceptionHandler.handle(new VertxException("With zero-length client-id, clean session MUST be true"));
       }
-      this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+      if(endpoint.protocolVersion() >= MqttVersion.MQTT_5.protocolLevel()) {
+        this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID);
+      } else {
+        this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+      }
     } else {
 
       // an exception at connection level is propagated to the endpoint
