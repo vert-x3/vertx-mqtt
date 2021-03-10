@@ -99,7 +99,7 @@ public class MqttServerConnection {
       if (result.isFailure()) {
         Throwable cause = result.cause();
         if (cause instanceof MqttUnacceptableProtocolVersionException) {
-          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0);
+          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0, MqttProperties.NO_PROPERTIES);
           endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION);
         } else {
           chctx.pipeline().fireExceptionCaught(result.cause());
@@ -226,7 +226,8 @@ public class MqttServerConnection {
         msg.payload().willTopic(),
         msg.payload().willMessageInBytes() != null ? Buffer.buffer(msg.payload().willMessageInBytes()) : null,
         msg.variableHeader().willQos(),
-        msg.variableHeader().isWillRetain());
+        msg.variableHeader().isWillRetain(),
+        msg.payload().willProperties());
 
     // retrieve authorization information from CONNECT message
     MqttAuth auth = (msg.variableHeader().hasUserName() &&
@@ -258,7 +259,8 @@ public class MqttServerConnection {
         msg.variableHeader().isCleanSession(),
         msg.variableHeader().version(),
         msg.variableHeader().name(),
-        msg.variableHeader().keepAliveTimeSeconds());
+        msg.variableHeader().keepAliveTimeSeconds(),
+        msg.variableHeader().properties());
 
     // remove the idle state handler for timeout on CONNECT
     chctx.pipeline().remove("idle");

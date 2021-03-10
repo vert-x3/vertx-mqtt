@@ -83,6 +83,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final int protocolVersion;
   private final String protocolName;
   private final int keepAliveTimeoutSeconds;
+  private final MqttProperties connectProperties;
 
   // handler to call when a subscribe request comes in
   private Handler<io.vertx.mqtt.messages.MqttSubscribeMessage> subscribeHandler;
@@ -134,8 +135,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param protocolVersion      protocol version required by the client
    * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
+   * @param connectProperties    MQTT properties of the CONNECT message
    */
-  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds) {
+  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds, MqttProperties connectProperties) {
     this.conn = conn;
     this.clientIdentifier = clientIdentifier;
     this.auth = auth;
@@ -144,6 +146,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.protocolVersion = protocolVersion;
     this.protocolName = protocolName;
     this.keepAliveTimeoutSeconds = keepAliveTimeoutSeconds;
+    this.connectProperties = connectProperties;
   }
 
   public String clientIdentifier() {
@@ -210,6 +213,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
     synchronized (this.conn) {
       return this.isConnected;
     }
+  }
+
+  @Override
+  public MqttProperties connectProperties() {
+    return this.connectProperties;
   }
 
   public MqttEndpoint setClientIdentifier(String clientIdentifier) {
@@ -558,6 +566,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, messageId, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties) {
     if (messageId > MAX_MESSAGE_ID || messageId < 0) {
       throw new IllegalArgumentException("messageId must be non-negative integer not larger than " + MAX_MESSAGE_ID);
     }
@@ -565,7 +578,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
     MqttPublishVariableHeader variableHeader =
-      new MqttPublishVariableHeader(topic, messageId);
+      new MqttPublishVariableHeader(topic, messageId, properties);
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
 
@@ -575,8 +588,26 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   @Override
-  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler) {
-    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId);
+  public MqttEndpointImpl publish(String topic,
+                                  Buffer payload,
+                                  MqttQoS qosLevel,
+                                  boolean isDup,
+                                  boolean isRetain,
+                                  int messageId,
+                                  Handler<AsyncResult<Integer>> publishSentHandler) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, messageId, MqttProperties.NO_PROPERTIES, publishSentHandler);
+  }
+
+  @Override
+  public MqttEndpointImpl publish(String topic,
+                                  Buffer payload,
+                                  MqttQoS qosLevel,
+                                  boolean isDup,
+                                  boolean isRetain,
+                                  int messageId,
+                                  MqttProperties properties,
+                                  Handler<AsyncResult<Integer>> publishSentHandler) {
+    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId, properties);
     if (publishSentHandler != null) {
       fut.onComplete(publishSentHandler);
     }

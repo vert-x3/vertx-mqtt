@@ -105,7 +105,7 @@ public class Mqtt5ServerEndpointStatusTest extends MqttServerBaseTest {
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      Mqtt5ProbeCallback callback = new Mqtt5ProbeCallback();
+      Mqtt5ProbeCallback callback = new Mqtt5ProbeCallback(context);
       client.setCallback(callback);
       client.connect();
 
@@ -119,6 +119,7 @@ public class Mqtt5ServerEndpointStatusTest extends MqttServerBaseTest {
       async.await();
 
       context.assertTrue(!client.isConnected() && !this.endpoint.isConnected());
+      System.out.println("***** tick2="+ System.currentTimeMillis());
       context.assertNotNull(callback.getDisconnectResponse());
       context.assertEquals(callback.getDisconnectResponse().getReturnCode(), MqttReturnCode.RETURN_CODE_SERVER_SHUTTING_DOWN);
 

@@ -175,6 +175,13 @@ public interface MqttEndpoint {
    */
   boolean isConnected();
 
+
+  /**
+   * @return MQTT properties of the CONNECT message
+   */
+  @GenIgnore
+  MqttProperties connectProperties();
+
   /**
    * Set client identifier if not provided by the remote MQTT client (zero-bytes)
    *
@@ -529,6 +536,12 @@ public interface MqttEndpoint {
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId);
 
   /**
+   * Like {@link #publish(String, Buffer, MqttQoS, boolean, boolean, int, properties, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  @GenIgnore
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties);
+
+  /**
    * Sends the PUBLISH message to the remote MQTT server explicitly specifying the messageId
    *
    * @param topic              topic on which the message is published
@@ -542,6 +555,30 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler);
+
+  /**
+   * Sends the PUBLISH message to the remote MQTT server explicitly specifying the messageId
+   *
+   * @param topic              topic on which the message is published
+   * @param payload            message payload
+   * @param qosLevel           QoS level
+   * @param isDup              if the message is a duplicate
+   * @param isRetain           if the message needs to be retained
+   * @param messageId          message ID
+   * @param properties         PUBLISH message properties
+   * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore
+  MqttEndpoint publish(String topic,
+                       Buffer payload,
+                       MqttQoS qosLevel,
+                       boolean isDup,
+                       boolean isRetain,
+                       int messageId,
+                       MqttProperties properties,
+                       Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
    * Sends the PINGRESP message to the remote MQTT client

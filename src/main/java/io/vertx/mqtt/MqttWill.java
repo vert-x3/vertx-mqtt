@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -34,6 +35,7 @@ public class MqttWill {
   private final Buffer willMessage;
   private final int willQos;
   private final boolean isWillRetain;
+  private final MqttProperties willProperties;
 
   /**
    * Constructor
@@ -43,13 +45,15 @@ public class MqttWill {
    * @param willMessage  payload of the will
    * @param willQos      qos level for the will
    * @param isWillRetain if the will message must be retained
+   * @param willProperties MQTT properties of the last will message
    */
-  public MqttWill(boolean isWillFlag, String willTopic, Buffer willMessage, int willQos, boolean isWillRetain) {
+  public MqttWill(boolean isWillFlag, String willTopic, Buffer willMessage, int willQos, boolean isWillRetain, MqttProperties willProperties) {
     this.isWillFlag = isWillFlag;
     this.willTopic = willTopic;
     this.willMessage = willMessage;
     this.willQos = willQos;
     this.isWillRetain = isWillRetain;
+    this.willProperties = willProperties;
   }
 
   /**
@@ -63,6 +67,8 @@ public class MqttWill {
     this.willMessage = json.getBuffer("willMessage");
     this.willQos = json.getInteger("willQos");
     this.isWillRetain = json.getBoolean("isWillRetain");
+    //TODO deserialize properties
+    this.willProperties = MqttProperties.NO_PROPERTIES;
   }
 
   /**
@@ -108,6 +114,13 @@ public class MqttWill {
   }
 
   /**
+   * @return MQTT properties of the last will message
+   */
+  public MqttProperties getWillProperties()  {
+    return this.willProperties;
+  }
+
+  /**
    * Convert instance in JSON
    *
    * @return JSON representation
@@ -119,6 +132,7 @@ public class MqttWill {
     json.put("willMessage", this.willMessage);
     json.put("willQos", this.willQos);
     json.put("isWillRetain", this.isWillRetain);
+    //TODO add will properties
     return json;
   }
 }

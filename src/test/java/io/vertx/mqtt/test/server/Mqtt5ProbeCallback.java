@@ -1,5 +1,7 @@
 package io.vertx.mqtt.test.server;
 
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
@@ -9,10 +11,16 @@ import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
 public class Mqtt5ProbeCallback implements MqttCallback {
   private MqttDisconnectResponse disconnectResponse;
+  private Async disconnectAsync;
+
+  public Mqtt5ProbeCallback(TestContext context) {
+    this.disconnectAsync = context.async();
+  }
 
   @Override
   public void disconnected(MqttDisconnectResponse disconnectResponse) {
     this.disconnectResponse = disconnectResponse;
+    disconnectAsync.complete();
   }
 
   @Override
@@ -41,6 +49,7 @@ public class Mqtt5ProbeCallback implements MqttCallback {
   }
 
   public MqttDisconnectResponse getDisconnectResponse() {
+    disconnectAsync.await(1000L);
     return disconnectResponse;
   }
 }

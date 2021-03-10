@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.test.server;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -29,10 +30,13 @@ import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
+import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +53,11 @@ public class Mqtt5ServerPublishTest extends MqttServerBaseTest {
 
   private String topic;
   private String message;
+  private MqttProperties properties;
+
+  private AtomicInteger nextMessageId = new AtomicInteger(0);
+
+  private AtomicReference<org.eclipse.paho.mqttv5.common.packet.MqttProperties> lastMessageProperties = new AtomicReference<>(null);
 
   @Before
   public void before(TestContext context) {
@@ -64,26 +73,47 @@ public class Mqtt5ServerPublishTest extends MqttServerBaseTest {
 
   @Test
   public void publishQos0(TestContext context) {
+    MqttProperties props = new MqttProperties();
+    String expectedContentType = "plain/text";
+    props.add(new MqttProperties.StringProperty(MqttProperties.MqttPropertyType.CONTENT_TYPE.value(), expectedContentType));
 
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0, props);
+
+    context.assertNotNull(lastMessageProperties.get());
+    context.assertEquals(expectedContentType, lastMessageProperties.get().getContentType());
   }
 
   @Test
   public void publishQos1(TestContext context) {
+    MqttProperties props = new MqttProperties();
+    props.add(new MqttProperties.UserProperty("priority", "fast"));
 
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1, props);
+
+    context.assertNotNull(lastMessageProperties.get());
+    UserProperty userProp = lastMessageProperties.get().getUserProperties().get(0);
+    context.assertNotNull(userProp);
+    context.assertEquals(userProp.getKey(), "priority");
+    context.assertEquals(userProp.getValue(), "fast");
   }
 
   @Test
   public void publishQos2(TestContext context) {
+    MqttProperties props = new MqttProperties();
+    int expectedMessageExpiry = 234;
+    props.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.PUBLICATION_EXPIRY_INTERVAL.value(), expectedMessageExpiry));
 
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2, props);
+
+    context.assertNotNull(lastMessageProperties.get());
+    context.assertEquals((long)expectedMessageExpiry, lastMessageProperties.get().getMessageExpiryInterval());
   }
 
-  private void publish(TestContext context, String topic, String message, int qos) {
+  private void publish(TestContext context, String topic, String message, int qos, MqttProperties properties) {
 
     this.topic = topic;
     this.message = message;
+    this.properties = properties;
 
     this.async = context.async(2);
 
@@ -98,10 +128,12 @@ public class Mqtt5ServerPublishTest extends MqttServerBaseTest {
         @Override
         public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
 
-          log.info("Just received message [" + mqttMessage.toString() + "] on topic [" + topic + "] with QoS [" + mqttMessage.getQos() + "]");
+          log.info("Just received message [" + mqttMessage.toString() + "] on topic [" + topic + "] with QoS [" + mqttMessage.getQos() + "]"+ this);
 
+          lastMessageProperties.set(mqttMessage.getProperties());
           if (mqttMessage.getQos() == 0)
             async.complete();
+
         }
       }});
 
@@ -125,9 +157,15 @@ public class Mqtt5ServerPublishTest extends MqttServerBaseTest {
           .map(MqttTopicSubscription::qualityOfService)
           .collect(Collectors.toList()));
 
-      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false, publishSent -> {
+      endpoint.publish(this.topic,
+        Buffer.buffer(this.message),
+        subscribe.topicSubscriptions().get(0).qualityOfService(),
+        false,
+        false,
+        nextMessageId.getAndIncrement(),
+        properties,
+        publishSent -> {
         context.assertTrue(publishSent.succeeded());
-        this.async.complete();
       });
     }).publishAcknowledgeHandler(messageId -> {
 

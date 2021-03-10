@@ -17,6 +17,7 @@
 package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -77,7 +78,18 @@ public class Mqtt5ServerConnectionTest extends MqttServerBaseTest {
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.connect();
+
+      MqttConnectionOptions options = new MqttConnectionOptions();
+      int expectedExpiryInterval = 123;
+      options.setSessionExpiryInterval((long)expectedExpiryInterval);
+      client.connect(options);
+
+      int actualExpiryInterval = (Integer)endpoint.connectProperties().getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value()).value();
+      context.assertEquals(actualExpiryInterval, expectedExpiryInterval);
+
+      context.assertEquals(endpoint.protocolName(), MqttVersion.MQTT_5.protocolName());
+      context.assertEquals(endpoint.protocolVersion(), (int)MqttVersion.MQTT_5.protocolLevel());
+
     } catch (MqttException e) {
       context.fail(e);
     }
