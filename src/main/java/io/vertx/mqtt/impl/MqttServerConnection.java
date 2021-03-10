@@ -148,7 +148,8 @@ public class MqttServerConnection {
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
             publish.variableHeader().topicName(),
-            newBuf);
+            newBuf,
+            publish.variableHeader().properties());
           this.handlePublish(mqttPublishMessage);
           break;
 

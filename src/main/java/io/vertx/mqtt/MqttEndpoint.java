@@ -37,6 +37,7 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
@@ -390,6 +391,18 @@ public interface MqttEndpoint {
   MqttEndpoint reject(MqttConnectReturnCode returnCode);
 
   /**
+   * Sends the CONNACK message to the remote MQTT client rejecting the connection
+   * request with specified return code. See {@link #accept(boolean)} for accepting connection
+   *
+   * @param returnCode  the connect return code
+   * @param properties CONNACK message properties
+   * @return  a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  @GenIgnore
+  MqttEndpoint reject(MqttConnectReturnCode returnCode, MqttProperties properties);
+
+  /**
    * Sends the SUBACK message to the remote MQTT client
    *
    * @param subscribeMessageId identifier of the SUBSCRIBE message to acknowledge
@@ -440,6 +453,10 @@ public interface MqttEndpoint {
    */
   @Fluent
   MqttEndpoint publishAcknowledge(int publishMessageId);
+
+  @Fluent
+  @GenIgnore
+  MqttEndpoint publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties properties);
 
   /**
    * Sends the PUBREC message to the remote MQTT client

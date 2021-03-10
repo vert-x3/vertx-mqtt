@@ -25,12 +25,17 @@ import io.vertx.mqtt.MqttEndpoint;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 /**
  * MQTT server testing about clients publish
@@ -41,6 +46,9 @@ public class Mqtt5ServerClientPublishTest extends MqttServerBaseTest {
   private static final Logger log = LoggerFactory.getLogger(Mqtt5ServerClientPublishTest.class);
 
   private Async async;
+
+  private String expectedMessage;
+  private String expectedLabel;
 
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_MESSAGE = "Hello Vert.x MQTT Server";
@@ -60,22 +68,22 @@ public class Mqtt5ServerClientPublishTest extends MqttServerBaseTest {
   @Test
   public void publishQos0(TestContext context) {
 
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 0, "red");
   }
 
   @Test
   public void publishQos1(TestContext context) {
 
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 1, "green");
   }
 
   @Test
   public void publishQos2(TestContext context) {
 
-    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2);
+    this.publish(context, MQTT_TOPIC, MQTT_MESSAGE, 2, "blue");
   }
 
-  private void publish(TestContext context, String topic, String message, int qos) {
+  private void publish(TestContext context, String topic, String message, int qos, String label) {
 
     this.async = context.async();
 
@@ -84,7 +92,15 @@ public class Mqtt5ServerClientPublishTest extends MqttServerBaseTest {
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      client.publish(topic, message.getBytes(), qos, false);
+      expectedMessage = message;
+      expectedLabel = label;
+
+
+      MqttProperties mqttProperties = new MqttProperties();
+      mqttProperties.setUserProperties(Collections.singletonList(new UserProperty("label", label)));
+      MqttMessage mqttMessage = new MqttMessage(message.getBytes(StandardCharsets.UTF_8), qos, false, mqttProperties);
+
+      client.publish(topic, mqttMessage);
 
       this.async.await();
 
@@ -101,7 +117,15 @@ public class Mqtt5ServerClientPublishTest extends MqttServerBaseTest {
 
     endpoint.publishHandler(message -> {
 
-      log.info("Just received message on [" + message.topicName() + "] payload [" + message.payload().toString(Charset.defaultCharset()) + "] with QoS [" + message.qosLevel() + "]");
+      String messageText = message.payload().toString(StandardCharsets.UTF_8);
+      log.info("Just received message on [" + message.topicName() + "] payload [" + messageText + "] with QoS [" + message.qosLevel() + "]");
+
+      context.assertEquals(expectedMessage, messageText);
+      io.netty.handler.codec.mqtt.MqttProperties.UserProperties userProps =
+        (io.netty.handler.codec.mqtt.MqttProperties.UserProperties)message.properties().getProperty(io.netty.handler.codec.mqtt.MqttProperties.MqttPropertyType.USER_PROPERTY.value());
+      context.assertEquals(1, userProps.value().size());
+      context.assertEquals("label", userProps.value().get(0).key);
+      context.assertEquals(expectedLabel, userProps.value().get(0).value);
 
       switch (message.qosLevel()) {
 

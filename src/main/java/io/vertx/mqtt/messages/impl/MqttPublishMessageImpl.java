@@ -17,6 +17,7 @@
 package io.vertx.mqtt.messages.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.messages.MqttPublishMessage;
@@ -32,24 +33,27 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   private final boolean isRetain;
   private final String topicName;
   private final Buffer payload;
+  private final MqttProperties properties;
 
   /**
    * Constructor
    *
-   * @param messageId message identifier
-   * @param qosLevel  quality of service level
-   * @param isDup     if the message is a duplicate
-   * @param isRetain  if the message needs to be retained
-   * @param topicName topic on which the message was published
-   * @param payload   payload message
+   * @param messageId  message identifier
+   * @param qosLevel   quality of service level
+   * @param isDup      if the message is a duplicate
+   * @param isRetain   if the message needs to be retained
+   * @param topicName  topic on which the message was published
+   * @param payload    payload message
+   * @param properties MQTT properties
    */
-  public MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
+  public MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload, MqttProperties properties) {
     this.messageId = messageId;
     this.qosLevel = qosLevel;
     this.isDup = isDup;
     this.isRetain = isRetain;
     this.topicName = topicName;
     this.payload = Buffer.buffer(payload);
+    this.properties = properties;
   }
 
   public int messageId() {
@@ -74,5 +78,9 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
 
   public Buffer payload() {
     return this.payload;
+  }
+
+  public MqttProperties properties() {
+    return this.properties;
   }
 }
