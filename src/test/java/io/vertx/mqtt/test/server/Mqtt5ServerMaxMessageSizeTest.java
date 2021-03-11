@@ -71,10 +71,10 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
 
       // The client seems to fail when sending IO and block forever (see MqttOutputStream)
       // that makes the test hang forever
-      client.setTimeToWait(1000);
+      client.setTimeToWait(2000);
       client.publish(MQTT_TOPIC, message, 0, false);
     } catch (MqttException e) {
-      context.assertEquals(e.getReasonCode(), (int)MqttClientException.REASON_CODE_INCOMING_PACKET_TOO_LARGE);
+      context.assertEquals((int)MqttClientException.REASON_CODE_INCOMING_PACKET_TOO_LARGE, e.getReasonCode());
     }
   }
 
