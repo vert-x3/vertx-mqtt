@@ -99,5 +99,6 @@ public interface MqttPublishMessage extends MqttMessage {
    * @return MQTT properties
    */
   @CacheReturn
+  @GenIgnore
   MqttProperties properties();
 }

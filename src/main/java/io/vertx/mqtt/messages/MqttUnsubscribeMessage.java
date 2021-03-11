@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.messages;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
@@ -38,12 +39,33 @@ public interface MqttUnsubscribeMessage extends MqttMessage {
   @GenIgnore
   static MqttUnsubscribeMessage create(int messageId, List<String> topics) {
 
-    return new MqttUnsubscribeMessageImpl(messageId, topics);
+    return new MqttUnsubscribeMessageImpl(messageId, topics, MqttProperties.NO_PROPERTIES);
   }
+
+  /**
+   * Create a concrete instance of a Vert.x unsubscribe message
+   *
+   * @param messageId message identifier
+   * @param topics    list of topics to unsubscribe
+   * @param properties UNSUBSCRIBE message properties
+   */
+  @GenIgnore
+  static MqttUnsubscribeMessage create(int messageId, List<String> topics, MqttProperties properties) {
+
+    return new MqttUnsubscribeMessageImpl(messageId, topics, properties);
+  }
+
 
   /**
    * @return  List of topics to unsubscribe
    */
   @CacheReturn
   List<String> topics();
+
+  /**
+   * @return MQTT properties
+   */
+  @CacheReturn
+  @GenIgnore
+  MqttProperties properties();
 }

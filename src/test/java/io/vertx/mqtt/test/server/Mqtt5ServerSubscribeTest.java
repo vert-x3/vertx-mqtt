@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.test.server;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
@@ -25,9 +26,14 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
+import io.vertx.mqtt.MqttTopicSubscription;
+import io.vertx.mqtt.messages.codes.MqttReasonCode;
+import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttSubscription;
+import org.eclipse.paho.mqttv5.common.packet.MqttReturnCode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +41,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MQTT server testing about clients subscription
@@ -46,8 +53,14 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
 
   private Async async;
 
+  private int requestedQos;
+  private boolean requestedRetainAsPublished;
+  private boolean requestedNoLocal;
+  private int requestedRetainHandling;
+
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_TOPIC_FAILURE = "/my_topic/failure";
+  private static final String MQTT_FAILURE_REASON = "test reason";
 
   @Before
   public void before(TestContext context) {
@@ -64,28 +77,28 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
   @Test
   public void subscribeQos0(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC, 0);
+    this.subscribe(context, MQTT_TOPIC, 0, true, false, 0);
   }
 
   @Test
   public void subscribeQos1(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC, 1);
+    this.subscribe(context, MQTT_TOPIC, 1, false, true, 1);
   }
 
   @Test
   public void subscribeQos2(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC, 2);
+    this.subscribe(context, MQTT_TOPIC, 2, true, true, 2);
   }
 
   @Test
   public void subscribeFailure(TestContext context) {
 
-    this.subscribe(context, MQTT_TOPIC_FAILURE, 0);
+    this.subscribe(context, MQTT_TOPIC_FAILURE, 0, false, false, 0);
   }
 
-  private void subscribe(TestContext context, String topic, int expectedQos) {
+  private void subscribe(TestContext context, String topic, int expectedQos, boolean retainAsPublished, boolean noLocal, int retainHandling) {
 
     this.async = context.async();
 
@@ -94,19 +107,24 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      String[] topics = new String[]{topic};
-      int[] qos = new int[]{expectedQos};
-      // after calling subscribe, the qos is replaced with granted QoS that should be the same
-      client.subscribe(topics, qos);
+      MqttSubscription subscription = new MqttSubscription(topic, expectedQos);
+      this.requestedQos = expectedQos;
+      subscription.setNoLocal(noLocal);
+      subscription.setRetainAsPublished(retainAsPublished);
+      subscription.setRetainHandling(retainHandling);
+      this.requestedNoLocal = noLocal;
+      this.requestedRetainAsPublished = retainAsPublished;
+      this.requestedRetainHandling = retainHandling;
+      client.subscribe(new MqttSubscription[]{ subscription });
 
       this.async.await();
-
-      context.assertTrue(qos[0] == expectedQos);
-
     } catch (MqttException e) {
 
-      context.assertTrue(!topic.equals(MQTT_TOPIC_FAILURE) ? false : true);
       e.printStackTrace();
+      if(topic.equals(MQTT_TOPIC_FAILURE)) {
+        context.assertEquals(e.getReasonCode(), MqttReturnCode.RETURN_CODE_TOPIC_FILTER_NOT_VALID);
+        context.assertEquals(e.getMessage(), MQTT_FAILURE_REASON);
+      }
     }
   }
 
@@ -150,15 +168,23 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
 
     endpoint.subscribeHandler(subscribe -> {
 
-      List<MqttQoS> qos = new ArrayList<>();
+      MqttTopicSubscription subscription = subscribe.topicSubscriptions().get(0);
+      context.assertEquals(requestedQos, subscription.subscriptionOption().qos().value());
+      context.assertEquals(requestedNoLocal, subscription.subscriptionOption().isNoLocal());
+      context.assertEquals(requestedRetainAsPublished, subscription.subscriptionOption().isRetainAsPublished());
+      context.assertEquals(requestedRetainHandling, subscription.subscriptionOption().retainHandling().value());
 
-      MqttQoS grantedQos =
-        subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE) ?
-          MqttQoS.FAILURE :
-          subscribe.topicSubscriptions().get(0).qualityOfService();
+      List<MqttSubAckReasonCode> reasonCodes = new ArrayList<>();
+      MqttProperties subackProperties = new MqttProperties();
 
-      qos.add(grantedQos);
-      endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
+      if(subscribe.topicSubscriptions().get(0).topicName().equals(MQTT_TOPIC_FAILURE)) {
+        reasonCodes.add(MqttSubAckReasonCode.TOPIC_FILTER_INVALID);
+        subackProperties.add(new MqttProperties.StringProperty(MqttProperties.MqttPropertyType.REASON_STRING.value(), MQTT_FAILURE_REASON));
+      } else {
+        reasonCodes.add(MqttSubAckReasonCode.qosGranted(subscribe.topicSubscriptions().get(0).qualityOfService()));
+      }
+
+      endpoint.subscribeAcknowledge(subscribe.messageId(), reasonCodes, subackProperties);
 
       this.async.complete();
     });

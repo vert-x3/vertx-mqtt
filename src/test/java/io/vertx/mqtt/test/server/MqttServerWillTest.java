@@ -16,8 +16,10 @@
 
 package io.vertx.mqtt.test.server;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
@@ -54,18 +56,20 @@ public class MqttServerWillTest {
 
   @After
   public void after(TestContext context) {
-    Async async = context.async(2);
     MqttServer server = this.server;
     if (server != null) {
+      Async async = context.async();
       this.server = null;
       server.close(context.asyncAssertSuccess(v -> async.countDown()));
+      async.await(20_000);
     }
     MqttClient client = this.client;
     if (client != null) {
+      Async async = context.async();
       this.client = null;
       client.disconnect(context.asyncAssertSuccess(v -> async.countDown()));
+      async.await(20_000);
     }
-    async.await(20_000);
     this.vertx.close(context.asyncAssertSuccess(v2 -> {
       this.vertx = null;
     }));
@@ -105,5 +109,28 @@ public class MqttServerWillTest {
       client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(ack -> {
       }));
     }));
+  }
+
+  @Test
+  public void testToJson(TestContext context) {
+    MqttProperties props1 = new MqttProperties();
+    props1.add(new MqttProperties.StringProperty(MqttProperties.MqttPropertyType.CONTENT_TYPE.value(), "text/plain"));
+    MqttWill will1 = new MqttWill(true, "/sample/topic", Buffer.buffer("sample message"), 2, false, props1);
+
+    JsonObject willJson = will1.toJson();
+
+    MqttWill will2 = new MqttWill(willJson);
+
+    context.assertEquals(will1.getWillMessage(), will2.getWillMessage());
+    context.assertEquals(will1.getWillQos(), will2.getWillQos());
+    context.assertEquals(will1.getWillTopic(), will2.getWillTopic());
+
+    MqttProperties props2 = will2.getWillProperties();
+    context.assertEquals(props1.listAll().size(), props2.listAll().size());
+    for(MqttProperties.MqttProperty<?> prop1: props1.listAll()) {
+      MqttProperties.MqttProperty<?> prop2 = props2.getProperty(prop1.propertyId());
+      context.assertNotNull(prop2);
+      context.assertEquals(prop1, prop2);
+    }
   }
 }

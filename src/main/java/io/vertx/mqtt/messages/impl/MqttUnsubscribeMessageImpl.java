@@ -16,6 +16,7 @@
 
 package io.vertx.mqtt.messages.impl;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
 
 import java.util.List;
@@ -27,17 +28,20 @@ public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
 
   private final int messageId;
   private final List<String> topics;
+  private final MqttProperties properties;
 
   /**
    * Constructor
    *
    * @param messageId message identifier
    * @param topics    list of topics to unsubscribe
+   * @param properties UNSUBSCRIBE message properties
    */
-  public MqttUnsubscribeMessageImpl(int messageId, List<String> topics) {
+  public MqttUnsubscribeMessageImpl(int messageId, List<String> topics, MqttProperties properties) {
 
     this.messageId = messageId;
     this.topics = topics;
+    this.properties = properties;
   }
 
   public int messageId() {
@@ -46,5 +50,9 @@ public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
 
   public List<String> topics() {
     return this.topics;
+  }
+
+  public MqttProperties properties() {
+    return this.properties;
   }
 }
