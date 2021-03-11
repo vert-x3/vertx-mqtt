@@ -42,7 +42,7 @@ public interface MqttTopicSubscription {
 
   /**
    * Subscription option
-   * @return
+   * @return Subscription options
    */
   @GenIgnore
   @CacheReturn
