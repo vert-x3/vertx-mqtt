@@ -98,7 +98,7 @@ public class Mqtt5ServerEndpointStatusTest extends MqttServerBaseTest {
   }
 
   @Test
-  public void disconnectedByServer(TestContext context) {
+  public void disconnectedByServer(TestContext context) throws InterruptedException {
 
     Async async = context.async();
 
@@ -118,8 +118,14 @@ public class Mqtt5ServerEndpointStatusTest extends MqttServerBaseTest {
 
       async.await();
 
+      //give client time to realize that it has been disconnected
+      for(int attempt = 0; attempt < 5; attempt++) {
+        if(!client.isConnected())
+          break;
+        else
+          Thread.sleep(10L);
+      }
       context.assertTrue(!client.isConnected() && !this.endpoint.isConnected());
-      System.out.println("***** tick2="+ System.currentTimeMillis());
       context.assertNotNull(callback.getDisconnectResponse());
       context.assertEquals(callback.getDisconnectResponse().getReturnCode(), MqttReturnCode.RETURN_CODE_SERVER_SHUTTING_DOWN);
 
