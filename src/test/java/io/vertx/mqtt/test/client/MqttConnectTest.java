@@ -202,4 +202,22 @@ public class MqttConnectTest {
       }));
     }));
   }
+
+  @Test
+  public void mqttClientReconnectAfterFailure(TestContext ctx) throws Exception {
+    MqttClientOptions options = new MqttClientOptions();
+    MqttClient mqttClient = MqttClient.create(Vertx.vertx(), options);
+    Async async = ctx.async();
+    mqttClient.connect(1883, "localhost", ctx.asyncAssertFailure(err -> {
+      async.complete();
+    }));
+    async.awaitSuccess(10_000);
+    Async serverLatch = ctx.async();
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+    });
+    server.listen(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    serverLatch.awaitSuccess(10_000);
+    mqttClient.connect(1883, "localhost", ctx.asyncAssertSuccess());
+  }
 }

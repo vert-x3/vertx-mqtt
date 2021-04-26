@@ -235,6 +235,7 @@ public class MqttClientImpl implements MqttClient {
         if (done.failed()) {
           log.error(String.format("Can't connect to %s:%d", host, port), done.cause());
           synchronized (this) {
+            this.status = Status.CLOSED;
             this.connectPromise = null;
             this.disconnectPromise = null;
             this.ctx = null;
