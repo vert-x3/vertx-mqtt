@@ -192,7 +192,7 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public Future<MqttConnAckMessage> connect(int port, String host, String serverName) {
 
-    return connect(port, host, serverName);
+    return this.doConnect(port, host, serverName);
   }
 
   /**
