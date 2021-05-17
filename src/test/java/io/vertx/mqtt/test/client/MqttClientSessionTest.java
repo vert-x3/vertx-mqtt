@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -157,7 +156,7 @@ public class MqttClientSessionTest {
 
     endpoint.unsubscribeHandler(u -> {
       log.info("[SERVER] Received UNSUBSCRIBE with message id = " + u.messageId());
-      for ( String topic : u.topics() ) {
+      for (String topic : u.topics()) {
         long t = publishTimers.remove(topic);
         vertx.cancelTimer(t);
       }
@@ -277,7 +276,12 @@ public class MqttClientSessionTest {
     }, sessionStates.toArray());
   }
 
-  private Object[] testSubscribe(Duration timeout, Consumer<MqttClientSession> customizer, BiFunction<MqttClientSession, List<String[]>, Boolean> completion) {
+  static class SubscribeTestResult {
+    LinkedList<MqttClientSession.SubscriptionEvent> events;
+    List<String[]> payloads;
+  }
+
+  private SubscribeTestResult testSubscribe(Duration timeout, Consumer<MqttClientSession> customizer, BiFunction<MqttClientSession, List<String[]>, Boolean> completion) {
 
     MqttClientSessionOptions options = new MqttClientSessionOptions()
       .setPort(MQTT_SERVER_TLS_PORT)
@@ -304,11 +308,8 @@ public class MqttClientSessionTest {
     msgAsync.handler(x -> {
 
       client.sessionStateHandler(event -> {
-
-        switch (event.getSessionState()) {
-          case DISCONNECTED:
-            async.complete();
-            break;
+        if (event.getSessionState() == MqttClientSession.SessionState.DISCONNECTED) {
+          async.complete();
         }
       });
 
@@ -319,7 +320,10 @@ public class MqttClientSessionTest {
 
     async.await(timeout.toMillis());
 
-    return new Object[]{events, payloads};
+    SubscribeTestResult result = new SubscribeTestResult();
+    result.events = events;
+    result.payloads = payloads;
+    return result;
   }
 
   /**
@@ -330,7 +334,7 @@ public class MqttClientSessionTest {
 
     startServer();
 
-    Object[] tuple = testSubscribe(Duration.ofSeconds(5), session -> {
+    SubscribeTestResult result = testSubscribe(Duration.ofSeconds(5), session -> {
         session.subscribe("qos0", MqttClientSession.RequestedQoS.QOS_1);
       },
       (session, payloads) -> payloads.size() == 2
@@ -338,19 +342,16 @@ public class MqttClientSessionTest {
 
     // assert
 
-    LinkedList<MqttClientSession.SubscriptionEvent> events = (LinkedList<MqttClientSession.SubscriptionEvent>) tuple[0];
-    List<String[]> payloads = (List<String[]>) tuple[1];
-
     assertArrayEquals(new Object[]{
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBED, 0),
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
-    }, events.toArray());
+    }, result.events.toArray());
 
     assertArrayEquals(new Object[]{
       new String[]{"qos0", "payload0"},
       new String[]{"qos0", "payload1"}
-    }, payloads.toArray());
+    }, result.payloads.toArray());
 
   }
 
@@ -362,7 +363,7 @@ public class MqttClientSessionTest {
 
     vertx.setTimer(2_000, x -> startServerAsync());
 
-    Object[] tuple = testSubscribe(Duration.ofSeconds(15), session -> {
+    SubscribeTestResult result = testSubscribe(Duration.ofSeconds(15), session -> {
         session.subscribe("qos0", MqttClientSession.RequestedQoS.QOS_1);
       },
       (session, payloads) -> payloads.size() == 2
@@ -370,20 +371,17 @@ public class MqttClientSessionTest {
 
     // assert
 
-    LinkedList<MqttClientSession.SubscriptionEvent> events = (LinkedList<MqttClientSession.SubscriptionEvent>) tuple[0];
-    List<String[]> payloads = (List<String[]>) tuple[1];
-
     assertArrayEquals(new Object[]{
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBED, 0),
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
-    }, events.toArray());
+    }, result.events.toArray());
 
     assertArrayEquals(new Object[]{
       new String[]{"qos0", "payload0"},
       new String[]{"qos0", "payload1"}
-    }, payloads.toArray());
+    }, result.payloads.toArray());
 
   }
 
@@ -395,7 +393,7 @@ public class MqttClientSessionTest {
 
     startServer();
 
-    Object[] tuple = testSubscribe(Duration.ofSeconds(25),
+    SubscribeTestResult result = testSubscribe(Duration.ofSeconds(25),
       session -> {
         session.subscribe("qos0", MqttClientSession.RequestedQoS.QOS_1);
       },
@@ -413,9 +411,6 @@ public class MqttClientSessionTest {
 
     // assert
 
-    LinkedList<MqttClientSession.SubscriptionEvent> events = (LinkedList<MqttClientSession.SubscriptionEvent>) tuple[0];
-    List<String[]> payloads = (List<String[]>) tuple[1];
-
     assertArrayEquals(new Object[]{
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
       new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBED, 0),
@@ -423,14 +418,14 @@ public class MqttClientSessionTest {
       new MqttClientSession.SubscriptionEvent("qos1", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
       new MqttClientSession.SubscriptionEvent("qos1", MqttClientSession.SubscriptionState.SUBSCRIBED, 1),
       new MqttClientSession.SubscriptionEvent("qos1", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
-    }, events.toArray());
+    }, result.events.toArray());
 
     assertArrayEquals(new Object[]{
       new String[]{"qos0", "payload0"},
       new String[]{"qos0", "payload1"},
       new String[]{"qos1", "payload0"},
       new String[]{"qos1", "payload1"}
-    }, payloads.toArray());
+    }, result.payloads.toArray());
 
   }
 
