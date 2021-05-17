@@ -615,8 +615,16 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public MqttClient unsubscribe(String topic, Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
+    return unsubscribe(Collections.singletonList(topic), unsubscribeSentHandler);
+  }
 
-    Future<Integer> fut = unsubscribe(topic);
+  /**
+   * See {@link MqttClient#unsubscribe(List, Handler)} )} for more details
+   */
+  @Override
+  public MqttClient unsubscribe(List<String> topics, Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
+
+    Future<Integer> fut = unsubscribe(topics);
     if (unsubscribeSentHandler != null) {
       fut.onComplete(unsubscribeSentHandler);
     }
@@ -629,6 +637,15 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public Future<Integer> unsubscribe(String topic) {
 
+    return unsubscribe(Collections.singletonList(topic));
+  }
+
+  /**
+   * See {@link MqttClient#unsubscribe(List)} for more details
+   */
+  @Override
+  public Future<Integer> unsubscribe(List<String> topics) {
+
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
       MqttMessageType.UNSUBSCRIBE,
       false,
@@ -638,7 +655,7 @@ public class MqttClientImpl implements MqttClient {
 
     MqttMessageIdVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), MqttProperties.NO_PROPERTIES);
 
-    MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Stream.of(topic).collect(Collectors.toList()));
+    MqttUnsubscribePayload payload = new MqttUnsubscribePayload(topics);
 
     io.netty.handler.codec.mqtt.MqttMessage unsubscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 

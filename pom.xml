@@ -18,6 +18,12 @@
       <organization>Red Hat</organization>
       <organizationUrl>http://www.redhat.com</organizationUrl>
     </developer>
+    <developer>
+      <name>Jens Reimann</name>
+      <email>ctron@dentrassi.de</email>
+      <organization>Red Hat</organization>
+      <organizationUrl>https://www.redhat.com</organizationUrl>
+    </developer>
   </developers>
 
   <properties>
