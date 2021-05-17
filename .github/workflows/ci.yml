@@ -17,6 +17,13 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         jdk: [8, 11]
+        include:
+          - os: ubuntu-latest
+            jdk: 11
+            jdk_release: latest
+          - os: ubuntu-latest
+            jdk: 8
+            jdk_release: "jdk8u282-b08" # required due to https://bugs.openjdk.java.net/browse/JDK-8266279
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -25,6 +32,7 @@ jobs:
         uses: joschi/setup-jdk@v2
         with:
           java-version: ${{ matrix.jdk }}
+          release: ${{ matrix.jdk_release }}
       - name: Run tests
         run: mvn -q clean verify -B
   Deploy:
