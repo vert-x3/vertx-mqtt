@@ -19,7 +19,9 @@ package io.vertx.mqtt;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.Fluent;
@@ -101,6 +103,28 @@ public interface MqttClientSession {
 
     public String getTopic() {
       return this.topic;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      SubscriptionEvent that = (SubscriptionEvent) o;
+      return topic.equals(that.topic) && subscriptionState == that.subscriptionState && Objects.equals(qos, that.qos);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(topic, subscriptionState, qos);
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", SubscriptionEvent.class.getSimpleName() + "[", "]")
+        .add("topic='" + topic + "'")
+        .add("subscriptionState=" + subscriptionState)
+        .add("qos=" + qos)
+        .toString();
     }
   }
 

@@ -341,7 +341,10 @@ public class MqttClientSessionImpl implements MqttClientSession {
    * Gets called when the connection just dropped.
    */
   private void connectionClosed() {
-    connectionClosed(new IOException("Connection closed"));
+    if (this.state != SessionState.DISCONNECTING) {
+      // this came unexpected
+      connectionClosed(new IOException("Connection closed"));
+    }
   }
 
   /**
@@ -352,12 +355,14 @@ public class MqttClientSessionImpl implements MqttClientSession {
   private void connectionClosed(final Throwable cause) {
     log.info("Connection closed", cause);
 
-    this.client.exceptionHandler(null);
-    this.client.publishHandler(null);
-    this.client.closeHandler(null);
-    this.client.subscribeCompletionHandler(null);
-    this.client.publishCompletionHandler(null);
-    this.client = null;
+    if (this.client != null) {
+      this.client.exceptionHandler(null);
+      this.client.publishHandler(null);
+      this.client.closeHandler(null);
+      this.client.subscribeCompletionHandler(null);
+      this.client.publishCompletionHandler(null);
+      this.client = null;
+    }
     setState(SessionState.DISCONNECTED, cause);
   }
 
@@ -377,7 +382,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
     }
   }
 
-  private void doSubscribe(Map<String, RequestedQoS> topics) {
+  void doSubscribe(Map<String, RequestedQoS> topics) {
     final LinkedHashMap<String, RequestedQoS> subscriptions = new LinkedHashMap<>(topics.size());
 
     for (Map.Entry<String, RequestedQoS> entry : topics.entrySet()) {
