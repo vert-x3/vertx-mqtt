@@ -19,6 +19,7 @@ package io.vertx.mqtt.impl;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -69,6 +70,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
   private volatile Handler<MqttPublishMessage> messageHandler;
   private volatile Handler<SessionEvent> sessionStateHandler;
   private volatile Handler<SubscriptionEvent> subscriptionStateHandler;
+  private volatile Handler<Integer> publishHandler;
 
   public MqttClientSessionImpl(final Vertx vertx, final MqttClientSessionOptions options) {
     this.vertx = (VertxInternal) vertx;
@@ -98,7 +100,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
   }
 
   @Override
-  public MqttClientSession unsubscribe(Set<String> topics) {
+  public MqttClientSession unsubscribe(Collection<String> topics) {
     final Set<String> finalTopics = new HashSet<>(topics);
     this.vertx.runOnContext(x -> doUnsubscribe(finalTopics));
     return this;
@@ -166,6 +168,12 @@ public class MqttClientSessionImpl implements MqttClientSession {
   @Override
   public MqttClientSession subscriptionStateHandler(Handler<SubscriptionEvent> subscriptionStateHandler) {
     this.subscriptionStateHandler = subscriptionStateHandler;
+    return this;
+  }
+
+  @Override
+  public MqttClientSession publishHandler(Handler<Integer> publishHandler) {
+    this.publishHandler = publishHandler;
     return this;
   }
 
@@ -271,6 +279,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
     this.client.publishHandler(this::serverPublished);
     this.client.subscribeCompletionHandler(this::subscribeCompleted);
     this.client.unsubscribeCompletionHandler(this::unsubscribeCompleted);
+    this.client.publishCompletionHandler(this::publishComplete);
 
     // change state
     setState(SessionState.CONNECTING, null);
@@ -541,4 +550,12 @@ public class MqttClientSessionImpl implements MqttClientSession {
       return Future.failedFuture("Session is not connected");
     }
   }
+
+  private void publishComplete(Integer messageId) {
+    Handler<Integer> handler = this.publishHandler;
+    if (handler != null ) {
+      handler.handle(messageId);
+    }
+  }
+
 }

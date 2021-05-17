@@ -16,11 +16,12 @@
 
 package io.vertx.mqtt;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.StringJoiner;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -138,6 +139,9 @@ public interface MqttClientSession {
   @Fluent
   MqttClientSession subscriptionStateHandler(Handler<SubscriptionEvent> subscriptionStateHandler);
 
+  @Fluent
+  MqttClientSession publishHandler(Handler<Integer> publishHandler);
+
   void start();
 
   void stop();
@@ -175,7 +179,16 @@ public interface MqttClientSession {
    *
    * @param topics Topics you want to unsubscribe from
    */
-  MqttClientSession unsubscribe(Set<String> topics);
+  MqttClientSession unsubscribe(Collection<String> topics);
+
+  /**
+   * Unsubscribe from receiving messages on given topics
+   *
+   * @param topics Topics you want to unsubscribe from
+   */
+  default MqttClientSession unsubscribe(String... topics) {
+    return unsubscribe(Arrays.asList(topics));
+  }
 
   /**
    * Sets handler which will be called each time server publish something to client
@@ -197,4 +210,16 @@ public interface MqttClientSession {
    * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
    */
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+  /**
+   * Sends the PUBLISH message to the remote MQTT server
+   *
+   * @param topic topic on which the message is published
+   * @param payload message payload
+   * @param qosLevel QoS level
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
+   */
+  default Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel) {
+    return publish(topic, payload, qosLevel, false, false);
+  }
 }
