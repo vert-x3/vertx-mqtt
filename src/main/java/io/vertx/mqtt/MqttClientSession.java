@@ -33,6 +33,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.impl.MqttClientSessionImpl;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
+/**
+ * An MQTT client session.
+ */
 public interface MqttClientSession {
 
   enum SessionState {
@@ -129,27 +132,61 @@ public interface MqttClientSession {
     }
   }
 
+  /**
+   * Create a new MQTT client session.
+   * <p>
+   * The session will initially be disconnected, and must be started using {@link #start()}.
+   *
+   * @param vertx Vert.x instance
+   * @param options MQTT client session options
+   * @return MQTT client session instance
+   */
   static MqttClientSession create(Vertx vertx, MqttClientSessionOptions options) {
     return new MqttClientSessionImpl(vertx, options);
   }
 
+  /**
+   * Set the session state handler.
+   *
+   * @param sessionStateHandler The new handler, will overwrite the old one.
+   * @return current MQTT client session instance
+   */
   @Fluent
   MqttClientSession sessionStateHandler(Handler<SessionEvent> sessionStateHandler);
 
+  /**
+   * Set the subscription state handler.
+   *
+   * @param subscriptionStateHandler The new handler, will overwrite the old one.
+   * @return current MQTT client session instance
+   */
   @Fluent
   MqttClientSession subscriptionStateHandler(Handler<SubscriptionEvent> subscriptionStateHandler);
 
+  /**
+   * The the publish response handler.
+   *
+   * @param publishHandler The new handler, will overwrite the old one.
+   * @return current MQTT client session instance
+   */
   @Fluent
   MqttClientSession publishHandler(Handler<Integer> publishHandler);
 
+  /**
+   * Start the session. This will try to drive the connection to {@link SessionState#CONNECTED}.
+   */
   void start();
 
+  /**
+   * Stop the session. This will try to drive the connection to {@link SessionState#DISCONNECTED}.
+   */
   void stop();
 
   /**
    * Subscribes to the topics with related QoS levels
    *
    * @param topics topics and related QoS levels to subscribe to
+   * @return current MQTT client session instance
    */
   @Fluent
   MqttClientSession subscribe(Map<String, RequestedQoS> topics);
@@ -159,12 +196,20 @@ public interface MqttClientSession {
    *
    * @param topic The topic to subscribe to.
    * @param qos The QoS to request from the server.
+   * @return current MQTT client session instance
    */
   @Fluent
   default MqttClientSession subscribe(String topic, RequestedQoS qos) {
     return subscribe(Collections.singletonMap(topic, qos));
   }
 
+  /**
+   * Subscribes to a list of topics, with the same QoS.
+   *
+   * @param qos The QoS to use.
+   * @param topics The topics to subscribe to.
+   * @return current MQTT client session instance
+   */
   @Fluent
   default MqttClientSession subscribe(RequestedQoS qos, String... topics) {
     final Map<String, RequestedQoS> topicMap = new LinkedHashMap<>(topics.length);
@@ -178,6 +223,7 @@ public interface MqttClientSession {
    * Unsubscribe from receiving messages on given topics
    *
    * @param topics Topics you want to unsubscribe from
+   * @return current MQTT client session instance
    */
   MqttClientSession unsubscribe(Collection<String> topics);
 
@@ -185,6 +231,7 @@ public interface MqttClientSession {
    * Unsubscribe from receiving messages on given topics
    *
    * @param topics Topics you want to unsubscribe from
+   * @return current MQTT client session instance
    */
   default MqttClientSession unsubscribe(String... topics) {
     return unsubscribe(Arrays.asList(topics));
