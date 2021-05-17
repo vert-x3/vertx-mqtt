@@ -189,6 +189,26 @@ public class MqttClientSessionImpl implements MqttClientSession {
       log.debug(String.format("setState - current: %s, next: %s", this.state, sessionState), cause);
     }
 
+    // before announcing our state change
+
+    switch (this.state) {
+      case CONNECTING:
+        break;
+      case CONNECTED:
+        break;
+      case DISCONNECTING:
+        break;
+      case DISCONNECTED:
+        this.pendingUnsubscribes.clear();
+        this.pendingSubscribes.clear();
+        for (String topic : this.subscriptions.keySet()) {
+          notifySubscriptionState(topic, SubscriptionState.UNSUBSCRIBED, null);
+        }
+        break;
+    }
+
+    // announce state change
+
     if (this.state != sessionState) {
       this.state = sessionState;
       Handler<SessionEvent> handler = this.sessionStateHandler;
@@ -196,6 +216,8 @@ public class MqttClientSessionImpl implements MqttClientSession {
         handler.handle(new SessionEvent(sessionState, cause));
       }
     }
+
+    // after announcing out state change
 
     switch (this.state) {
       case CONNECTING:
@@ -210,11 +232,6 @@ public class MqttClientSessionImpl implements MqttClientSession {
         // we just wait for the outcome
         break;
       case DISCONNECTED:
-        this.pendingUnsubscribes.clear();
-        this.pendingSubscribes.clear();
-        for (String topic : this.subscriptions.keySet()) {
-          notifySubscriptionState(topic, SubscriptionState.UNSUBSCRIBED, null);
-        }
         if (this.running) {
           scheduleReconnect();
         }

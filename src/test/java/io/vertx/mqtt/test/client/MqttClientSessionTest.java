@@ -61,6 +61,11 @@ public class MqttClientSessionTest {
   private static final int MQTT_SERVER_TLS_PORT = 1883;
   private static final String MQTT_SERVER_HOST = "localhost";
 
+  static class SubscribeTestResult {
+    LinkedList<MqttClientSession.SubscriptionEvent> events;
+    List<String[]> payloads;
+  }
+
   Vertx vertx = Vertx.vertx();
   MqttServer server;
   TestContext ctx;
@@ -274,11 +279,6 @@ public class MqttClientSessionTest {
       MqttClientSession.SessionState.DISCONNECTING,
       MqttClientSession.SessionState.DISCONNECTED
     }, sessionStates.toArray());
-  }
-
-  static class SubscribeTestResult {
-    LinkedList<MqttClientSession.SubscriptionEvent> events;
-    List<String[]> payloads;
   }
 
   private SubscribeTestResult testSubscribe(Duration timeout, Consumer<MqttClientSession> customizer, BiFunction<MqttClientSession, List<String[]>, Boolean> completion) {
