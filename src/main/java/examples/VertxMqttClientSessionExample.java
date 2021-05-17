@@ -1,10 +1,10 @@
-package io.vertx.mqtt.example;
+package examples;
 
 import io.vertx.core.Vertx;
 import io.vertx.mqtt.MqttClientSession;
 import io.vertx.mqtt.MqttClientSessionOptions;
 
-public class MqttSessionExample {
+public class VertxMqttClientSessionExample {
 
   public static void main(String[] args) {
     Vertx vertx = Vertx.vertx();
