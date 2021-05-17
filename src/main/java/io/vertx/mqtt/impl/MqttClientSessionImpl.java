@@ -191,7 +191,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
 
     // before announcing our state change
 
-    switch (this.state) {
+    switch (sessionState) {
       case CONNECTING:
         break;
       case CONNECTED:
