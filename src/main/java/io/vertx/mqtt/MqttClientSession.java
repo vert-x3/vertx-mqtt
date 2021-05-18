@@ -127,6 +127,7 @@ public interface MqttClientSession {
 
     /**
      * The new state of the session.
+     *
      * @return The state.
      */
     public SessionState getSessionState() {
@@ -135,6 +136,7 @@ public interface MqttClientSession {
 
     /**
      * The (optional) cause of change.
+     *
      * @return The throwable that causes the state change, or {@code null}, if there was none.
      */
     public Throwable getCause() {
@@ -168,6 +170,7 @@ public interface MqttClientSession {
 
     /**
      * The new subscription state.
+     *
      * @return The state.
      */
     public SubscriptionState getSubscriptionState() {
@@ -176,6 +179,7 @@ public interface MqttClientSession {
 
     /**
      * The name of the topic this change refers to.
+     *
      * @return The topic name.
      */
     public String getTopic() {

@@ -44,6 +44,7 @@ import io.vertx.mqtt.MqttClientSessionOptions;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.reconnect.ReconnectDelayProvider;
 
 public class MqttClientSessionImpl implements MqttClientSession {
 
@@ -58,6 +59,8 @@ public class MqttClientSessionImpl implements MqttClientSession {
   private final Map<Integer, LinkedHashMap<String, RequestedQoS>> pendingSubscribes = new HashMap<>();
   // record the pending unsubscribes
   private final Map<Integer, List<String>> pendingUnsubscribes = new HashMap<>();
+  // the provider for the reconnect delay
+  private final ReconnectDelayProvider reconnectDelay;
 
   // the current state
   private SessionState state = SessionState.DISCONNECTED;
@@ -82,6 +85,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
   public MqttClientSessionImpl(final Vertx vertx, final MqttClientSessionOptions options) {
     this.vertx = (VertxInternal) vertx;
     this.options = options;
+    this.reconnectDelay = options.getReconnectDelay().createProvider();
 
     // validate options
     if (!this.options.isCleanSession()) {
@@ -118,6 +122,9 @@ public class MqttClientSessionImpl implements MqttClientSession {
       // nothing to do
       return;
     }
+
+    // we connect, not re-connect
+    this.reconnectDelay.reset();
 
     this.running = true;
     switch (this.state) {
@@ -208,6 +215,8 @@ public class MqttClientSessionImpl implements MqttClientSession {
       case CONNECTING:
         break;
       case CONNECTED:
+        // successful connection, reset delay
+        this.reconnectDelay.reset();
         break;
       case DISCONNECTING:
         break;
@@ -290,7 +299,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
    * @return The duration to wait.
    */
   private Duration nextDelay() {
-    return Duration.ofSeconds(10);
+    return this.reconnectDelay.nextDelay();
   }
 
   /**

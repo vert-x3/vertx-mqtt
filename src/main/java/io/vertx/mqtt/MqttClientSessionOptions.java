@@ -18,14 +18,17 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
+import io.vertx.mqtt.reconnect.ConstantReconnectDelayOptions;
 import io.vertx.mqtt.reconnect.ReconnectDelayOptions;
 
 @DataObject(generateConverter = true)
 public class MqttClientSessionOptions extends MqttClientOptions {
 
+  private static final ReconnectDelayOptions DEFAULT_RECONNECT_DELAY = new ConstantReconnectDelayOptions();
+
   private String hostname = MqttClientOptions.DEFAULT_HOST;
   private int port = MqttClientOptions.DEFAULT_PORT;
-  private ReconnectDelayOptions reconnectDelay;
+  private ReconnectDelayOptions reconnectDelay = DEFAULT_RECONNECT_DELAY;
 
   /**
    * Default constructor
