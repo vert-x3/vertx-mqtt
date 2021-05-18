@@ -79,6 +79,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
 
   /**
    * Create a new instance, which is not started.
+   *
    * @param vertx The vert.x instance to use.
    * @param options The client session options.
    */
@@ -86,11 +87,6 @@ public class MqttClientSessionImpl implements MqttClientSession {
     this.vertx = (VertxInternal) vertx;
     this.options = options;
     this.reconnectDelay = options.getReconnectDelay().createProvider();
-
-    // validate options
-    if (!this.options.isCleanSession()) {
-      throw new IllegalArgumentException("MqttClientSessionImpl only works with cleanSession=true");
-    }
   }
 
   @Override
@@ -353,9 +349,12 @@ public class MqttClientSessionImpl implements MqttClientSession {
       return;
     }
 
+    MqttConnAckMessage ack = result.result();
+
     setState(SessionState.CONNECTED, null);
 
-    if (!this.subscriptions.isEmpty()) {
+    if (!this.subscriptions.isEmpty() && (options.isCleanSession() || !ack.isSessionPresent())) {
+      // re-subscribe if we have requested subscriptions and (either cleanSession=true or no session found on the server)
       requestSubscribe(new LinkedHashMap<>(this.subscriptions));
     }
   }
@@ -596,7 +595,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
 
   private void publishComplete(Integer messageId) {
     Handler<Integer> handler = this.publishHandler;
-    if (handler != null ) {
+    if (handler != null) {
       handler.handle(messageId);
     }
   }
