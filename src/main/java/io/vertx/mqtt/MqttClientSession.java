@@ -38,20 +38,65 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
  */
 public interface MqttClientSession {
 
+  /**
+   * The state of the session.
+   */
   enum SessionState {
+    /**
+     * The session is disconnected.
+     *
+     * A re-connect timer may be pending.
+     */
     DISCONNECTED,
+    /**
+     * The session started to connect.
+     *
+     * This may include re-subscribing to any topics after the connect call was successful.
+     */
     CONNECTING,
+    /**
+     * The session is connected.
+     */
     CONNECTED,
+    /**
+     * The session is in the process of an orderly disconnect.
+     */
     DISCONNECTING,
   }
 
+  /**
+   * The state of a subscription.
+   *
+   * Subscriptions established when a new topic gets added, or the connection was established. If the subscribe call
+   * returns an error for the subscription, the state will remain {@link #FAILED} and it will not try to re-subscribe
+   * while the connection is active.
+   *
+   * When the session (connection) disconnects, all subscriptions will automatically be reset to {@link #UNSUBSCRIBED}.
+   */
   enum SubscriptionState {
+    /**
+     * The topic is not subscribed.
+     */
     UNSUBSCRIBED,
+    /**
+     * The topic is in the process of subscribing.
+     */
     SUBSCRIBING,
+    /**
+     * The topic is subscribed.
+     */
     SUBSCRIBED,
+    /**
+     * The topic could not be subscribed.
+     */
     FAILED,
   }
 
+  /**
+   * The requested QoS level.
+   *
+   * NOTE: This is missing QoS 2, as this mode is not properly supported by the session.
+   */
   enum RequestedQoS {
     QOS_0(0),
     QOS_1(1);
@@ -67,6 +112,9 @@ public interface MqttClientSession {
     }
   }
 
+  /**
+   * An event of a session state change.
+   */
   class SessionEvent {
 
     private final SessionState sessionState;
@@ -77,15 +125,26 @@ public interface MqttClientSession {
       this.cause = reason;
     }
 
+    /**
+     * The new state of the session.
+     * @return The state.
+     */
     public SessionState getSessionState() {
       return this.sessionState;
     }
 
+    /**
+     * The (optional) cause of change.
+     * @return The throwable that causes the state change, or {@code null}, if there was none.
+     */
     public Throwable getCause() {
       return this.cause;
     }
   }
 
+  /**
+   * An event of a subscription state change.
+   */
   class SubscriptionEvent {
     private final String topic;
     private final SubscriptionState subscriptionState;
@@ -97,14 +156,28 @@ public interface MqttClientSession {
       this.qos = qos;
     }
 
+    /**
+     * The granted QoS level from the server.
+     *
+     * @return When the state changed to {@link SubscriptionState#SUBSCRIBED}, it contains the QoS level granted by
+     * the server. Otherwise it will be {@code null}.
+     */
     public Integer getQos() {
       return this.qos;
     }
 
+    /**
+     * The new subscription state.
+     * @return The state.
+     */
     public SubscriptionState getSubscriptionState() {
       return this.subscriptionState;
     }
 
+    /**
+     * The name of the topic this change refers to.
+     * @return The topic name.
+     */
     public String getTopic() {
       return this.topic;
     }

@@ -64,7 +64,9 @@ public class MqttClientSessionImpl implements MqttClientSession {
   // drives to connection either to CONNECTED or DISCONNECTED
   private boolean running;
 
+  // holds the actual MQTT client connection
   private MqttClient client;
+  // an optional reconnect timer
   private Long reconnectTimer;
 
   private volatile Handler<MqttPublishMessage> messageHandler;
@@ -72,6 +74,11 @@ public class MqttClientSessionImpl implements MqttClientSession {
   private volatile Handler<SubscriptionEvent> subscriptionStateHandler;
   private volatile Handler<Integer> publishHandler;
 
+  /**
+   * Create a new instance, which is not started.
+   * @param vertx The vert.x instance to use.
+   * @param options The client session options.
+   */
   public MqttClientSessionImpl(final Vertx vertx, final MqttClientSessionOptions options) {
     this.vertx = (VertxInternal) vertx;
     this.options = options;
@@ -174,6 +181,12 @@ public class MqttClientSessionImpl implements MqttClientSession {
   @Override
   public MqttClientSession publishHandler(Handler<Integer> publishHandler) {
     this.publishHandler = publishHandler;
+    return this;
+  }
+
+  @Override
+  public MqttClientSession messageHandler(Handler<MqttPublishMessage> messageHandler) {
+    this.messageHandler = messageHandler;
     return this;
   }
 
@@ -408,6 +421,11 @@ public class MqttClientSessionImpl implements MqttClientSession {
     }
   }
 
+  /**
+   * Perform subscribing.
+   *
+   * @param topics The topics to subscribe to.
+   */
   private void doSubscribe(Map<String, RequestedQoS> topics) {
     final LinkedHashMap<String, RequestedQoS> subscriptions = new LinkedHashMap<>(topics.size());
 
@@ -426,6 +444,11 @@ public class MqttClientSessionImpl implements MqttClientSession {
     requestSubscribe(subscriptions);
   }
 
+  /**
+   * Perform unsubscribing.
+   *
+   * @param topics The topics to unsubscribe from.
+   */
   private void doUnsubscribe(Set<String> topics) {
     final List<String> topicsToSend = new ArrayList<>(topics.size());
     for (String topic : topics) {
@@ -543,12 +566,6 @@ public class MqttClientSessionImpl implements MqttClientSession {
     for (String topic : request) {
       notifySubscriptionState(topic, SubscriptionState.UNSUBSCRIBED, null);
     }
-  }
-
-  @Override
-  public MqttClientSession messageHandler(Handler<MqttPublishMessage> messageHandler) {
-    this.messageHandler = messageHandler;
-    return this;
   }
 
   @Override

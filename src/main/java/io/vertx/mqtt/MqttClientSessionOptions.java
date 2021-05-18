@@ -18,12 +18,14 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
+import io.vertx.mqtt.reconnect.ReconnectDelayOptions;
 
 @DataObject(generateConverter = true)
 public class MqttClientSessionOptions extends MqttClientOptions {
 
   private String hostname = MqttClientOptions.DEFAULT_HOST;
   private int port = MqttClientOptions.DEFAULT_PORT;
+  private ReconnectDelayOptions reconnectDelay;
 
   /**
    * Default constructor
@@ -51,6 +53,7 @@ public class MqttClientSessionOptions extends MqttClientOptions {
     super(other);
     this.hostname = other.hostname;
     this.port = other.port;
+    this.reconnectDelay= other.reconnectDelay.copy();
   }
 
   public int getPort() {
@@ -69,5 +72,14 @@ public class MqttClientSessionOptions extends MqttClientOptions {
   public MqttClientSessionOptions setHostname(String hostname) {
     this.hostname = hostname;
     return this;
+  }
+
+  public MqttClientSessionOptions setReconnectDelay(ReconnectDelayOptions reconnectDelay) {
+    this.reconnectDelay = reconnectDelay;
+    return this;
+  }
+
+  public ReconnectDelayOptions getReconnectDelay() {
+    return this.reconnectDelay;
   }
 }
