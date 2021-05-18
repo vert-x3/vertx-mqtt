@@ -34,6 +34,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -360,7 +361,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
    * @param reason The reason message.
    */
   private void closeConnection(final String reason) {
-    closeConnection(new IOException(reason));
+    closeConnection(new VertxException(reason).fillInStackTrace());
   }
 
   /**
@@ -369,7 +370,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
   private void connectionClosed() {
     if (this.state != SessionState.DISCONNECTING) {
       // this came unexpected
-      connectionClosed(new IOException("Connection closed"));
+      connectionClosed(new VertxException("Connection closed"));
     }
   }
 
