@@ -467,7 +467,7 @@ public class MqttClientSessionTest {
 
       switch (event.getSessionState()) {
         case CONNECTED:
-          client.publishHandler(x -> client.stop());
+          client.publishCompletionHandler(x -> client.stop());
           client.publish("foo", Buffer.buffer("bar"), MqttQoS.AT_LEAST_ONCE);
           break;
         case DISCONNECTED:

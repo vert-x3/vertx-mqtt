@@ -75,7 +75,9 @@ public class MqttClientSessionImpl implements MqttClientSession {
   private volatile Handler<MqttPublishMessage> messageHandler;
   private volatile Handler<SessionEvent> sessionStateHandler;
   private volatile Handler<SubscriptionEvent> subscriptionStateHandler;
-  private volatile Handler<Integer> publishHandler;
+  private volatile Handler<Integer> publishCompleteHandler;
+  private volatile Handler<Integer> publishCompletionExpirationHandler;
+  private volatile Handler<Integer> publishCompletionUnknownPacketIdHandler;
 
   /**
    * Create a new instance, which is not started.
@@ -182,8 +184,20 @@ public class MqttClientSessionImpl implements MqttClientSession {
   }
 
   @Override
-  public MqttClientSession publishHandler(Handler<Integer> publishHandler) {
-    this.publishHandler = publishHandler;
+  public MqttClientSession publishCompletionHandler(Handler<Integer> publishCompleteHandler) {
+    this.publishCompleteHandler = publishCompleteHandler;
+    return this;
+  }
+
+  @Override
+  public MqttClientSession publishCompletionExpirationHandler(Handler<Integer> publishCompletionExpirationHandler) {
+    this.publishCompletionExpirationHandler = publishCompletionExpirationHandler;
+    return this;
+  }
+
+  @Override
+  public MqttClientSession publishCompletionUnknownPacketIdHandler(Handler<Integer> publishCompletionUnknownPacketIdHandler) {
+    this.publishCompletionUnknownPacketIdHandler = publishCompletionUnknownPacketIdHandler;
     return this;
   }
 
@@ -315,6 +329,8 @@ public class MqttClientSessionImpl implements MqttClientSession {
     this.client.subscribeCompletionHandler(this::subscribeCompleted);
     this.client.unsubscribeCompletionHandler(this::unsubscribeCompleted);
     this.client.publishCompletionHandler(this::publishComplete);
+    this.client.publishCompletionExpirationHandler(this::publishExpired);
+    this.client.publishCompletionUnknownPacketIdHandler(this::publishCompletionUnknown);
 
     // change state
     setState(SessionState.CONNECTING, null);
@@ -408,6 +424,8 @@ public class MqttClientSessionImpl implements MqttClientSession {
       this.client.closeHandler(null);
       this.client.subscribeCompletionHandler(null);
       this.client.publishCompletionHandler(null);
+      this.client.publishCompletionExpirationHandler(null);
+      this.client.publishCompletionUnknownPacketIdHandler(null);
       this.client = null;
     }
     setState(SessionState.DISCONNECTED, cause);
@@ -594,7 +612,21 @@ public class MqttClientSessionImpl implements MqttClientSession {
   }
 
   private void publishComplete(Integer messageId) {
-    Handler<Integer> handler = this.publishHandler;
+    Handler<Integer> handler = this.publishCompleteHandler;
+    if (handler != null) {
+      handler.handle(messageId);
+    }
+  }
+
+  private void publishExpired(Integer messageId) {
+    Handler<Integer> handler = this.publishCompletionExpirationHandler;
+    if (handler != null) {
+      handler.handle(messageId);
+    }
+  }
+
+  private void publishCompletionUnknown(Integer messageId) {
+    Handler<Integer> handler = this.publishCompletionUnknownPacketIdHandler;
     if (handler != null) {
       handler.handle(messageId);
     }

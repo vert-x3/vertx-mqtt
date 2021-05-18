@@ -44,13 +44,13 @@ public interface MqttClientSession {
   enum SessionState {
     /**
      * The session is disconnected.
-     *
+     * <p>
      * A re-connect timer may be pending.
      */
     DISCONNECTED,
     /**
      * The session started to connect.
-     *
+     * <p>
      * This may include re-subscribing to any topics after the connect call was successful.
      */
     CONNECTING,
@@ -66,11 +66,11 @@ public interface MqttClientSession {
 
   /**
    * The state of a subscription.
-   *
+   * <p>
    * Subscriptions established when a new topic gets added, or the connection was established. If the subscribe call
    * returns an error for the subscription, the state will remain {@link #FAILED} and it will not try to re-subscribe
    * while the connection is active.
-   *
+   * <p>
    * When the session (connection) disconnects, all subscriptions will automatically be reset to {@link #UNSUBSCRIBED}.
    */
   enum SubscriptionState {
@@ -94,7 +94,7 @@ public interface MqttClientSession {
 
   /**
    * The requested QoS level.
-   *
+   * <p>
    * NOTE: This is missing QoS 2, as this mode is not properly supported by the session.
    */
   enum RequestedQoS {
@@ -162,7 +162,7 @@ public interface MqttClientSession {
      * The granted QoS level from the server.
      *
      * @return When the state changed to {@link SubscriptionState#SUBSCRIBED}, it contains the QoS level granted by
-     * the server. Otherwise it will be {@code null}.
+     *   the server. Otherwise it will be {@code null}.
      */
     public Integer getQos() {
       return this.qos;
@@ -241,13 +241,34 @@ public interface MqttClientSession {
   MqttClientSession subscriptionStateHandler(Handler<SubscriptionEvent> subscriptionStateHandler);
 
   /**
-   * The the publish response handler.
+   * Set the publish complete handler.
    *
-   * @param publishHandler The new handler, will overwrite the old one.
+   * @param publishCompleteHandler The new handler, will overwrite the old one.
    * @return current MQTT client session instance
+   * @see MqttClient#publishCompletionHandler(Handler)
    */
   @Fluent
-  MqttClientSession publishHandler(Handler<Integer> publishHandler);
+  MqttClientSession publishCompletionHandler(Handler<Integer> publishCompleteHandler);
+
+  /**
+   * Set the publish completion expiration handler.
+   *
+   * @param publishCompletionExpirationHandler The new handler, will overwrite the old one.
+   * @return current MQTT client session instance
+   * @see MqttClient#publishCompletionExpirationHandler(Handler)
+   */
+  @Fluent
+  MqttClientSession publishCompletionExpirationHandler(Handler<Integer> publishCompletionExpirationHandler);
+
+  /**
+   * Set the publish completion unknown packet id handler.
+   *
+   * @param publishCompletionUnknownPacketIdHandler The new handler, will overwrite the old one.
+   * @return current MQTT client session instance
+   * @see MqttClient#publishCompletionUnknownPacketIdHandler(Handler)
+   */
+  @Fluent
+  MqttClientSession publishCompletionUnknownPacketIdHandler(Handler<Integer> publishCompletionUnknownPacketIdHandler);
 
   /**
    * Start the session. This will try to drive the connection to {@link SessionState#CONNECTED}.
