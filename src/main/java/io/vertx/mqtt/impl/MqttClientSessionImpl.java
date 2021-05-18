@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.impl;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -409,7 +408,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
     }
   }
 
-  void doSubscribe(Map<String, RequestedQoS> topics) {
+  private void doSubscribe(Map<String, RequestedQoS> topics) {
     final LinkedHashMap<String, RequestedQoS> subscriptions = new LinkedHashMap<>(topics.size());
 
     for (Map.Entry<String, RequestedQoS> entry : topics.entrySet()) {
