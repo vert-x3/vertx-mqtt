@@ -53,7 +53,12 @@ import io.vertx.mqtt.MqttClientSessionOptions;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttTopicSubscription;
+import io.vertx.mqtt.session.RequestedQoS;
+import io.vertx.mqtt.session.SessionState;
 import io.vertx.mqtt.messages.MqttPublishMessage;
+import io.vertx.mqtt.session.SubscriptionEvent;
+import io.vertx.mqtt.session.impl.SubscriptionEventImpl;
+import io.vertx.mqtt.session.SubscriptionState;
 
 @RunWith(VertxUnitRunner.class)
 public class MqttClientSessionTest {
@@ -62,7 +67,7 @@ public class MqttClientSessionTest {
   private static final String MQTT_SERVER_HOST = "localhost";
 
   static class SubscribeTestResult {
-    LinkedList<MqttClientSession.SubscriptionEvent> events;
+    LinkedList<SubscriptionEvent> events;
     List<String[]> payloads;
   }
 
@@ -203,7 +208,7 @@ public class MqttClientSessionTest {
     MqttClientSession client = MqttClientSession
       .create(vertx, options);
 
-    LinkedList<MqttClientSession.SessionState> sessionStates = new LinkedList<>();
+    LinkedList<SessionState> sessionStates = new LinkedList<>();
 
     Async async = ctx.async();
 
@@ -225,10 +230,10 @@ public class MqttClientSessionTest {
     async.await();
 
     assertArrayEquals(new Object[]{
-      MqttClientSession.SessionState.CONNECTING,
-      MqttClientSession.SessionState.CONNECTED,
-      MqttClientSession.SessionState.DISCONNECTING,
-      MqttClientSession.SessionState.DISCONNECTED
+      SessionState.CONNECTING,
+      SessionState.CONNECTED,
+      SessionState.DISCONNECTING,
+      SessionState.DISCONNECTED
     }, sessionStates.toArray());
   }
 
@@ -244,7 +249,7 @@ public class MqttClientSessionTest {
     MqttClientSession client = MqttClientSession
       .create(vertx, options);
 
-    LinkedList<MqttClientSession.SessionState> sessionStates = new LinkedList<>();
+    LinkedList<SessionState> sessionStates = new LinkedList<>();
 
     Async async = ctx.async(2);
 
@@ -271,13 +276,13 @@ public class MqttClientSessionTest {
     async.await(15_000);
 
     assertArrayEquals(new Object[]{
-      MqttClientSession.SessionState.CONNECTING,
-      MqttClientSession.SessionState.DISCONNECTED,
+      SessionState.CONNECTING,
+      SessionState.DISCONNECTED,
 
-      MqttClientSession.SessionState.CONNECTING,
-      MqttClientSession.SessionState.CONNECTED,
-      MqttClientSession.SessionState.DISCONNECTING,
-      MqttClientSession.SessionState.DISCONNECTED
+      SessionState.CONNECTING,
+      SessionState.CONNECTED,
+      SessionState.DISCONNECTING,
+      SessionState.DISCONNECTED
     }, sessionStates.toArray());
   }
 
@@ -293,7 +298,7 @@ public class MqttClientSessionTest {
 
     Async async = ctx.async();
 
-    LinkedList<MqttClientSession.SubscriptionEvent> events = new LinkedList<>();
+    LinkedList<SubscriptionEvent> events = new LinkedList<>();
     client.subscriptionStateHandler(events::add);
 
     List<String[]> payloads = new LinkedList<>();
@@ -308,7 +313,7 @@ public class MqttClientSessionTest {
     msgAsync.handler(x -> {
 
       client.sessionStateHandler(event -> {
-        if (event.getSessionState() == MqttClientSession.SessionState.DISCONNECTED) {
+        if (event.getSessionState() == SessionState.DISCONNECTED) {
           async.complete();
         }
       });
@@ -335,7 +340,7 @@ public class MqttClientSessionTest {
     startServer();
 
     SubscribeTestResult result = testSubscribe(Duration.ofSeconds(5), session -> {
-        session.subscribe("qos0", MqttClientSession.RequestedQoS.QOS_1);
+        session.subscribe("qos0", RequestedQoS.QOS_1);
       },
       (session, payloads) -> payloads.size() == 2
     );
@@ -343,9 +348,9 @@ public class MqttClientSessionTest {
     // assert
 
     assertArrayEquals(new Object[]{
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBED, 0),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.SUBSCRIBING, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.SUBSCRIBED, 0),
+      new SubscriptionEventImpl("qos0", SubscriptionState.UNSUBSCRIBED, null),
     }, result.events.toArray());
 
     assertArrayEquals(new Object[]{
@@ -364,7 +369,7 @@ public class MqttClientSessionTest {
     vertx.setTimer(2_000, x -> startServerAsync());
 
     SubscribeTestResult result = testSubscribe(Duration.ofSeconds(15), session -> {
-        session.subscribe("qos0", MqttClientSession.RequestedQoS.QOS_1);
+        session.subscribe("qos0", RequestedQoS.QOS_1);
       },
       (session, payloads) -> payloads.size() == 2
     );
@@ -372,10 +377,10 @@ public class MqttClientSessionTest {
     // assert
 
     assertArrayEquals(new Object[]{
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBED, 0),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.UNSUBSCRIBED, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.SUBSCRIBING, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.SUBSCRIBED, 0),
+      new SubscriptionEventImpl("qos0", SubscriptionState.UNSUBSCRIBED, null),
     }, result.events.toArray());
 
     assertArrayEquals(new Object[]{
@@ -395,14 +400,14 @@ public class MqttClientSessionTest {
 
     SubscribeTestResult result = testSubscribe(Duration.ofSeconds(25),
       session -> {
-        session.subscribe("qos0", MqttClientSession.RequestedQoS.QOS_1);
+        session.subscribe("qos0", RequestedQoS.QOS_1);
       },
       (session, payloads) -> {
         if (payloads.size() == 2) {
           // stop
-          session.unsubscribe(Collections.singleton("qos0"));
+          session.unsubscribe("qos0");
           vertx.setTimer(5_000, x -> {
-            session.subscribe("qos1", MqttClientSession.RequestedQoS.QOS_1);
+            session.subscribe("qos1", RequestedQoS.QOS_1);
           });
         }
         return payloads.size() == 4;
@@ -412,12 +417,12 @@ public class MqttClientSessionTest {
     // assert
 
     assertArrayEquals(new Object[]{
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.SUBSCRIBED, 0),
-      new MqttClientSession.SubscriptionEvent("qos0", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
-      new MqttClientSession.SubscriptionEvent("qos1", MqttClientSession.SubscriptionState.SUBSCRIBING, null),
-      new MqttClientSession.SubscriptionEvent("qos1", MqttClientSession.SubscriptionState.SUBSCRIBED, 1),
-      new MqttClientSession.SubscriptionEvent("qos1", MqttClientSession.SubscriptionState.UNSUBSCRIBED, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.SUBSCRIBING, null),
+      new SubscriptionEventImpl("qos0", SubscriptionState.SUBSCRIBED, 0),
+      new SubscriptionEventImpl("qos0", SubscriptionState.UNSUBSCRIBED, null),
+      new SubscriptionEventImpl("qos1", SubscriptionState.SUBSCRIBING, null),
+      new SubscriptionEventImpl("qos1", SubscriptionState.SUBSCRIBED, 1),
+      new SubscriptionEventImpl("qos1", SubscriptionState.UNSUBSCRIBED, null),
     }, result.events.toArray());
 
     assertArrayEquals(new Object[]{

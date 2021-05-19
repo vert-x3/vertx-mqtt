@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.reconnect;
+package io.vertx.mqtt.session;
 
 import java.time.Duration;
 

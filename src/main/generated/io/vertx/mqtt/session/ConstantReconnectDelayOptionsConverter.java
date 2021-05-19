@@ -1,4 +1,4 @@
-package io.vertx.mqtt.reconnect;
+package io.vertx.mqtt.session;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
@@ -7,8 +7,8 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Converter and mapper for {@link io.vertx.mqtt.reconnect.ConstantReconnectDelayOptions}.
- * NOTE: This class has been automatically generated from the {@link io.vertx.mqtt.reconnect.ConstantReconnectDelayOptions} original class using Vert.x codegen.
+ * Converter and mapper for {@link io.vertx.mqtt.session.ConstantReconnectDelayOptions}.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.mqtt.session.ConstantReconnectDelayOptions} original class using Vert.x codegen.
  */
 public class ConstantReconnectDelayOptionsConverter {
 

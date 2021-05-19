@@ -18,8 +18,8 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
-import io.vertx.mqtt.reconnect.ConstantReconnectDelayOptions;
-import io.vertx.mqtt.reconnect.ReconnectDelayOptions;
+import io.vertx.mqtt.session.ConstantReconnectDelayOptions;
+import io.vertx.mqtt.session.ReconnectDelayOptions;
 
 @DataObject(generateConverter = true)
 public class MqttClientSessionOptions extends MqttClientOptions {

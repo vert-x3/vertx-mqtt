@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.reconnect;
+package io.vertx.mqtt.session;
 
-public interface ReconnectDelayOptions {
+import io.vertx.codegen.annotations.VertxGen;
 
-  ReconnectDelayProvider createProvider();
+@VertxGen
+public interface SessionEvent {
+  SessionState getSessionState();
 
-  ReconnectDelayOptions copy();
-
+  Throwable getCause();
 }

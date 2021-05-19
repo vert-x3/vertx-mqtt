@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package io.vertx.mqtt.reconnect;
+package io.vertx.mqtt.session;
 
-import java.time.Duration;
+import io.vertx.codegen.annotations.VertxGen;
 
-public interface ReconnectDelayProvider {
+@VertxGen
+public interface SubscriptionEvent {
+  Integer getQos();
 
-  Duration nextDelay();
+  SubscriptionState getSubscriptionState();
 
-  void reset();
-
+  String getTopic();
 }

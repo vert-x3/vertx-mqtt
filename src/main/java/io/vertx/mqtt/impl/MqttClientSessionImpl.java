@@ -41,10 +41,17 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientSession;
 import io.vertx.mqtt.MqttClientSessionOptions;
+import io.vertx.mqtt.session.RequestedQoS;
+import io.vertx.mqtt.session.SessionEvent;
+import io.vertx.mqtt.session.SessionState;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
-import io.vertx.mqtt.reconnect.ReconnectDelayProvider;
+import io.vertx.mqtt.session.ReconnectDelayProvider;
+import io.vertx.mqtt.session.SubscriptionEvent;
+import io.vertx.mqtt.session.impl.SessionEventImpl;
+import io.vertx.mqtt.session.impl.SubscriptionEventImpl;
+import io.vertx.mqtt.session.SubscriptionState;
 
 public class MqttClientSessionImpl implements MqttClientSession {
 
@@ -109,7 +116,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
   }
 
   @Override
-  public MqttClientSession unsubscribe(Collection<String> topics) {
+  public MqttClientSession unsubscribe(List<String> topics) {
     final Set<String> finalTopics = new HashSet<>(topics);
     this.vertx.runOnContext(x -> doUnsubscribe(finalTopics));
     return this;
@@ -245,7 +252,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
       this.state = sessionState;
       Handler<SessionEvent> handler = this.sessionStateHandler;
       if (handler != null) {
-        handler.handle(new SessionEvent(sessionState, cause));
+        handler.handle(new SessionEventImpl(sessionState, cause));
       }
     }
 
@@ -279,7 +286,7 @@ public class MqttClientSessionImpl implements MqttClientSession {
 
     Handler<SubscriptionEvent> handler = this.subscriptionStateHandler;
     if (handler != null) {
-      handler.handle(new SubscriptionEvent(topic, state, grantedQoS));
+      handler.handle(new SubscriptionEventImpl(topic, state, grantedQoS));
     }
 
   }
