@@ -37,7 +37,8 @@ public class SessionEventImpl implements SessionEvent {
    *
    * @return The state.
    */
-  @Override public SessionState getSessionState() {
+  @Override
+  public SessionState getSessionState() {
     return this.sessionState;
   }
 
@@ -46,7 +47,8 @@ public class SessionEventImpl implements SessionEvent {
    *
    * @return The throwable that causes the state change, or {@code null}, if there was none.
    */
-  @Override public Throwable getCause() {
+  @Override
+  public Throwable getCause() {
     return this.cause;
   }
 }
