@@ -237,7 +237,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl disconnectHandlerWithMessage(Handler<MqttDisconnectMessage> handler) {
+  public MqttEndpointImpl disconnectMessageHandler(Handler<MqttDisconnectMessage> handler) {
     synchronized (this.conn) {
       this.checkClosed();
       this.disconnectHandlerWithMessage = handler;
@@ -282,7 +282,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl publishAcknowledgeHandlerWithMessage(Handler<MqttPubAckMessage> handler) {
+  public MqttEndpointImpl publishAcknowledgeMessageHandler(Handler<MqttPubAckMessage> handler) {
     synchronized (this.conn) {
       this.checkClosed();
       this.pubackHandlerWithMessage = handler;
@@ -300,7 +300,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl publishReceivedHandlerWithMessage(Handler<MqttPubRecMessage> handler) {
+  public MqttEndpointImpl publishReceivedMessageHandler(Handler<MqttPubRecMessage> handler) {
     synchronized (this.conn) {
       this.checkClosed();
       this.pubrecHandlerWithMessage = handler;
@@ -318,7 +318,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl publishReleaseHandlerWithMessage(Handler<MqttPubRelMessage> handler) {
+  public MqttEndpointImpl publishReleaseMessageHandler(Handler<MqttPubRelMessage> handler) {
     synchronized (this.conn) {
       this.checkClosed();
       this.pubrelHandlerWithMessage = handler;
@@ -336,7 +336,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  public MqttEndpointImpl publishCompletionHandlerWithMessage(Handler<MqttPubCompMessage> handler) {
+  public MqttEndpointImpl publishCompletionMessageHandler(Handler<MqttPubCompMessage> handler) {
     synchronized (this.conn) {
       this.checkClosed();
       this.pubcompHandlerWithMessage = handler;

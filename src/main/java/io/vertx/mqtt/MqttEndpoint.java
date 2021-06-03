@@ -180,7 +180,7 @@ public interface MqttEndpoint {
   /**
    * @return MQTT properties of the CONNECT message
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttProperties connectProperties();
 
   /**
@@ -210,7 +210,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint disconnectHandlerWithMessage(Handler<MqttDisconnectMessage> handler);
+  MqttEndpoint disconnectMessageHandler(Handler<MqttDisconnectMessage> handler);
 
   /**
    * Set a subscribe handler on the MQTT endpoint. This handler is called when a SUBSCRIBE
@@ -260,7 +260,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint publishAcknowledgeHandlerWithMessage(Handler<MqttPubAckMessage> handler);
+  MqttEndpoint publishAcknowledgeMessageHandler(Handler<MqttPubAckMessage> handler);
 
   /**
    * Set the pubrec handler on the MQTT endpoint. This handler is called when a PUBREC
@@ -280,7 +280,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint publishReceivedHandlerWithMessage(Handler<MqttPubRecMessage> handler);
+  MqttEndpoint publishReceivedMessageHandler(Handler<MqttPubRecMessage> handler);
 
   /**
    * Set the pubrel handler on the MQTT endpoint. This handler is called when a PUBREL
@@ -300,7 +300,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint publishReleaseHandlerWithMessage(Handler<MqttPubRelMessage> handler);
+  MqttEndpoint publishReleaseMessageHandler(Handler<MqttPubRelMessage> handler);
 
 
   /**
@@ -321,7 +321,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  MqttEndpoint publishCompletionHandlerWithMessage(Handler<MqttPubCompMessage> handler);
+  MqttEndpoint publishCompletionMessageHandler(Handler<MqttPubCompMessage> handler);
 
   /**
    * Set the pingreq handler on the MQTT endpoint. This handler is called when a PINGREQ
@@ -376,7 +376,7 @@ public interface MqttEndpoint {
    * @param properties CONNACK message properties (MQTT5)
    * @return  a reference to this, so the API can be used fluently
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   MqttEndpoint accept(boolean sessionPresent, MqttProperties properties);
 
@@ -399,7 +399,7 @@ public interface MqttEndpoint {
    * @return  a reference to this, so the API can be used fluently
    */
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint reject(MqttConnectReturnCode returnCode, MqttProperties properties);
 
   /**
@@ -421,7 +421,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint subscribeAcknowledge(int subscribeMessageId, List<MqttSubAckReasonCode> reasonCodes, MqttProperties properties);
 
   /**
@@ -442,7 +442,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint unsubscribeAcknowledge(int unsubscribeMessageId, List<MqttUnsubAckReasonCode> reasonCodes, MqttProperties properties);
 
   /**
@@ -455,7 +455,7 @@ public interface MqttEndpoint {
   MqttEndpoint publishAcknowledge(int publishMessageId);
 
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties properties);
 
   /**
@@ -475,7 +475,7 @@ public interface MqttEndpoint {
    * @param properties MQTT properties
    * @return a reference to this, so the API can be used fluently
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   MqttEndpoint publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties);
 
@@ -497,7 +497,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties);
 
   /**
@@ -518,7 +518,7 @@ public interface MqttEndpoint {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint publishComplete(int publishMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties);
 
   /**
@@ -553,9 +553,9 @@ public interface MqttEndpoint {
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId);
 
   /**
-   * Like {@link #publish(String, Buffer, MqttQoS, boolean, boolean, int, properties, Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #publish(String, Buffer, MqttQoS, boolean, boolean, int, MqttProperties, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties);
 
   /**
@@ -587,7 +587,7 @@ public interface MqttEndpoint {
    * @return current MQTT client instance
    */
   @Fluent
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttEndpoint publish(String topic,
                        Buffer payload,
                        MqttQoS qosLevel,
@@ -613,7 +613,7 @@ public interface MqttEndpoint {
    * @param properties MQTT message properties
    * @return a reference to this, so the API can be used fluently
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   MqttEndpoint disconnect(MqttDisconnectReasonCode code, MqttProperties properties);
 }
