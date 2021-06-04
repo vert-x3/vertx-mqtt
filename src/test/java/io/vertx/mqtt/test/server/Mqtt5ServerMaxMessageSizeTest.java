@@ -31,6 +31,7 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.packet.MqttReturnCode;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -55,6 +56,8 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
     this.setUp(context, options);
   }
 
+  //Temporarily disabled until https://github.com/vert-x3/vertx-mqtt/issues/202 gets resolved
+  @Ignore
   @Test
   public void publishBigMessage(TestContext context) {
     Mqtt5ProbeCallback probeCallback = new Mqtt5ProbeCallback(context);
