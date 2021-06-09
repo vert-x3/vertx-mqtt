@@ -111,7 +111,7 @@ public class MqttServerSubscribeTest extends MqttServerBaseTest {
   }
 
   @Test
-  public void subscribeUnsupportedQos(TestContext context) {
+  public void subscribeUnsupportedMqttVersion(TestContext context) {
 
     Async async = context.async();
 
@@ -122,7 +122,7 @@ public class MqttServerSubscribeTest extends MqttServerBaseTest {
         0x11,                         // MSG LEN
         0x00, 0x04,                   // PROTOCOL NAME LENGTH
         0x4D, 0x51, 0x54, 0x54,       // MQTT
-        0x05,                         // VERSION
+        0x06,                         // VERSION
         0x02,                         // QOS
         0x00, 0x3C,                   // KEEP ALIVE
         0x00, 0x05,                   // CLIENT ID LENGTH
