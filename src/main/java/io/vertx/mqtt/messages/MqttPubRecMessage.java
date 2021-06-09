@@ -37,7 +37,7 @@ public interface MqttPubRecMessage {
    * @param properties MQTT properties of the pubrec message
    * @return
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttPubRecMessage create(int messageId, MqttPubRecReasonCode code, MqttProperties properties) {
     return new MqttPubRecMessageImpl(messageId, code, properties);
   }
@@ -55,6 +55,6 @@ public interface MqttPubRecMessage {
    * @return MQTT properties
    */
   @CacheReturn
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttProperties properties();
 }

@@ -44,7 +44,7 @@ public interface MqttTopicSubscription {
    * Subscription option
    * @return Subscription options
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @CacheReturn
   MqttSubscriptionOption subscriptionOption();
 

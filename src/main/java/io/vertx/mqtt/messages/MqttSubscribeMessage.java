@@ -52,7 +52,7 @@ public interface MqttSubscribeMessage extends MqttMessage {
    * @param properties MQTT message properties
    * @return Vert.x subscribe message
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttSubscribeMessage create(int messageId, List<io.netty.handler.codec.mqtt.MqttTopicSubscription> topicSubscriptions, MqttProperties properties) {
     return new MqttSubscribeMessageImpl(messageId, topicSubscriptions, properties);
   }
@@ -67,7 +67,7 @@ public interface MqttSubscribeMessage extends MqttMessage {
   /**
    * @return MQTT properties
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @CacheReturn
   MqttProperties properties();
 }

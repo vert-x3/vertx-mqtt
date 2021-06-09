@@ -48,7 +48,7 @@ public interface MqttConnAckMessage {
    * @param properties MQTT properties
    * @return
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttConnAckMessage create(MqttConnectReturnCode code, boolean isSessionPresent, MqttProperties properties) {
     return new MqttConnAckMessageImpl(code, isSessionPresent, properties);
   }
@@ -65,7 +65,7 @@ public interface MqttConnAckMessage {
   @CacheReturn
   boolean isSessionPresent();
 
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @CacheReturn
   MqttProperties properties();
 }

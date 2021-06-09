@@ -37,7 +37,7 @@ public interface MqttPubAckMessage {
    * @param properties MQTT properties of the puback message
    * @return
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttPubAckMessage create(int messageId, MqttPubAckReasonCode code, MqttProperties properties) {
     return new MqttPubAckMessageImpl(messageId, code, properties);
   }
@@ -55,6 +55,6 @@ public interface MqttPubAckMessage {
    * @return MQTT properties
    */
   @CacheReturn
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttProperties properties();
 }

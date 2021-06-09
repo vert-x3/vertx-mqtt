@@ -59,7 +59,7 @@ public interface MqttPublishMessage extends MqttMessage {
    * @param properties message properties
    * @return Vert.x publish message
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload, MqttProperties properties) {
 
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, properties);
@@ -99,6 +99,6 @@ public interface MqttPublishMessage extends MqttMessage {
    * @return MQTT properties
    */
   @CacheReturn
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttProperties properties();
 }

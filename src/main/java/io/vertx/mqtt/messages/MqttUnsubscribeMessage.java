@@ -49,7 +49,7 @@ public interface MqttUnsubscribeMessage extends MqttMessage {
    * @param topics    list of topics to unsubscribe
    * @param properties UNSUBSCRIBE message properties
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttUnsubscribeMessage create(int messageId, List<String> topics, MqttProperties properties) {
 
     return new MqttUnsubscribeMessageImpl(messageId, topics, properties);
@@ -66,6 +66,6 @@ public interface MqttUnsubscribeMessage extends MqttMessage {
    * @return MQTT properties
    */
   @CacheReturn
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttProperties properties();
 }

@@ -36,7 +36,7 @@ public interface MqttDisconnectMessage {
    * @param properties MQTT properties of the disconnect message
    * @return
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttDisconnectMessage create(MqttDisconnectReasonCode code, MqttProperties properties) {
     return new MqttDisconnectMessageImpl(code, properties);
   }
@@ -50,7 +50,7 @@ public interface MqttDisconnectMessage {
   /**
    * @return MQTT properties
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @CacheReturn
   MqttProperties properties();
 }
