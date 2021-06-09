@@ -29,6 +29,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -55,6 +56,7 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
     this.setUp(context, options);
   }
 
+  @Ignore
   @Test
   public void publishBigMessage(TestContext context) {
 
