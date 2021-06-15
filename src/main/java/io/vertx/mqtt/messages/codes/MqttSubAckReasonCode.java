@@ -6,7 +6,7 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 /**
  * Reason codes for SUBACK MQTT message
  */
-public enum MqttSubAckReasonCode {
+public enum MqttSubAckReasonCode implements MqttReasonCode {
     //All MQTT versions
     GRANTED_QOS0((byte)0x0),
     GRANTED_QOS1((byte)0x1),
