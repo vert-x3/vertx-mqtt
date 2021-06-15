@@ -1,5 +1,8 @@
 package io.vertx.mqtt.messages.codes;
 
+/**
+ * Reason codes for PUBACK MQTT message
+ */
 public enum MqttPubAckReasonCode implements MqttReasonCode {
     SUCCESS((byte)0x0),
     NO_MATCHING_SUBSCRIBERS((byte)0x10),

@@ -1,5 +1,8 @@
 package io.vertx.mqtt.messages.codes;
 
+/**
+ * Reason codes for UNSUBACK MQTT message
+ */
 public enum MqttUnsubAckReasonCode {
     SUCCESS((byte)0x0),
     NO_SUBSCRIPTION_EXISTED((byte)0x11),

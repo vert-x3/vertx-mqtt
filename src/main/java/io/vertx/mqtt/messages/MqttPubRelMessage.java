@@ -24,7 +24,7 @@ import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 import io.vertx.mqtt.messages.impl.MqttPubRelMessageImpl;
 
 /**
- * Represents an MQTT PUBREC message
+ * Represents an MQTT PUBREL message
  */
 @VertxGen
 public interface MqttPubRelMessage {

@@ -1,5 +1,8 @@
 package io.vertx.mqtt.messages.codes;
 
+/**
+ * Reason codes for PUBCOMP MQTT message
+ */
 public enum MqttPubCompReasonCode implements MqttReasonCode {
     SUCCESS((byte)0x0),
     PACKET_IDENTIFIER_NOT_FOUND((byte)0x92);

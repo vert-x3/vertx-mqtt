@@ -1,5 +1,8 @@
 package io.vertx.mqtt.messages.codes;
 
+/**
+ * Utilities for MQTT message codes enums
+ */
 public class ReasonCodeUtils {
     static <C extends MqttReasonCode> void fillValuesByCode(C[] valuesByCode, C[] values) {
         for (C code : values) {

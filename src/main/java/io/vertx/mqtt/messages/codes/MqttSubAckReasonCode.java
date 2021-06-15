@@ -3,6 +3,9 @@ package io.vertx.mqtt.messages.codes;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 
+/**
+ * Reason codes for SUBACK MQTT message
+ */
 public enum MqttSubAckReasonCode {
     //All MQTT versions
     GRANTED_QOS0((byte)0x0),

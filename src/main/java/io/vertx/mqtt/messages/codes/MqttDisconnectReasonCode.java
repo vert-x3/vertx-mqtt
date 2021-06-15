@@ -1,5 +1,8 @@
 package io.vertx.mqtt.messages.codes;
 
+/**
+ * Reason codes for DISCONNECT MQTT message
+ */
 public enum MqttDisconnectReasonCode implements MqttReasonCode {
     NORMAL((byte)0x0),
     WITH_WILL_MESSAGE((byte)0x04),
