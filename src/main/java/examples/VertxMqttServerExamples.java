@@ -16,6 +16,7 @@
 
 package examples;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -26,6 +27,7 @@ import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.MqttTopicSubscription;
+import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -49,6 +51,7 @@ public class VertxMqttServerExamples {
       if (endpoint.auth() != null) {
         System.out.println("[username = " + endpoint.auth().getUsername() + ", password = " + endpoint.auth().getPassword() + "]");
       }
+      System.out.println("[properties = " + endpoint.connectProperties() + "]");
       if (endpoint.will() != null) {
         System.out.println("[will topic = " + endpoint.will().getWillTopic() + " msg = " + new String(endpoint.will().getWillMessageBytes()) +
           " QoS = " + endpoint.will().getWillQos() + " isRetain = " + endpoint.will().isWillRetain() + "]");
@@ -80,9 +83,9 @@ public class VertxMqttServerExamples {
   public void example2(MqttEndpoint endpoint) {
 
     // handling disconnect message
-    endpoint.disconnectHandler(v -> {
+    endpoint.disconnectMessageHandler(disconnectMessage -> {
 
-      System.out.println("Received disconnect from client");
+      System.out.println("Received disconnect from client, reason code = " + disconnectMessage.code());
     });
   }
 
@@ -141,13 +144,13 @@ public class VertxMqttServerExamples {
     // handling requests for subscriptions
     endpoint.subscribeHandler(subscribe -> {
 
-      List<MqttQoS> grantedQosLevels = new ArrayList<>();
+      List<MqttSubAckReasonCode> reasonCodes = new ArrayList<>();
       for (MqttTopicSubscription s: subscribe.topicSubscriptions()) {
         System.out.println("Subscription for " + s.topicName() + " with QoS " + s.qualityOfService());
-        grantedQosLevels.add(s.qualityOfService());
+        reasonCodes.add(MqttSubAckReasonCode.qosGranted(s.qualityOfService()));
       }
       // ack the subscriptions request
-      endpoint.subscribeAcknowledge(subscribe.messageId(), grantedQosLevels);
+      endpoint.subscribeAcknowledge(subscribe.messageId(), reasonCodes, MqttProperties.NO_PROPERTIES);
 
     });
   }
