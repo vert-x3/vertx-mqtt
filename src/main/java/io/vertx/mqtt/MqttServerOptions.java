@@ -28,6 +28,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents options used by the MQTT server
@@ -255,6 +256,40 @@ public class MqttServerOptions extends NetServerOptions {
   public MqttServerOptions setTimeoutOnConnect(int timeoutOnConnect) {
     this.timeoutOnConnect = timeoutOnConnect;
     return this;
+  }
+
+  @Override
+  public MqttServerOptions setUseProxyProtocol(boolean useProxyProtocol) {
+    super.setUseProxyProtocol(useProxyProtocol);
+    return this;
+  }
+
+  @Override
+  public boolean isUseProxyProtocol() {
+    return super.isUseProxyProtocol();
+  }
+
+  @Override
+  public long getProxyProtocolTimeout() {
+    return super.getProxyProtocolTimeout();
+  }
+
+  @Override
+  public MqttServerOptions setProxyProtocolTimeout(long proxyProtocolTimeout) {
+    super.setProxyProtocolTimeout(proxyProtocolTimeout);
+    return this;
+  }
+
+  @Override
+  public MqttServerOptions setProxyProtocolTimeoutUnit(
+    TimeUnit proxyProtocolTimeoutUnit) {
+    super.setProxyProtocolTimeoutUnit(proxyProtocolTimeoutUnit);
+    return this;
+  }
+
+  @Override
+  public TimeUnit getProxyProtocolTimeoutUnit() {
+    return super.getProxyProtocolTimeoutUnit();
   }
 
   /**

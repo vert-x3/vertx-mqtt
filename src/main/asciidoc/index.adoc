@@ -345,3 +345,32 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 ----
 {@link examples.VertxMqttClientExamples#example9}
 ----
+
+=== Use proxy protocol
+
+[source,$lang]
+----
+{@link examples.VertxMqttServerExamples#example13}
+----
+
+If your servers are behind haproxy or nginx and you want to get the client's original ip and port, then you need to set `setUseProxyProtocol` to `true`
+
+IMPORTANT: to enable this feature, you need to add dependency `netty-codec-haproxy`, but it is not introduced by default, so you need to manually add it
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-codec-haproxy</artifactId>
+    <version>${maven.version}</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile io.netty:netty-codec-haproxy:${maven.version}
+----
