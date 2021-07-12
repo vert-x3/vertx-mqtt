@@ -17,39 +17,30 @@
 package io.vertx.mqtt.messages.impl;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
-import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
-
-import java.util.List;
+import io.vertx.mqtt.messages.MqttDisconnectMessage;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 
 /**
- * Represents an MQTT UNSUBSCRIBE message
+ * Represents an MQTT DISCONNECT message
  */
-public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
+public class MqttDisconnectMessageImpl implements MqttDisconnectMessage {
 
-  private final int messageId;
-  private final List<String> topics;
+  private final MqttDisconnectReasonCode code;
   private final MqttProperties properties;
 
   /**
    * Constructor
    *
-   * @param messageId message identifier
-   * @param topics    list of topics to unsubscribe
-   * @param properties UNSUBSCRIBE message properties
+   * @param code  reason code from the disconnect request
+   * @param properties MQTT properties of the message
    */
-  public MqttUnsubscribeMessageImpl(int messageId, List<String> topics, MqttProperties properties) {
-
-    this.messageId = messageId;
-    this.topics = topics;
+  public MqttDisconnectMessageImpl(MqttDisconnectReasonCode code, MqttProperties properties) {
+    this.code = code;
     this.properties = properties;
   }
 
-  public int messageId() {
-    return this.messageId;
-  }
-
-  public List<String> topics() {
-    return this.topics;
+  public MqttDisconnectReasonCode code() {
+    return this.code;
   }
 
   public MqttProperties properties() {

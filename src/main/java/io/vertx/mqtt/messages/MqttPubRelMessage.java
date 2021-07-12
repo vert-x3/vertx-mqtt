@@ -20,47 +20,36 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.mqtt.messages.impl.MqttUnsubscribeMessageImpl;
-
-import java.util.List;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.impl.MqttPubRelMessageImpl;
 
 /**
- * Represents an MQTT UNSUBSCRIBE message
+ * Represents an MQTT PUBREL message
  */
 @VertxGen
-public interface MqttUnsubscribeMessage extends MqttMessage {
+public interface MqttPubRelMessage {
 
   /**
-   * Create a concrete instance of a Vert.x unsubscribe message
+   * Create a concrete instance of a Vert.x pubrel message
    *
-   * @param messageId message identifier
-   * @param topics    list of topics to unsubscribe
-   */
-  @GenIgnore
-  static MqttUnsubscribeMessage create(int messageId, List<String> topics) {
-
-    return new MqttUnsubscribeMessageImpl(messageId, topics, MqttProperties.NO_PROPERTIES);
-  }
-
-  /**
-   * Create a concrete instance of a Vert.x unsubscribe message
-   *
-   * @param messageId message identifier
-   * @param topics    list of topics to unsubscribe
-   * @param properties UNSUBSCRIBE message properties
+   * @param messageId message Id
+   * @param code  return code from the pubrel
+   * @param properties MQTT properties of the pubrel message
+   * @return
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  static MqttUnsubscribeMessage create(int messageId, List<String> topics, MqttProperties properties) {
-
-    return new MqttUnsubscribeMessageImpl(messageId, topics, properties);
+  static MqttPubRelMessage create(int messageId, MqttPubRelReasonCode code, MqttProperties properties) {
+    return new MqttPubRelMessageImpl(messageId, code, properties);
   }
 
+  @CacheReturn
+  int messageId();
 
   /**
-   * @return  List of topics to unsubscribe
+   * @return  reason code from the pubrel request
    */
   @CacheReturn
-  List<String> topics();
+  MqttPubRelReasonCode code();
 
   /**
    * @return MQTT properties

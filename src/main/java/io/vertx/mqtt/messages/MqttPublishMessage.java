@@ -17,6 +17,7 @@
 package io.vertx.mqtt.messages;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
@@ -44,7 +45,24 @@ public interface MqttPublishMessage extends MqttMessage {
   @GenIgnore
   static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
 
-    return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload);
+    return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, MqttProperties.NO_PROPERTIES);
+  }
+  /**
+   * Create a concrete instance of a Vert.x publish message
+   *
+   * @param messageId  message identifier
+   * @param qosLevel   quality of service level
+   * @param isDup      if the message is a duplicate
+   * @param isRetain   if the message needs to be retained
+   * @param topicName  topic on which the message was published
+   * @param payload    payload message
+   * @param properties message properties
+   * @return Vert.x publish message
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload, MqttProperties properties) {
+
+    return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, properties);
   }
 
   /**
@@ -76,4 +94,11 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @CacheReturn
   Buffer payload();
+
+  /**
+   * @return MQTT properties
+   */
+  @CacheReturn
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttProperties properties();
 }

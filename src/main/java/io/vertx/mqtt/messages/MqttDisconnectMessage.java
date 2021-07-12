@@ -16,55 +16,40 @@
 
 package io.vertx.mqtt.messages;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.mqtt.messages.impl.MqttConnAckMessageImpl;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.impl.MqttDisconnectMessageImpl;
 
 /**
  * Represents an MQTT CONNACK message
  */
 @VertxGen
-public interface MqttConnAckMessage {
+public interface MqttDisconnectMessage {
 
   /**
-   * Create a concrete instance of a Vert.x connack message
+   * Create a concrete instance of a Vert.x disconnect message
    *
-   * @param code  return code from the connection request
-   * @param isSessionPresent  is an old session is present
-   * @return
-   */
-  static MqttConnAckMessage create(MqttConnectReturnCode code, boolean isSessionPresent) {
-    return new MqttConnAckMessageImpl(code, isSessionPresent);
-  }
-
-  /**
-   * Create a concrete instance of a Vert.x connack message
-   *
-   * @param code  return code from the connection request
-   * @param isSessionPresent  is an old session is present
-   * @param properties MQTT properties
+   * @param code  return code from the disconnect request
+   * @param properties MQTT properties of the disconnect message
    * @return
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  static MqttConnAckMessage create(MqttConnectReturnCode code, boolean isSessionPresent, MqttProperties properties) {
-    return new MqttConnAckMessageImpl(code, isSessionPresent, properties);
+  static MqttDisconnectMessage create(MqttDisconnectReasonCode code, MqttProperties properties) {
+    return new MqttDisconnectMessageImpl(code, properties);
   }
 
   /**
    * @return  return code from the connection request
    */
   @CacheReturn
-  MqttConnectReturnCode code();
+  MqttDisconnectReasonCode code();
 
   /**
-   * @return  is an old session is present
+   * @return MQTT properties
    */
-  @CacheReturn
-  boolean isSessionPresent();
-
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @CacheReturn
   MqttProperties properties();

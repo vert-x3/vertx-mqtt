@@ -22,12 +22,17 @@ import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageFactory;
+import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -40,8 +45,21 @@ import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.MqttWill;
+import io.vertx.mqtt.messages.MqttDisconnectMessage;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.MqttPubCompMessage;
+import io.vertx.mqtt.messages.MqttPubRecMessage;
+import io.vertx.mqtt.messages.MqttPubRelMessage;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttUnsubAckReasonCode;
 
 import javax.net.ssl.SSLSession;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,6 +83,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final int protocolVersion;
   private final String protocolName;
   private final int keepAliveTimeoutSeconds;
+  private final MqttProperties connectProperties;
 
   // handler to call when a subscribe request comes in
   private Handler<io.vertx.mqtt.messages.MqttSubscribeMessage> subscribeHandler;
@@ -74,14 +93,19 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private Handler<io.vertx.mqtt.messages.MqttPublishMessage> publishHandler;
   // handler to call when a puback message comes in
   private Handler<Integer> pubackHandler;
+  private Handler<MqttPubAckMessage> pubackHandlerWithMessage;
   // handler to call when a pubrec message comes in
   private Handler<Integer> pubrecHandler;
+  private Handler<MqttPubRecMessage> pubrecHandlerWithMessage;
   // handler to call when a pubrel message comes in
   private Handler<Integer> pubrelHandler;
+  private Handler<MqttPubRelMessage> pubrelHandlerWithMessage;
   // handler to call when a pubcomp message comes in
   private Handler<Integer> pubcompHandler;
+  private Handler<MqttPubCompMessage> pubcompHandlerWithMessage;
   // handler to call when a disconnect request comes in
   private Handler<Void> disconnectHandler;
+  private Handler<MqttDisconnectMessage> disconnectHandlerWithMessage;
   // handler to call when a pingreq message comes in
   private Handler<Void> pingreqHandler;
   // handler to call when the endpoint is isClosed
@@ -111,8 +135,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param protocolVersion      protocol version required by the client
    * @param protocolName         protocol name sent by the client
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
+   * @param connectProperties    MQTT properties of the CONNECT message
    */
-  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds) {
+  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds, MqttProperties connectProperties) {
     this.conn = conn;
     this.clientIdentifier = clientIdentifier;
     this.auth = auth;
@@ -121,6 +146,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.protocolVersion = protocolVersion;
     this.protocolName = protocolName;
     this.keepAliveTimeoutSeconds = keepAliveTimeoutSeconds;
+    this.connectProperties = connectProperties;
   }
 
   public String clientIdentifier() {
@@ -189,6 +215,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
+  @Override
+  public MqttProperties connectProperties() {
+    return this.connectProperties;
+  }
+
   public MqttEndpoint setClientIdentifier(String clientIdentifier) {
 
     synchronized (this.conn) {
@@ -205,6 +236,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
       return this;
     }
   }
+
+  public MqttEndpointImpl disconnectMessageHandler(Handler<MqttDisconnectMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.disconnectHandlerWithMessage = handler;
+      return this;
+    }
+  }
+
 
   public MqttEndpointImpl subscribeHandler(Handler<io.vertx.mqtt.messages.MqttSubscribeMessage> handler) {
 
@@ -242,6 +282,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
+  public MqttEndpointImpl publishAcknowledgeMessageHandler(Handler<MqttPubAckMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.pubackHandlerWithMessage = handler;
+      return this;
+    }
+  }
+
+
   public MqttEndpointImpl publishReceivedHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
@@ -250,6 +299,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
       return this;
     }
   }
+
+  public MqttEndpointImpl publishReceivedMessageHandler(Handler<MqttPubRecMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.pubrecHandlerWithMessage = handler;
+      return this;
+    }
+  }
+
 
   public MqttEndpointImpl publishReleaseHandler(Handler<Integer> handler) {
 
@@ -260,6 +318,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
+  public MqttEndpointImpl publishReleaseMessageHandler(Handler<MqttPubRelMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.pubrelHandlerWithMessage = handler;
+      return this;
+    }
+  }
+
+
   public MqttEndpointImpl publishCompletionHandler(Handler<Integer> handler) {
 
     synchronized (this.conn) {
@@ -268,6 +335,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
       return this;
     }
   }
+
+  public MqttEndpointImpl publishCompletionMessageHandler(Handler<MqttPubCompMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.pubcompHandlerWithMessage = handler;
+      return this;
+    }
+  }
+
 
   public MqttEndpointImpl pingHandler(Handler<Void> handler) {
 
@@ -296,12 +372,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
-  private MqttEndpointImpl connack(MqttConnectReturnCode returnCode, boolean sessionPresent) {
+  private MqttEndpointImpl connack(MqttConnectReturnCode returnCode, boolean sessionPresent, MqttProperties properties) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
     MqttConnAckVariableHeader variableHeader =
-      new MqttConnAckVariableHeader(returnCode, sessionPresent);
+      new MqttConnAckVariableHeader(returnCode, sessionPresent, properties);
 
     io.netty.handler.codec.mqtt.MqttMessage connack = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -323,17 +399,24 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl accept(boolean sessionPresent) {
+    return accept(sessionPresent, MqttProperties.NO_PROPERTIES);
+  }
 
+  public MqttEndpointImpl accept(boolean sessionPresent, MqttProperties properties) {
     synchronized (conn) {
       if (this.isConnected) {
         throw new IllegalStateException("Connection already accepted");
       }
 
-      return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent);
+      return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent, properties);
     }
   }
 
   public MqttEndpointImpl reject(MqttConnectReturnCode returnCode) {
+    return reject(returnCode, MqttProperties.NO_PROPERTIES);
+  }
+
+  public MqttEndpointImpl reject(MqttConnectReturnCode returnCode, MqttProperties properties) {
 
     synchronized (conn) {
       if (returnCode == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
@@ -341,18 +424,30 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
 
       // sessionPresent flag has no meaning in this case, the network connection will be closed
-      return this.connack(returnCode, false);
+      return this.connack(returnCode, false, properties);
     }
   }
 
-  public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<MqttQoS> grantedQoSLevels) {
 
+  public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<MqttQoS> grantedQoSLevels) {
+    return subscribeAcknowledgeWithCode(subscribeMessageId,
+      grantedQoSLevels.stream().mapToInt(MqttQoS::value).toArray(),
+      MqttProperties.NO_PROPERTIES);
+  }
+
+  public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<MqttSubAckReasonCode> reasonCodes, MqttProperties properties) {
+    return subscribeAcknowledgeWithCode(subscribeMessageId,
+      reasonCodes.stream().mapToInt(MqttSubAckReasonCode::value).toArray(),
+      MqttProperties.NO_PROPERTIES);
+  }
+
+  private MqttEndpointImpl subscribeAcknowledgeWithCode(int subscribeMessageId, int[] reasonCodes, MqttProperties properties) {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(subscribeMessageId);
+    MqttMessageIdAndPropertiesVariableHeader variableHeader =
+      new MqttMessageIdAndPropertiesVariableHeader(subscribeMessageId, properties);
 
-    MqttSubAckPayload payload = new MqttSubAckPayload(grantedQoSLevels.stream().mapToInt(MqttQoS::value).toArray());
+    MqttSubAckPayload payload = new MqttSubAckPayload(reasonCodes);
 
     io.netty.handler.codec.mqtt.MqttMessage suback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
@@ -362,12 +457,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl unsubscribeAcknowledge(int unsubscribeMessageId) {
+    return unsubscribeAcknowledge(unsubscribeMessageId, Collections.emptyList(), MqttProperties.NO_PROPERTIES);
+  }
 
+  public MqttEndpointImpl unsubscribeAcknowledge(int unsubscribeMessageId, List<MqttUnsubAckReasonCode> reasonCodes, MqttProperties properties) {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(unsubscribeMessageId);
-    MqttUnsubAckPayload payload = new MqttUnsubAckPayload();
+    MqttMessageIdAndPropertiesVariableHeader variableHeader =
+      new MqttMessageIdAndPropertiesVariableHeader(unsubscribeMessageId, properties);
+
+    short[] reasoneCodesNum = new short[reasonCodes.size()];
+    for(int i = 0; i < reasoneCodesNum.length; i++) {
+      reasoneCodesNum[i] = reasonCodes.get(i).value();
+    }
+    MqttUnsubAckPayload payload = new MqttUnsubAckPayload(reasoneCodesNum);
 
     io.netty.handler.codec.mqtt.MqttMessage unsuback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
@@ -376,12 +479,18 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
+
   public MqttEndpointImpl publishAcknowledge(int publishMessageId) {
+    return publishAcknowledge(publishMessageId, MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+  }
+
+  public MqttEndpointImpl publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties
+    properties) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(publishMessageId);
+    MqttPubReplyMessageVariableHeader variableHeader =
+      new MqttPubReplyMessageVariableHeader(publishMessageId, reasonCode.value(), properties);
 
     io.netty.handler.codec.mqtt.MqttMessage puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -391,11 +500,14 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl publishReceived(int publishMessageId) {
+    return publishReceived(publishMessageId, MqttPubRecReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+  }
 
+  public MqttEndpointImpl publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties) {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(publishMessageId);
+    MqttMessageIdAndPropertiesVariableHeader variableHeader =
+      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -404,12 +516,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
-  public MqttEndpointImpl publishRelease(int publishMessageId) {
 
+  public MqttEndpointImpl publishRelease(int publishMessageId) {
+    return publishRelease(publishMessageId, MqttPubRelReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+  }
+
+  public MqttEndpointImpl publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties) {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(publishMessageId);
+    MqttMessageIdAndPropertiesVariableHeader variableHeader =
+      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -418,12 +534,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this;
   }
 
+
   public MqttEndpointImpl publishComplete(int publishMessageId) {
+    return publishComplete(publishMessageId, MqttPubCompReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+  }
+
+  public MqttEndpointImpl publishComplete(int publishMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader =
-      MqttMessageIdVariableHeader.from(publishMessageId);
+    MqttMessageIdAndPropertiesVariableHeader variableHeader =
+      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -431,6 +552,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     return this;
   }
+
 
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
@@ -444,6 +566,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, messageId, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties) {
     if (messageId > MAX_MESSAGE_ID || messageId < 0) {
       throw new IllegalArgumentException("messageId must be non-negative integer not larger than " + MAX_MESSAGE_ID);
     }
@@ -451,7 +578,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
     MqttPublishVariableHeader variableHeader =
-      new MqttPublishVariableHeader(topic, messageId);
+      new MqttPublishVariableHeader(topic, messageId, properties);
 
     ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
 
@@ -461,8 +588,26 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   @Override
-  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler) {
-    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId);
+  public MqttEndpointImpl publish(String topic,
+                                  Buffer payload,
+                                  MqttQoS qosLevel,
+                                  boolean isDup,
+                                  boolean isRetain,
+                                  int messageId,
+                                  Handler<AsyncResult<Integer>> publishSentHandler) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, messageId, MqttProperties.NO_PROPERTIES, publishSentHandler);
+  }
+
+  @Override
+  public MqttEndpointImpl publish(String topic,
+                                  Buffer payload,
+                                  MqttQoS qosLevel,
+                                  boolean isDup,
+                                  boolean isRetain,
+                                  int messageId,
+                                  MqttProperties properties,
+                                  Handler<AsyncResult<Integer>> publishSentHandler) {
+    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId, properties);
     if (publishSentHandler != null) {
       fut.onComplete(publishSentHandler);
     }
@@ -477,6 +622,23 @@ public class MqttEndpointImpl implements MqttEndpoint {
     io.netty.handler.codec.mqtt.MqttMessage pingresp = MqttMessageFactory.newMessage(fixedHeader, null, null);
 
     this.write(pingresp);
+
+    return this;
+  }
+
+  public MqttEndpointImpl disconnect(MqttDisconnectReasonCode code, MqttProperties properties) {
+    if(protocolVersion >= MqttVersion.MQTT_5.protocolLevel()) {
+      MqttFixedHeader fixedHeader =
+        new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0);
+
+      MqttReasonCodeAndPropertiesVariableHeader variableHeader = new MqttReasonCodeAndPropertiesVariableHeader(code.value(), properties);
+
+      io.netty.handler.codec.mqtt.MqttMessage disconnect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+
+      this.write(disconnect);
+    }
+
+    this.close();
 
     return this;
   }
@@ -553,12 +715,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * Used for calling the puback handler when the remote MQTT client acknowledge a QoS 1 message with puback
    *
    * @param pubackMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT properties
    */
-  void handlePuback(int pubackMessageId) {
+  void handlePuback(int pubackMessageId, MqttPubAckReasonCode code, MqttProperties properties) {
 
     synchronized (this.conn) {
       if (this.pubackHandler != null) {
         this.pubackHandler.handle(pubackMessageId);
+      }
+      if (this.pubackHandlerWithMessage != null) {
+        this.pubackHandlerWithMessage.handle(MqttPubAckMessage.create(pubackMessageId, code, properties));
       }
     }
   }
@@ -567,12 +734,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
    *
    * @param pubrecMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT properties
    */
-  void handlePubrec(int pubrecMessageId) {
-
+  void handlePubrec(int pubrecMessageId, MqttPubRecReasonCode code, MqttProperties properties) {
     synchronized (this.conn) {
       if (this.pubrecHandler != null) {
         this.pubrecHandler.handle(pubrecMessageId);
+      }
+      if(this.pubrecHandlerWithMessage != null) {
+        this.pubrecHandlerWithMessage.handle(MqttPubRecMessage.create(pubrecMessageId, code, properties));
       }
 
       if (this.isPublishAutoAck) {
@@ -585,12 +756,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * Used for calling the pubrel handler when the remote MQTT client acknowledge a QoS 2 message with pubrel
    *
    * @param pubrelMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT message properties
    */
-  void handlePubrel(int pubrelMessageId) {
+  void handlePubrel(int pubrelMessageId, MqttPubRelReasonCode code, MqttProperties properties) {
 
     synchronized (this.conn) {
       if (this.pubrelHandler != null) {
         this.pubrelHandler.handle(pubrelMessageId);
+      }
+      if (this.pubrelHandlerWithMessage != null) {
+        this.pubrelHandlerWithMessage.handle(MqttPubRelMessage.create(pubrelMessageId, code, properties));
       }
 
       if (this.isPublishAutoAck) {
@@ -604,11 +780,13 @@ public class MqttEndpointImpl implements MqttEndpoint {
    *
    * @param pubcompMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  void handlePubcomp(int pubcompMessageId) {
-
+  void handlePubcomp(int pubcompMessageId, MqttPubCompReasonCode code, MqttProperties properties) {
     synchronized (this.conn) {
       if (this.pubcompHandler != null) {
         this.pubcompHandler.handle(pubcompMessageId);
+      }
+      if (this.pubcompHandlerWithMessage != null) {
+        this.pubcompHandlerWithMessage.handle(MqttPubCompMessage.create(pubcompMessageId, code, properties));
       }
     }
   }
@@ -632,16 +810,20 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   /**
    * Used for calling the disconnect handler when the remote MQTT client disconnects
+   * @param code status code
+   * @param properties MQTT message properties
    */
-  void handleDisconnect() {
+  void handleDisconnect(MqttDisconnectReasonCode code, MqttProperties properties) {
 
     synchronized (this.conn) {
       if (this.disconnectHandler != null) {
         this.disconnectHandler.handle(null);
-
-        // if client didn't close the connection, the sever SHOULD close it (MQTT spec)
-        this.close();
       }
+      if (this.disconnectHandlerWithMessage != null) {
+        this.disconnectHandlerWithMessage.handle(MqttDisconnectMessage.create(code, properties));
+      }
+      // if client didn't close the connection, the sever SHOULD close it (MQTT spec)
+      this.close();
     }
   }
 

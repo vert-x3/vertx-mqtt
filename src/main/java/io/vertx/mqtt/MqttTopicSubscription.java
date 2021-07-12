@@ -17,7 +17,9 @@
 package io.vertx.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -37,4 +39,13 @@ public interface MqttTopicSubscription {
    */
   @CacheReturn
   MqttQoS qualityOfService();
+
+  /**
+   * Subscription option
+   * @return Subscription options
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @CacheReturn
+  MqttSubscriptionOption subscriptionOption();
+
 }

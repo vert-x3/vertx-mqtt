@@ -17,6 +17,7 @@
 package io.vertx.mqtt.messages.impl;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 
 /**
@@ -26,6 +27,7 @@ public class MqttConnAckMessageImpl implements MqttConnAckMessage {
 
   private final MqttConnectReturnCode code;
   private final boolean isSessionPresent;
+  private final MqttProperties properties;
 
   /**
    * Constructor
@@ -34,8 +36,20 @@ public class MqttConnAckMessageImpl implements MqttConnAckMessage {
    * @param isSessionPresent  is an old session is present
    */
   public MqttConnAckMessageImpl(MqttConnectReturnCode code, boolean isSessionPresent) {
+    this(code, isSessionPresent, MqttProperties.NO_PROPERTIES);
+  }
+
+  /**
+   * Constructor
+   *
+   * @param code  return code from the connection request
+   * @param isSessionPresent  is an old session is present
+   * @param properties MQTT properties
+   */
+  public MqttConnAckMessageImpl(MqttConnectReturnCode code, boolean isSessionPresent, MqttProperties properties) {
     this.code = code;
     this.isSessionPresent = isSessionPresent;
+    this.properties = properties;
   }
 
   public MqttConnectReturnCode code() {
@@ -44,5 +58,9 @@ public class MqttConnAckMessageImpl implements MqttConnAckMessage {
 
   public boolean isSessionPresent() {
     return this.isSessionPresent;
+  }
+
+  public MqttProperties properties() {
+    return this.properties;
   }
 }

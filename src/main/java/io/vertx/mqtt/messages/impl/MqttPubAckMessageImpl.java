@@ -17,39 +17,36 @@
 package io.vertx.mqtt.messages.impl;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
-import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
-
-import java.util.List;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 
 /**
- * Represents an MQTT UNSUBSCRIBE message
+ * Represents an MQTT PUBACK message
  */
-public class MqttUnsubscribeMessageImpl implements MqttUnsubscribeMessage {
+public class MqttPubAckMessageImpl implements MqttPubAckMessage {
 
   private final int messageId;
-  private final List<String> topics;
+  private final MqttPubAckReasonCode code;
   private final MqttProperties properties;
 
   /**
    * Constructor
    *
-   * @param messageId message identifier
-   * @param topics    list of topics to unsubscribe
-   * @param properties UNSUBSCRIBE message properties
+   * @param code  reason code from the puback request
+   * @param properties MQTT properties of the message
    */
-  public MqttUnsubscribeMessageImpl(int messageId, List<String> topics, MqttProperties properties) {
-
+  public MqttPubAckMessageImpl(int messageId, MqttPubAckReasonCode code, MqttProperties properties) {
     this.messageId = messageId;
-    this.topics = topics;
+    this.code = code;
     this.properties = properties;
   }
 
   public int messageId() {
-    return this.messageId;
+    return messageId;
   }
 
-  public List<String> topics() {
-    return this.topics;
+  public MqttPubAckReasonCode code() {
+    return this.code;
   }
 
   public MqttProperties properties() {

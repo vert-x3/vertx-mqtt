@@ -24,7 +24,7 @@
     <stack.version>4.2.0-SNAPSHOT</stack.version>
     <junit.version>4.13.1</junit.version>
     <mockito.version>3.3.3</mockito.version>
-    <paho.version>1.1.0</paho.version>
+    <paho.version>1.2.5</paho.version>
     <fabric8-docker-plugin.version>0.21.0</fabric8-docker-plugin.version>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
@@ -102,6 +102,12 @@
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+      <version>${paho.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
       <version>${paho.version}</version>
       <scope>test</scope>
     </dependency>

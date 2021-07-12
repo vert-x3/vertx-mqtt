@@ -22,7 +22,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttUnacceptableProtocolVersionException;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -40,6 +43,11 @@ import io.vertx.mqtt.MqttWill;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 
 import java.util.UUID;
 
@@ -91,7 +99,7 @@ public class MqttServerConnection {
       if (result.isFailure()) {
         Throwable cause = result.cause();
         if (cause instanceof MqttUnacceptableProtocolVersionException) {
-          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0);
+          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0, MqttProperties.NO_PROPERTIES);
           endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION);
         } else {
           chctx.pipeline().fireExceptionCaught(result.cause());
@@ -140,32 +148,39 @@ public class MqttServerConnection {
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
             publish.variableHeader().topicName(),
-            newBuf);
+            newBuf,
+            publish.variableHeader().properties());
           this.handlePublish(mqttPublishMessage);
           break;
 
         case PUBACK:
 
           io.netty.handler.codec.mqtt.MqttPubAckMessage mqttPubackMessage = (io.netty.handler.codec.mqtt.MqttPubAckMessage) mqttMessage;
-          this.handlePuback(mqttPubackMessage.variableHeader().messageId());
+          if(mqttPubackMessage.variableHeader() instanceof MqttPubReplyMessageVariableHeader) {
+            MqttPubReplyMessageVariableHeader variableHeader = (MqttPubReplyMessageVariableHeader) mqttPubackMessage.variableHeader();
+            this.handlePuback(variableHeader.messageId(), MqttPubAckReasonCode.valueOf(variableHeader.reasonCode()), variableHeader.properties());
+          } else {
+            this.handlePuback(mqttPubackMessage.variableHeader().messageId(), MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+          }
           break;
+
 
         case PUBREC:
 
-          int pubrecMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-          this.handlePubrec(pubrecMessageId);
+          MqttPubReplyMessageVariableHeader pubrecVariableHeader = ((io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader) mqttMessage.variableHeader());
+          this.handlePubrec(pubrecVariableHeader.messageId(), MqttPubRecReasonCode.valueOf(pubrecVariableHeader.reasonCode()), pubrecVariableHeader.properties());
           break;
 
         case PUBREL:
 
-          int pubrelMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-          this.handlePubrel(pubrelMessageId);
+          MqttPubReplyMessageVariableHeader pubrelVariableHeader = (io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader) mqttMessage.variableHeader();
+          this.handlePubrel(pubrelVariableHeader.messageId(), MqttPubRelReasonCode.valueOf(pubrelVariableHeader.reasonCode()), pubrelVariableHeader.properties());
           break;
 
         case PUBCOMP:
 
-          int pubcompMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId();
-          this.handlePubcomp(pubcompMessageId);
+          MqttPubReplyMessageVariableHeader pubcompVariableHeader = (io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader) mqttMessage.variableHeader();
+          this.handlePubcomp(pubcompVariableHeader.messageId(), MqttPubCompReasonCode.valueOf(pubcompVariableHeader.reasonCode()), pubcompVariableHeader.properties());
           break;
 
         case PINGREQ:
@@ -175,7 +190,10 @@ public class MqttServerConnection {
 
         case DISCONNECT:
 
-          this.handleDisconnect();
+          io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader disconnectVariableHeader =
+            (io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader) mqttMessage.variableHeader();
+          this.handleDisconnect(MqttDisconnectReasonCode.valueOf(disconnectVariableHeader.reasonCode()),
+            disconnectVariableHeader.properties());
           break;
 
         default:
@@ -209,7 +227,8 @@ public class MqttServerConnection {
         msg.payload().willTopic(),
         msg.payload().willMessageInBytes() != null ? Buffer.buffer(msg.payload().willMessageInBytes()) : null,
         msg.variableHeader().willQos(),
-        msg.variableHeader().isWillRetain());
+        msg.variableHeader().isWillRetain(),
+        msg.payload().willProperties());
 
     // retrieve authorization information from CONNECT message
     MqttAuth auth = (msg.variableHeader().hasUserName() &&
@@ -241,7 +260,8 @@ public class MqttServerConnection {
         msg.variableHeader().isCleanSession(),
         msg.variableHeader().version(),
         msg.variableHeader().name(),
-        msg.variableHeader().keepAliveTimeSeconds());
+        msg.variableHeader().keepAliveTimeSeconds(),
+        msg.variableHeader().properties());
 
     // remove the idle state handler for timeout on CONNECT
     chctx.pipeline().remove("idle");
@@ -276,7 +296,11 @@ public class MqttServerConnection {
       if (this.exceptionHandler != null) {
         this.exceptionHandler.handle(new VertxException("With zero-length client-id, clean session MUST be true"));
       }
-      this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+      if(endpoint.protocolVersion() >= MqttVersion.MQTT_5.protocolLevel()) {
+        this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID);
+      } else {
+        this.endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+      }
     } else {
 
       // an exception at connection level is propagated to the endpoint
@@ -338,11 +362,11 @@ public class MqttServerConnection {
    *
    * @param pubackMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  void handlePuback(int pubackMessageId) {
+  void handlePuback(int pubackMessageId, MqttPubAckReasonCode code, MqttProperties properties) {
 
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePuback(pubackMessageId);
+        this.endpoint.handlePuback(pubackMessageId, code, properties);
       }
     }
   }
@@ -351,12 +375,14 @@ public class MqttServerConnection {
    * Used for calling the pubrec handler when the remote MQTT client acknowledge a QoS 2 message with pubrec
    *
    * @param pubrecMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT properties
    */
-  void handlePubrec(int pubrecMessageId) {
+  void handlePubrec(int pubrecMessageId, MqttPubRecReasonCode code, MqttProperties properties) {
 
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePubrec(pubrecMessageId);
+        this.endpoint.handlePubrec(pubrecMessageId, code, properties);
       }
     }
   }
@@ -366,11 +392,10 @@ public class MqttServerConnection {
    *
    * @param pubrelMessageId identifier of the message acknowledged by the remote MQTT client
    */
-  void handlePubrel(int pubrelMessageId) {
-
+  void handlePubrel(int pubrelMessageId, MqttPubRelReasonCode code, MqttProperties properties) {
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePubrel(pubrelMessageId);
+        this.endpoint.handlePubrel(pubrelMessageId, code, properties);
       }
     }
   }
@@ -379,12 +404,13 @@ public class MqttServerConnection {
    * Used for calling the pubcomp handler when the remote MQTT client acknowledge a QoS 2 message with pubcomp
    *
    * @param pubcompMessageId identifier of the message acknowledged by the remote MQTT client
+   * @param code reason code
+   * @param properties MQTT message properties
    */
-  void handlePubcomp(int pubcompMessageId) {
-
+  void handlePubcomp(int pubcompMessageId, MqttPubCompReasonCode code, MqttProperties properties) {
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handlePubcomp(pubcompMessageId);
+        this.endpoint.handlePubcomp(pubcompMessageId, code, properties);
       }
     }
   }
@@ -403,12 +429,14 @@ public class MqttServerConnection {
 
   /**
    * Used for calling the disconnect handler when the remote MQTT client disconnects
+   *
+   * @param code reason code
+   * @param properties MQTT message properties
    */
-  void handleDisconnect() {
-
+  void handleDisconnect(MqttDisconnectReasonCode code, MqttProperties properties) {
     synchronized (this.so) {
       if (this.checkConnected()) {
-        this.endpoint.handleDisconnect();
+        this.endpoint.handleDisconnect(code, properties);
       }
     }
   }
