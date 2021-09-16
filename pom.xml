@@ -15,7 +15,7 @@
       
     <artifactId>vertx-mqtt</artifactId>
       
-    <version>4.1.4</version>
+    <version>4.1.5-SNAPSHOT</version>
       
     <developers>
             
@@ -35,7 +35,7 @@
       
     <properties>
             
-        <stack.version>4.1.4</stack.version>
+        <stack.version>4.1.5-SNAPSHOT</stack.version>
             
         <junit.version>4.13.1</junit.version>
             
