@@ -31,6 +31,7 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -86,6 +87,15 @@ public class MqttServerImpl implements MqttServer {
 
       initChannel(pipeline);
       MqttServerConnection conn = new MqttServerConnection(soi, h1, h2, options);
+
+      soi.eventHandler(evt -> {
+        if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
+          synchronized (conn) {
+            conn.handleHandshakeComplete((WebSocketServerProtocolHandler.HandshakeComplete) evt);
+          }
+        }
+        ReferenceCountUtil.release(evt);
+      });
 
       soi.messageHandler(msg -> {
         synchronized (conn) {
@@ -197,6 +207,8 @@ public class MqttServerImpl implements MqttServer {
             ctx.channel().close();
           }
         }
+
+        super.userEventTriggered(ctx, evt);
       }
     });
 

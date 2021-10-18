@@ -36,6 +36,7 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -84,6 +85,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final String protocolName;
   private final int keepAliveTimeoutSeconds;
   private final MqttProperties connectProperties;
+
+  // information about connected remote MQTT client (from WebSocket handshake)
+  private final MultiMap httpHeaders;
+  private String httpRequestUri;
 
   // handler to call when a subscribe request comes in
   private Handler<io.vertx.mqtt.messages.MqttSubscribeMessage> subscribeHandler;
@@ -137,7 +142,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
    * @param keepAliveTimeoutSeconds keep alive timeout (in seconds)
    * @param connectProperties    MQTT properties of the CONNECT message
    */
-  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds, MqttProperties connectProperties) {
+  public MqttEndpointImpl(NetSocketInternal conn, String clientIdentifier, MqttAuth auth, MqttWill will, boolean isCleanSession, int protocolVersion, String protocolName, int keepAliveTimeoutSeconds, MqttProperties connectProperties, MultiMap httpHeaders, String httpRequestUri) {
     this.conn = conn;
     this.clientIdentifier = clientIdentifier;
     this.auth = auth;
@@ -147,6 +152,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
     this.protocolName = protocolName;
     this.keepAliveTimeoutSeconds = keepAliveTimeoutSeconds;
     this.connectProperties = connectProperties;
+    this.httpHeaders = httpHeaders;
+    this.httpRequestUri = httpRequestUri;
   }
 
   public String clientIdentifier() {
@@ -884,6 +891,16 @@ public class MqttEndpointImpl implements MqttEndpoint {
       this.checkClosed();
       return conn.isSsl();
     }
+  }
+
+  @Override
+  public MultiMap httpHeaders() {
+    return httpHeaders;
+  }
+
+  @Override
+  public String httpRequestURI() {
+    return httpRequestUri;
   }
 
   public SSLSession sslSession() {
