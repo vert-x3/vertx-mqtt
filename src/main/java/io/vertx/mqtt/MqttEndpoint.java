@@ -26,6 +26,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.mqtt.messages.MqttDisconnectMessage;
@@ -74,6 +75,20 @@ public interface MqttEndpoint {
    * @return true if this {@link io.vertx.mqtt.MqttEndpoint} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+
+  /**
+   *  Returns the HTTP headers sent by the client when a WebSocket transport is used otherwise {@code null}
+   *
+   * @return the HTTP headers
+   */
+  MultiMap httpHeaders();
+
+  /**
+   *  Returns the HTTP request URI sent by the client when a WebSocket transport is used otherwise {@code null}
+   *
+   * @return the HTTP request uri
+   */
+  String httpRequestURI();
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is

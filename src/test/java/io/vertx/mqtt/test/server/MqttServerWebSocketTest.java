@@ -16,11 +16,13 @@
 
 package io.vertx.mqtt.test.server;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttServer;
@@ -155,4 +157,30 @@ public class MqttServerWebSocketTest {
     }
   }
 
+  @Test
+  public void testHttpHeaders(TestContext context) {
+    MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT).setUseWebSocket(true));
+    Async done = context.async();
+    server.endpointHandler(endpoint -> {
+      MultiMap headers = endpoint.httpHeaders();
+      context.assertNotNull(headers);
+      context.assertEquals("Upgrade", headers.get("Connection"));
+      context.assertEquals("/mqtt", endpoint.httpRequestURI());
+      done.complete();
+      endpoint.accept(false);
+    });
+    Async listen = context.async();
+    server.listen(context.asyncAssertSuccess(s -> listen.complete()));
+    listen.awaitSuccess(15_000);
+    MemoryPersistence persistence = new MemoryPersistence();
+    try (MqttClient client = new MqttClient(String.format("ws://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence)) {
+      client.connect();
+      client.disconnect();
+    } catch (MqttException e) {
+      context.fail(e);
+    }
+
+
+
+  }
 }

@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -30,8 +31,10 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -70,6 +73,8 @@ public class MqttServerConnection {
   private MqttEndpointImpl endpoint;
   private final ChannelHandlerContext chctx;
   private final MqttServerOptions options;
+  private MultiMap httpHeaders;
+  private String httpRequestUri;
 
   public MqttServerConnection(NetSocketInternal so,
                               Handler<MqttEndpoint> endpointHandler,
@@ -99,7 +104,7 @@ public class MqttServerConnection {
       if (result.isFailure()) {
         Throwable cause = result.cause();
         if (cause instanceof MqttUnacceptableProtocolVersionException) {
-          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0, MqttProperties.NO_PROPERTIES);
+          endpoint = new MqttEndpointImpl(so, null, null, null, false, 0, null, 0, MqttProperties.NO_PROPERTIES, httpHeaders, httpRequestUri);
           endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION);
         } else {
           chctx.pipeline().fireExceptionCaught(result.cause());
@@ -261,7 +266,9 @@ public class MqttServerConnection {
         msg.variableHeader().version(),
         msg.variableHeader().name(),
         msg.variableHeader().keepAliveTimeSeconds(),
-        msg.variableHeader().properties());
+        msg.variableHeader().properties(),
+        httpHeaders,
+        httpRequestUri);
 
     // remove the idle state handler for timeout on CONNECT
     chctx.pipeline().remove("idle");
@@ -439,6 +446,11 @@ public class MqttServerConnection {
         this.endpoint.handleDisconnect(code, properties);
       }
     }
+  }
+
+  void handleHandshakeComplete(WebSocketServerProtocolHandler.HandshakeComplete handshake) {
+    httpHeaders = new HeadersAdaptor(handshake.requestHeaders());
+    httpRequestUri = handshake.requestUri();
   }
 
   /**
