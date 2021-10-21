@@ -18,7 +18,6 @@ package io.vertx.mqtt.test.client;
 
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
@@ -119,6 +118,7 @@ public class MqttConnectTest {
     });
     Async proxyLatch = ctx.async();
     proxyServer.listen(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(v -> proxyLatch.complete()));
+    proxyLatch.awaitSuccess(10000);
     Async async = ctx.async();
     client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack1 -> {
       client.closeHandler(v1 -> {
