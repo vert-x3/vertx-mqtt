@@ -443,9 +443,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   public MqttEndpointImpl subscribeAcknowledge(int subscribeMessageId, List<MqttSubAckReasonCode> reasonCodes, MqttProperties properties) {
-    return subscribeAcknowledgeWithCode(subscribeMessageId,
-      reasonCodes.stream().mapToInt(MqttSubAckReasonCode::value).toArray(),
-      MqttProperties.NO_PROPERTIES);
+    return subscribeAcknowledgeWithCode(subscribeMessageId, reasonCodes.stream().mapToInt(MqttSubAckReasonCode::value).toArray(), properties);
   }
 
   private MqttEndpointImpl subscribeAcknowledgeWithCode(int subscribeMessageId, int[] reasonCodes, MqttProperties properties) {
