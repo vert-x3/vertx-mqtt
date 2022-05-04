@@ -214,11 +214,13 @@ public class MqttServerImpl implements MqttServer {
 
     if(options.isUseWebSocket()) {
 
+      int maxFrameSize = options.getWebSocketMaxFrameSize();
+
       pipeline.addBefore("mqttEncoder", "httpServerCodec", new HttpServerCodec());
-      pipeline.addAfter("httpServerCodec", "aggregator", new HttpObjectAggregator(65536));
+      pipeline.addAfter("httpServerCodec", "aggregator", new HttpObjectAggregator(maxFrameSize));
 
       pipeline.addAfter("aggregator", "webSocketHandler",
-        new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST));
+        new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST, false,maxFrameSize, 10000L));
 
       pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());
       pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new WebSocketFrameToByteBufDecoder());

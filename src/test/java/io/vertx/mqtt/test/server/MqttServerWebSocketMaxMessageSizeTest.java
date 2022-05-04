@@ -41,7 +41,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
   private boolean expectReceiveMsg;
 
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final int MQTT_MESSAGE_SIZE = 64;
+  private static final int MQTT_MESSAGE_SIZE = 64 * 1024;
   private static final int MQTT_MAX_MESSAGE_SIZE =
     + 2 // Topic length
       + MQTT_TOPIC.length() // Topic
@@ -53,6 +53,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
     MqttServerOptions options = new MqttServerOptions();
     options.setMaxMessageSize(MQTT_MAX_MESSAGE_SIZE);
+    options.setWebSocketMaxFrameSize(MQTT_MAX_MESSAGE_SIZE + 1000); // 1000 is a generous padding value for the MQTT envelope
     options.setUseWebSocket(true);
 
     this.setUp(context, options);
