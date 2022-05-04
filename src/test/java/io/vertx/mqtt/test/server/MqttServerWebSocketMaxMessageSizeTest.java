@@ -38,26 +38,41 @@ import org.junit.runner.RunWith;
 public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
 
   private Async async;
+  private boolean expectReceiveMsg;
 
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final int MQTT_MAX_MESSAGE_SIZE = 50;
-  private static final int MQTT_BIG_MESSAGE_SIZE = 50;
+  private static final int MQTT_MESSAGE_SIZE = 64 * 1024;
+  private static final int MQTT_MAX_MESSAGE_SIZE =
+    + 2 // Topic length
+      + MQTT_TOPIC.length() // Topic
+      + MQTT_MESSAGE_SIZE // Message
+    ;
 
   @Before
   public void before(TestContext context) {
 
     MqttServerOptions options = new MqttServerOptions();
     options.setMaxMessageSize(MQTT_MAX_MESSAGE_SIZE);
+    options.setWebSocketMaxFrameSize(MQTT_MAX_MESSAGE_SIZE + 1000); // 1000 is a generous padding value for the MQTT envelope
     options.setUseWebSocket(true);
 
     this.setUp(context, options);
   }
 
-  @Ignore
   @Test
-  public void publishBigMessage(TestContext context) {
+  public void publishMaxMessageSize(TestContext context) {
+    publishBigMessage(context, MQTT_MESSAGE_SIZE, true);
+  }
+
+  @Test
+  public void publishLargerThanMaxMessageSize(TestContext context) {
+    publishBigMessage(context, MQTT_MESSAGE_SIZE + 1, false);
+  }
+
+  private void publishBigMessage(TestContext context, int messageSize, boolean expectReceiveMsg) {
 
     this.async = context.async();
+    this.expectReceiveMsg = expectReceiveMsg;
 
     try {
 
@@ -65,7 +80,7 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
       MqttClient client = new MqttClient(String.format("ws://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
+      byte[] message = new byte[messageSize];
 
       // The client seems to fail when sending IO and block forever (see MqttOutputStream)
       // that makes the test hang forever
@@ -85,12 +100,22 @@ public class MqttServerWebSocketMaxMessageSizeTest extends MqttServerBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
-    System.out.println("a");
-
-    endpoint.exceptionHandler(t -> {
-      System.out.println("b");
-      if (t instanceof DecoderException) {
+    endpoint.publishHandler(pub -> {
+      if (expectReceiveMsg) {
         this.async.complete();
+      } else {
+        context.fail("Was not expecting msg");
+      }
+    });
+    endpoint.exceptionHandler(t -> {
+      if (expectReceiveMsg) {
+        context.fail(t);
+      } else {
+        if (t instanceof DecoderException) {
+          this.async.complete();
+        } else {
+          context.fail(t);
+        }
       }
     });
 
