@@ -16,22 +16,19 @@
 
 package io.vertx.mqtt.test.server;
 
-import io.netty.handler.codec.TooLongFrameException;
-import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.DecoderException;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
-import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
-import org.eclipse.paho.mqttv5.common.packet.MqttReturnCode;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -43,9 +40,17 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
 
   private static final Logger log = LoggerFactory.getLogger(Mqtt5ServerMaxMessageSizeTest.class);
 
+  private Async async;
+  private boolean expectReceiveMsg;
+
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final int MQTT_MAX_MESSAGE_SIZE = 50;
-  private static final int MQTT_BIG_MESSAGE_SIZE = MQTT_MAX_MESSAGE_SIZE + 1;
+  private static final int MQTT_MESSAGE_SIZE = 64;
+  private static final int MQTT_MAX_MESSAGE_SIZE =
+    + 2 // Topic length
+      + MQTT_TOPIC.length() // Topic
+      + 1 // Properties
+      + MQTT_MESSAGE_SIZE // Message
+    ;
 
   @Before
   public void before(TestContext context) {
@@ -56,18 +61,29 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
     this.setUp(context, options);
   }
 
-  //Temporarily disabled until https://github.com/vert-x3/vertx-mqtt/issues/202 gets resolved
-  @Ignore
   @Test
-  public void publishBigMessage(TestContext context) {
-    Mqtt5ProbeCallback probeCallback = new Mqtt5ProbeCallback(context);
+  public void publishMaxMessageSize(TestContext context) {
+    publishBigMessage(context, MQTT_MESSAGE_SIZE, true);
+  }
+
+  @Test
+  public void publishLargerThanMaxMessageSize(TestContext context) {
+    publishBigMessage(context, MQTT_MESSAGE_SIZE + 1, false);
+  }
+
+  private void publishBigMessage(TestContext context, int messageSize, boolean expectReceiveMsg) {
+
+    this.async = context.async();
+    this.expectReceiveMsg = expectReceiveMsg;
+
+    // Mqtt5ProbeCallback probeCallback = new Mqtt5ProbeCallback(context);
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.setCallback(probeCallback);
+      // client.setCallback(probeCallback);
       client.connect();
 
-      byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
+      byte[] message = new byte[messageSize];
 
       // The client seems to fail when sending IO and block forever (see MqttOutputStream)
       // that makes the test hang forever
@@ -76,7 +92,7 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
     } catch (MqttException e) {
       log.info("MQTT client failure", e);
     }
-    context.assertEquals((int) MqttReturnCode.RETURN_CODE_PACKET_TOO_LARGE, probeCallback.getDisconnectResponse().getReturnCode());
+    // context.assertEquals((int) MqttReturnCode.RETURN_CODE_PACKET_TOO_LARGE, probeCallback.getDisconnectResponse().getReturnCode());
   }
 
   @After
@@ -88,9 +104,22 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
+    endpoint.publishHandler(pub -> {
+      if (expectReceiveMsg) {
+        this.async.complete();
+      } else {
+        context.fail("Was not expecting msg");
+      }
+    });
     endpoint.exceptionHandler(t -> {
-      if (t instanceof TooLongFrameException) {
-        endpoint.disconnect(MqttDisconnectReasonCode.PACKET_TOO_LARGE, MqttProperties.NO_PROPERTIES);
+      if (expectReceiveMsg) {
+        context.fail(t);
+      } else {
+        if (t instanceof DecoderException) {
+          this.async.complete();
+        } else {
+          context.fail(t);
+        }
       }
     });
 

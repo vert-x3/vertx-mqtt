@@ -29,7 +29,6 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,13 +38,16 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttServerMaxMessageSizeTest.class);
-
   private Async async;
+  private boolean expectReceiveMsg;
 
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final int MQTT_MAX_MESSAGE_SIZE = 50;
-  private static final int MQTT_BIG_MESSAGE_SIZE = MQTT_MAX_MESSAGE_SIZE + 1;
+  private static final int MQTT_MESSAGE_SIZE = 64;
+  private static final int MQTT_MAX_MESSAGE_SIZE =
+      + 2 // Topic length
+      + MQTT_TOPIC.length() // Topic
+      + MQTT_MESSAGE_SIZE // Message
+    ;
 
   @Before
   public void before(TestContext context) {
@@ -56,11 +58,20 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
     this.setUp(context, options);
   }
 
-  @Ignore
   @Test
-  public void publishBigMessage(TestContext context) {
+  public void publishMaxMessageSize(TestContext context) {
+    publishBigMessage(context, MQTT_MESSAGE_SIZE, true);
+  }
+
+  @Test
+  public void publishLargerThanMaxMessageSize(TestContext context) {
+    publishBigMessage(context, MQTT_MESSAGE_SIZE + 1, false);
+  }
+
+  private void publishBigMessage(TestContext context, int messageSize, boolean expectReceiveMsg) {
 
     this.async = context.async();
+    this.expectReceiveMsg = expectReceiveMsg;
 
     try {
 
@@ -68,7 +79,7 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
       MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
       client.connect();
 
-      byte[] message = new byte[MQTT_BIG_MESSAGE_SIZE];
+      byte[] message = new byte[messageSize];
 
       // The client seems to fail when sending IO and block forever (see MqttOutputStream)
       // that makes the test hang forever
@@ -87,9 +98,22 @@ public class MqttServerMaxMessageSizeTest extends MqttServerBaseTest {
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
 
-    endpoint.exceptionHandler(t -> {
-      if (t instanceof DecoderException) {
+    endpoint.publishHandler(pub -> {
+      if (expectReceiveMsg) {
         this.async.complete();
+      } else {
+        context.fail("Was not expecting msg");
+      }
+    });
+    endpoint.exceptionHandler(t -> {
+      if (expectReceiveMsg) {
+        context.fail(t);
+      } else {
+        if (t instanceof DecoderException) {
+          this.async.complete();
+        } else {
+          context.fail(t);
+        }
       }
     });
 
