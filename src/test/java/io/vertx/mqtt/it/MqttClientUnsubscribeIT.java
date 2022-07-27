@@ -23,7 +23,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttClient;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,7 +38,10 @@ public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
   private static final Logger log = LoggerFactory.getLogger(MqttClientUnsubscribeIT.class);
 
   private static final String MQTT_TOPIC = "/my_topic";
-  private static final List<String> MQTT_TOPIC_LIST = Stream.of("my_topic1", "my_topic2").collect(Collectors.toList());
+
+  private static final List<String> MQTT_TOPIC_LIST = Stream.of("my_topic1", "my_topic2").collect(
+    Collectors.toList());
+
 
   private int messageId = 0;
 
