@@ -29,6 +29,7 @@ import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -252,6 +253,24 @@ public interface MqttClient {
    * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
   Future<Integer> unsubscribe(String topic);
+
+  /**
+   * Unsubscribe from receiving messages on given list of topic
+   *
+   * @param topics Topic you want to unsubscribe from
+   * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
+   */
+  Future<Integer> unsubscribe(List<String> topics);
+
+  /**
+   * Unsubscribe from receiving messages on given topics
+   *
+   * @param topics Topics you want to unsubscribe from
+   * @param unsubscribeSentHandler  handler called after UNSUBSCRIBE packet sent
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient unsubscribe(List<String> topics, Handler<AsyncResult<Integer>> unsubscribeSentHandler);
 
   /**
    * Unsubscribe from receiving messages on given topic
