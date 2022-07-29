@@ -668,7 +668,7 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient unsubscribe(List<String> topics,
     Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
-    Future<Integer> fut = unsubscribe((topics));
+    Future<Integer> fut = unsubscribe(topics);
     if (unsubscribeSentHandler != null) {
       fut.onComplete(unsubscribeSentHandler);
     }
@@ -1084,21 +1084,21 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private void handlePubackTimeout(int packetId) {
-    ExpiringPacket expiredMessage;
-    synchronized (this) {
-      expiredMessage = qos1outbound.remove(packetId);
+      ExpiringPacket expiredMessage;
+      synchronized (this) {
+        expiredMessage = qos1outbound.remove(packetId);
 
-      if (expiredMessage == null) {
+        if (expiredMessage == null) {
         // the message has already been ACKed
-        log.debug("PUBLISH expiration timer fired but QoS 1 message has already been PUBACKed by server");
-        return;
-      }
-    }
-    countInflightQueue--;
-    Handler<Integer> handler = publishCompletionExpirationHandler();
-    if (handler != null) {
-      handler.handle(expiredMessage.packetId);
-    }
+         log.debug("PUBLISH expiration timer fired but QoS 1 message has already been PUBACKed by server");
+         return;
+       }
+     }
+     countInflightQueue--;
+     Handler<Integer> handler = publishCompletionExpirationHandler();
+     if (handler != null) {
+       handler.handle(expiredMessage.packetId);
+     }
   }
 
   /**
@@ -1129,20 +1129,20 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private void handlePubcompTimeout(int packetId) {
-    ExpiringPacket expiredMessage;
-    synchronized (this) {
-      expiredMessage = qos2outbound.remove(packetId);
+      ExpiringPacket expiredMessage;
+      synchronized (this) {
+        expiredMessage = qos2outbound.remove(packetId);
 
-      if (expiredMessage == null) {
-        log.debug("PUBCOMP expiration timer fired but QoS 2 message has already been PUBCOMPed by server");
-        return;
+        if (expiredMessage == null) {
+          log.debug("PUBCOMP expiration timer fired but QoS 2 message has already been PUBCOMPed by server");
+          return;
+        }
       }
-    }
-    countInflightQueue--;
-    Handler<Integer> handler = publishCompletionExpirationHandler();
-    if (handler != null) {
-      handler.handle(expiredMessage.packetId);
-    }
+      countInflightQueue--;
+      Handler<Integer> handler = publishCompletionExpirationHandler();
+      if (handler != null) {
+        handler.handle(expiredMessage.packetId);
+      }
   }
 
   /**
@@ -1169,20 +1169,20 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private void handlePubrecTimeout(int packetId) {
-    ExpiringPacket expiredMessage;
-    synchronized (this) {
-      expiredMessage = qos2outbound.remove(packetId);
+      ExpiringPacket expiredMessage;
+      synchronized (this) {
+        expiredMessage = qos2outbound.remove(packetId);
 
-      if (expiredMessage == null) {
-        log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
-        return;
+        if (expiredMessage == null) {
+          log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
+          return;
+        }
       }
-    }
-    countInflightQueue--;
-    Handler<Integer> handler = publishCompletionExpirationHandler();
-    if (handler != null) {
-      handler.handle(expiredMessage.packetId);
-    }
+      countInflightQueue--;
+      Handler<Integer> handler = publishCompletionExpirationHandler();
+      if (handler != null) {
+        handler.handle(expiredMessage.packetId);
+      }
   }
 
   /**

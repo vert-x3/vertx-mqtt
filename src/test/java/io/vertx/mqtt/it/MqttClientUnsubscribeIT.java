@@ -39,9 +39,7 @@ public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
 
   private static final String MQTT_TOPIC = "/my_topic";
 
-  private static final List<String> MQTT_TOPIC_LIST = Stream.of("my_topic1", "my_topic2").collect(
-    Collectors.toList());
-
+  private static final List<String> MQTT_TOPIC_LIST = Stream.of("my_topic1", "my_topic2").collect(Collectors.toList());
 
   private int messageId = 0;
 

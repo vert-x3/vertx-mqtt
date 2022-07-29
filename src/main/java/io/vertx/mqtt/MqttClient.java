@@ -257,7 +257,7 @@ public interface MqttClient {
   /**
    * Unsubscribe from receiving messages on given list of topic
    *
-   * @param topics Topic you want to unsubscribe from
+   * @param topics list of topics you want to unsubscribe from
    * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
   Future<Integer> unsubscribe(List<String> topics);
@@ -265,7 +265,7 @@ public interface MqttClient {
   /**
    * Unsubscribe from receiving messages on given topics
    *
-   * @param topics Topics you want to unsubscribe from
+   * @param topics list of topics you want to unsubscribe from
    * @param unsubscribeSentHandler  handler called after UNSUBSCRIBE packet sent
    * @return current MQTT client instance
    */
@@ -275,7 +275,7 @@ public interface MqttClient {
   /**
    * Unsubscribe from receiving messages on given topic
    *
-   * @param topic Topic you want to unsubscribe from
+   * @param topic list of topics you want to unsubscribe from
    * @param unsubscribeSentHandler  handler called after UNSUBSCRIBE packet sent
    * @return current MQTT client instance
    */
