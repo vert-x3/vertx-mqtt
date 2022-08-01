@@ -22,10 +22,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.timeout.IdleState;
@@ -45,6 +50,7 @@ import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.vertx.mqtt.MqttServerOptions.MQTT_SUBPROTOCOL_CSV_LIST;
@@ -212,18 +218,39 @@ public class MqttServerImpl implements MqttServer {
       }
     });
 
-    if(options.isUseWebSocket()) {
-
+    if (options.isUseWebSocket()) {
       int maxFrameSize = options.getWebSocketMaxFrameSize();
 
       pipeline.addBefore("mqttEncoder", "httpServerCodec", new HttpServerCodec());
       pipeline.addAfter("httpServerCodec", "aggregator", new HttpObjectAggregator(maxFrameSize));
 
-      pipeline.addAfter("aggregator", "webSocketHandler",
-        new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST, false,maxFrameSize, 10000L));
+      List<WebSocketServerExtensionHandshaker> extensionHandshakers = createExtensionHandshakers();
+
+      if (!extensionHandshakers.isEmpty()) {
+        WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
+          extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[0]));
+        pipeline.addAfter("aggregator", "webSocketExtensionHandler", extensionHandler);
+      }
+
+      pipeline.addAfter("webSocketExtensionHandler", "webSocketHandler",
+        new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST, !extensionHandshakers.isEmpty(), maxFrameSize, 10000L));
 
       pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());
       pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new WebSocketFrameToByteBufDecoder());
     }
+  }
+
+  private List<WebSocketServerExtensionHandshaker> createExtensionHandshakers() {
+    ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
+
+    if (options.isPerFrameWebSocketCompressionSupported()) {
+      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.getWebSocketCompressionLevel()));
+    }
+    if (options.isPerMessageWebSocketCompressionSupported()) {
+      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.getWebSocketCompressionLevel(),
+        ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
+        options.isWebSocketAllowServerNoContext(), options.isWebSocketPreferredClientNoContext()));
+    }
+    return extensionHandshakers;
   }
 }
