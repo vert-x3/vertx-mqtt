@@ -46,6 +46,7 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -204,7 +205,7 @@ public class MqttClientImpl implements MqttClient {
   private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
 
     ContextInternal ctx = vertx.getOrCreateContext();
-    NetClient client = vertx.createNetClient(options, new CloseFuture());
+    NetClient client = new NetClientBuilder(vertx, options).closeFuture(new CloseFuture()).build();
     PromiseInternal<MqttConnAckMessage> connectPromise = ctx.promise();
     PromiseInternal<Void> disconnectPromise = ctx.promise();
 
