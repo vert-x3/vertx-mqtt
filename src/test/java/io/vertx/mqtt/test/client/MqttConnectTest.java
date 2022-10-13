@@ -115,6 +115,7 @@ public class MqttConnectTest {
     });
     Async proxyLatch = ctx.async();
     proxyServer.listen(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(v -> proxyLatch.complete()));
+    proxyLatch.awaitSuccess(20_000);
     Async async = ctx.async();
     client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack1 -> {
       client.closeHandler(v1 -> {
