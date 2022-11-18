@@ -39,7 +39,7 @@ public class MqttServerOptions extends NetServerOptions {
   public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
   public static final int DEFAULT_TLS_PORT = 8883; // Default TLS port is 8883 for MQTT
 
-  public static final int DEFAULT_MAX_MESSAGE_SIZE = -1;
+  public static final int DEFAULT_MAX_MESSAGE_SIZE = 8092;
   public static final int DEFAULT_TIMEOUT_ON_CONNECT = 90;
   public static final int DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = 65536;
 
@@ -218,8 +218,8 @@ public class MqttServerOptions extends NetServerOptions {
    * @return  MQTT server options instance
    */
   public MqttServerOptions setMaxMessageSize(int maxMessageSize) {
-    Arguments.require(maxMessageSize > 0 || maxMessageSize == DEFAULT_MAX_MESSAGE_SIZE, "maxMessageSize must be > 0");
-    if ((maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
+    Arguments.require(maxMessageSize > 0, "maxMessageSize must be > 0");
+    if (this.getReceiveBufferSize() > 0) {
       Arguments.require(this.getReceiveBufferSize() >= maxMessageSize,
         "Receiver buffer size can't be lower than max message size");
     }
