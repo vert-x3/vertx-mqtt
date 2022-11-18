@@ -185,13 +185,7 @@ public class MqttServerImpl implements MqttServer {
   private void initChannel(ChannelPipeline pipeline) {
 
     pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
-    if (this.options.getMaxMessageSize() > 0) {
-      pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
-    } else {
-      // max message size not set, so the default from Netty MQTT codec is used
-      pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
-    }
-
+    pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
     // adding the idle state handler for timeout on CONNECT packet
     pipeline.addBefore("handler", "idle", new IdleStateHandler(this.options.timeoutOnConnect(), 0, 0));
     pipeline.addBefore("handler", "timeoutOnConnect", new ChannelDuplexHandler() {
