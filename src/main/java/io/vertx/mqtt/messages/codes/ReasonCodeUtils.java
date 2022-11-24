@@ -11,7 +11,7 @@ public class ReasonCodeUtils {
         }
     }
 
-    static <C> C codeLoopkup(C[] valuesByCode, byte b, String codeType) {
+    static <C> C codeLookup(C[] valuesByCode, byte b, String codeType) {
         final int unsignedByte = b & 0xFF;
         C reasonCode = null;
         try {

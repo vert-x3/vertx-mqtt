@@ -36,7 +36,7 @@ public enum MqttPubRecReasonCode implements MqttReasonCode {
     }
 
     public static MqttPubRecReasonCode valueOf(byte b) {
-        return ReasonCodeUtils.codeLoopkup(VALUES, b, "PUBREC");
+        return ReasonCodeUtils.codeLookup(VALUES, b, "PUBREC");
     }
 
 }
