@@ -27,7 +27,7 @@ public enum MqttPubAckReasonCode implements MqttReasonCode {
     }
 
     public static MqttPubAckReasonCode valueOf(byte b) {
-        return ReasonCodeUtils.codeLoopkup(VALUES, b, "PUBACK");
+        return ReasonCodeUtils.codeLookup(VALUES, b, "PUBACK");
     }
 
     @Override
