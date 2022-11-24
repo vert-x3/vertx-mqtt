@@ -853,7 +853,9 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private Future<Void> write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
-    log.debug(String.format("Sending packet %s", mqttMessage));
+     if(log.isDebugEnabled()){
+        log.debug(String.format("Sending packet %s", mqttMessage));
+     }
     return this.connection().writeMessage(mqttMessage);
   }
 
@@ -916,8 +918,9 @@ public class MqttClientImpl implements MqttClient {
         chctx.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
         return;
       }
-
-      log.debug(String.format("Incoming packet %s", msg));
+      if(log.isDebugEnabled()){
+         log.debug(String.format("Incoming packet %s", msg));
+      }
       switch (mqttMessage.fixedHeader().messageType()) {
 
         case CONNACK:
