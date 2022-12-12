@@ -44,9 +44,9 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @GenIgnore
   static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
-
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, MqttProperties.NO_PROPERTIES);
   }
+  
   /**
    * Create a concrete instance of a Vert.x publish message
    *
@@ -61,7 +61,6 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload, MqttProperties properties) {
-
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, properties);
   }
 
@@ -82,7 +81,7 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @CacheReturn
   boolean isRetain();
-
+  
   /**
    * @return  Topic on which the message was published
    */
@@ -94,6 +93,12 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @CacheReturn
   Buffer payload();
+  
+  
+  /**
+   * Send the PUBACK/PUBCOMP to the broker
+   */
+  void ack();
 
   /**
    * @return MQTT properties

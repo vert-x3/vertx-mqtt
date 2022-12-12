@@ -60,6 +60,7 @@ import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -507,7 +508,7 @@ public class MqttClientImpl implements MqttClient {
   private synchronized Handler<MqttPublishMessage> publishHandler() {
     return this.publishHandler;
   }
-
+  
   /**
    * See {@link MqttClient#subscribeCompletionHandler(Handler)} for more details
    */
@@ -1173,30 +1174,35 @@ public class MqttClientImpl implements MqttClient {
    * @param msg published message
    */
   private void handlePublish(MqttPublishMessage msg) {
+	  
+    Handler<MqttPublishMessage> handler = this.publishHandler();
 
-    Handler<MqttPublishMessage> handler;
     switch (msg.qosLevel()) {
-
-      case AT_MOST_ONCE:
-        handler = this.publishHandler();
-        if (handler != null) {
-          handler.handle(msg);
-        }
+    		  
+      case AT_MOST_ONCE: 	
+      	if (handler != null) {
+	        handler.handle(msg);
+      	}
         break;
 
-      case AT_LEAST_ONCE:
-        this.publishAcknowledge(msg.messageId());
-        handler = this.publishHandler();
-        if (handler != null) {
-          handler.handle(msg);
-        }
-        break;
-
+      case AT_LEAST_ONCE:  
+		  if (options.isAutoAck()) {			  
+			  this.publishAcknowledge(msg.messageId());
+		  } else {
+              ((MqttPublishMessageImpl) msg).setAckCallback(() -> this.publishAcknowledge(msg.messageId()));
+		  }
+		  if (handler != null) {
+			  handler.handle(msg);
+		  }
+    	  break;
+    	
       case EXACTLY_ONCE:
         this.publishReceived(msg);
-        // we will handle the PUBLISH when a PUBREL comes
+        // we will handle the PUBCOMP when a PUBREL comes
         break;
-    }
+
+	}
+
   }
 
   /**
@@ -1213,12 +1219,19 @@ public class MqttClientImpl implements MqttClient {
         log.warn("Received PUBREL packet without having related PUBREC packet in storage");
         return;
       }
-      this.publishComplete(pubrelMessageId);
     }
-    Handler<MqttPublishMessage> handler = this.publishHandler();
-    if (handler != null) {
-      handler.handle((MqttPublishMessage) message);
-    }
+    
+	if (options.isAutoAck()) {
+	  this.publishComplete(pubrelMessageId);
+	} else {
+		((MqttPublishMessageImpl) message).setAckCallback(() -> publishComplete(pubrelMessageId));
+	}
+	
+	Handler<MqttPublishMessage> handler = this.publishHandler();
+	if (handler != null) {
+	  handler.handle((MqttPublishMessage) message);
+	}
+	
   }
 
   /**

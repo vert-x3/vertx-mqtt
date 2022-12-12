@@ -20,6 +20,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.mqtt.messages.MqttPubAckCallback;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
 /**
@@ -27,6 +30,8 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
  */
 public class MqttPublishMessageImpl implements MqttPublishMessage {
 
+  private static final Logger log = LoggerFactory.getLogger(MqttPublishMessageImpl.class);
+	  
   private final int messageId;
   private final MqttQoS qosLevel;
   private final boolean isDup;
@@ -34,6 +39,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   private final String topicName;
   private final Buffer payload;
   private final MqttProperties properties;
+  private MqttPubAckCallback ackCallback;
 
   /**
    * Constructor
@@ -79,8 +85,24 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   public Buffer payload() {
     return this.payload;
   }
+  
+  public void setAckCallback(MqttPubAckCallback ackCallback) {
+	this.ackCallback = ackCallback;
+  }
+  
+  @Override
+  public void ack() {
+    if (this.qosLevel == MqttQoS.AT_LEAST_ONCE || this.qosLevel == MqttQoS.EXACTLY_ONCE) {
+      if (ackCallback == null) {
+        log.error("Callback not present. Is Auto Ack enabled?");
+      } else {
+        ackCallback.ack();
+      }
+    }
+  }
 
   public MqttProperties properties() {
     return this.properties;
   }
+  
 }
