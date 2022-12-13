@@ -375,10 +375,19 @@ public class MqttClientOptions extends NetClientOptions {
     return this;
   }
  
+  /**
+   * @return if the ack (PUBACK/PUBCOMP) will be sent automatically by vertx-mqtt
+   */
   public boolean isAutoAck() {
-     return autoAck;
+    return autoAck;
   }
 
+  /**
+   * Set to false to let the application code to ack the message via {@link MqttPublishMessage#ack()}.
+   * If true, the ack (PUBACK/PUBCOMP) will be sent by vertx-mqtt before {@link MqttClient#publishHandler()} execution.
+   * (default is true)
+   * @param autoAck 
+   */
   public void setAutoAck(boolean autoAck) {
     this.autoAck = autoAck;
   }

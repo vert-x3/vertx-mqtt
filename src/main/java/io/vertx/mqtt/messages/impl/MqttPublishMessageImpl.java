@@ -22,7 +22,6 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.mqtt.messages.MqttPubAckCallback;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
 /**
@@ -86,6 +85,10 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
     return this.payload;
   }
   
+  /**
+   * Set the ack operation that will be execute on {@link MqttPublishMessage#ack()} invocation. 
+   * @param ackCallback
+   */
   public void setAckCallback(MqttPubAckCallback ackCallback) {
     this.ackCallback = ackCallback;
   }
@@ -103,6 +106,19 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
 
   public MqttProperties properties() {
     return this.properties;
+  }
+  
+  /**
+   * Define the callback action to do when the manual ack in involved.
+   */
+  public interface MqttPubAckCallback {
+
+    /**
+     *  Send message's ack (PUBACK/PUBCOMP) to the broker.
+     *  To use only when the AutoAck is false.
+     */
+    void ack();
+      
   }
   
 }

@@ -96,9 +96,8 @@ public interface MqttPublishMessage extends MqttMessage {
   @CacheReturn
   Buffer payload();
   
-  
   /**
-   * Send the PUBACK/PUBCOMP to the broker
+   * Send the PUBACK/PUBCOMP to the broker. Use this method only if autoAck option is set to false.
    */
   void ack();
 
