@@ -376,11 +376,11 @@ public class MqttClientOptions extends NetClientOptions {
   }
  
   public boolean isAutoAck() {
-	return autoAck;
+     return autoAck;
   }
 
   public void setAutoAck(boolean autoAck) {
-	this.autoAck = autoAck;
+    this.autoAck = autoAck;
   }
 
   /**

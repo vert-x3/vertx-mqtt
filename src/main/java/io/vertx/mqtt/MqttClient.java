@@ -180,13 +180,13 @@ public interface MqttClient {
 
   /**
    * Sets handler which will be called each time server publish something to client
-   * 
+   *
    * @param publishHandler handler to call
    * @return current MQTT client instance
    */
   @Fluent
   MqttClient publishHandler(Handler<MqttPublishMessage> publishHandler);
-  
+
   /**
    * Sets handler which will be called after SUBACK packet receiving
    *
