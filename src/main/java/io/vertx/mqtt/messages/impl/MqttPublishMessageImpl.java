@@ -38,6 +38,8 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   private final String topicName;
   private final Buffer payload;
   private final MqttProperties properties;
+  
+  private boolean isAcked;
   private MqttPubAckCallback ackCallback;
 
   /**
@@ -97,8 +99,11 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   public void ack() {
     if (this.qosLevel == MqttQoS.AT_LEAST_ONCE || this.qosLevel == MqttQoS.EXACTLY_ONCE) {
       if (ackCallback == null) {
-        log.error("Callback not present. Is Auto Ack enabled?");
+        throw new IllegalStateException("Callback not present. Check that Auto Ack is disabled.");
+      } else if (isAcked) {
+        throw new IllegalStateException("Ack of message " + messageId + " altready sent.");
       } else {
+        isAcked = true;
         ackCallback.ack();
       }
     }

@@ -98,6 +98,8 @@ public interface MqttPublishMessage extends MqttMessage {
   
   /**
    * Send the PUBACK/PUBCOMP to the broker. Use this method only if autoAck option is set to false.
+   * @throws IllegalStateException if you are ack a message (with QoS > 0) when the Auto Ack is true
+   * @throws IllegalStateException if the message is already ack'ed
    */
   void ack();
 
