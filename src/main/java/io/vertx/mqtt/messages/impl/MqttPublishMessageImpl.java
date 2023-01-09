@@ -20,8 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
 /**
@@ -29,8 +27,6 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
  */
 public class MqttPublishMessageImpl implements MqttPublishMessage {
 
-  private static final Logger log = LoggerFactory.getLogger(MqttPublishMessageImpl.class);
-	  
   private final int messageId;
   private final MqttQoS qosLevel;
   private final boolean isDup;
