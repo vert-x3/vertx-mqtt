@@ -34,6 +34,9 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   private final String topicName;
   private final Buffer payload;
   private final MqttProperties properties;
+  
+  private boolean isAcked;
+  private MqttPubAckCallback ackCallback;
 
   /**
    * Constructor
@@ -79,8 +82,44 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   public Buffer payload() {
     return this.payload;
   }
+  
+  /**
+   * Set the ack operation that will be execute on {@link MqttPublishMessage#ack()} invocation. 
+   * @param ackCallback
+   */
+  public void setAckCallback(MqttPubAckCallback ackCallback) {
+    this.ackCallback = ackCallback;
+  }
+  
+  @Override
+  public void ack() {
+    if (this.qosLevel == MqttQoS.AT_LEAST_ONCE || this.qosLevel == MqttQoS.EXACTLY_ONCE) {
+      if (ackCallback == null) {
+        throw new IllegalStateException("Callback not present. Check that Auto Ack is disabled.");
+      } else if (isAcked) {
+        throw new IllegalStateException("Ack of message " + messageId + " altready sent.");
+      } else {
+        isAcked = true;
+        ackCallback.ack();
+      }
+    }
+  }
 
   public MqttProperties properties() {
     return this.properties;
   }
+  
+  /**
+   * Define the callback action to do when the manual ack in involved.
+   */
+  public interface MqttPubAckCallback {
+
+    /**
+     *  Send message's ack (PUBACK/PUBCOMP) to the broker.
+     *  To use only when the AutoAck is false.
+     */
+    void ack();
+      
+  }
+  
 }

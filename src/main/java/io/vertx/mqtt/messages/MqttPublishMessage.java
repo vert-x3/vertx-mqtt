@@ -47,6 +47,7 @@ public interface MqttPublishMessage extends MqttMessage {
 
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, MqttProperties.NO_PROPERTIES);
   }
+  
   /**
    * Create a concrete instance of a Vert.x publish message
    *
@@ -94,6 +95,13 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @CacheReturn
   Buffer payload();
+  
+  /**
+   * Send the PUBACK/PUBCOMP to the broker. Use this method only if autoAck option is set to false.
+   * @throws IllegalStateException if you are ack a message (with QoS > 0) when the Auto Ack is true
+   * @throws IllegalStateException if the message is already ack'ed
+   */
+  void ack();
 
   /**
    * @return MQTT properties
