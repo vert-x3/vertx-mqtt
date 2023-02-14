@@ -74,7 +74,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.netty.handler.codec.mqtt.MqttQoS.*;
 
@@ -392,7 +391,7 @@ public class MqttClientImpl implements MqttClient {
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
 
     if (MqttQoS.FAILURE == qosLevel) {
-        throw new IllegalArgumentException("QoS level must be one of AT_MOST_ONCE, AT_LEAST_ONCE or EXACTLY_ONCE");
+      throw new IllegalArgumentException("QoS level must be one of AT_MOST_ONCE, AT_LEAST_ONCE or EXACTLY_ONCE");
     }
 
     io.netty.handler.codec.mqtt.MqttMessage publish;
@@ -600,6 +599,17 @@ public class MqttClientImpl implements MqttClient {
     return this;
   }
 
+  /**
+   * Unsubscribe from receiving messages on given topic
+   *
+   * @param topic Topic you want to unsubscribe from
+   * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
+   */
+  @Override
+  public Future<Integer> unsubscribe(String topic) {
+    return unsubscribe(Collections.singletonList(topic));
+  }
+
   private synchronized Handler<Integer> unsubscribeCompletionHandler() {
 
     return this.unsubscribeCompletionHandler;
@@ -611,7 +621,7 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public MqttClient unsubscribe(String topic, Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
 
-    Future<Integer> fut = unsubscribe(topic);
+    Future<Integer> fut = unsubscribe(Collections.singletonList(topic));
     if (unsubscribeSentHandler != null) {
       fut.onComplete(unsubscribeSentHandler);
     }
@@ -619,10 +629,10 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#unsubscribe(String)} )} for more details
+   * See {@link MqttClient#unsubscribe(List<String>)} )} for more details
    */
   @Override
-  public Future<Integer> unsubscribe(String topic) {
+  public Future<Integer> unsubscribe(List<String> topics) {
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
       MqttMessageType.UNSUBSCRIBE,
@@ -633,13 +643,30 @@ public class MqttClientImpl implements MqttClient {
 
     MqttMessageIdVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), MqttProperties.NO_PROPERTIES);
 
-    MqttUnsubscribePayload payload = new MqttUnsubscribePayload(Stream.of(topic).collect(Collectors.toList()));
+    MqttUnsubscribePayload payload = new MqttUnsubscribePayload(topics);
 
     io.netty.handler.codec.mqtt.MqttMessage unsubscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
     this.write(unsubscribe);
 
     return ctx.succeededFuture(variableHeader.messageId());
+  }
+
+  /**
+   * Unsubscribe from receiving messages on given topics
+   *
+   * @param topics                 Topics you want to unsubscribe from
+   * @param unsubscribeSentHandler handler called after UNSUBSCRIBE packet sent
+   * @return current MQTT client instance
+   */
+  @Override
+  public MqttClient unsubscribe(List<String> topics,
+    Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
+    Future<Integer> fut = unsubscribe(topics);
+    if (unsubscribeSentHandler != null) {
+      fut.onComplete(unsubscribeSentHandler);
+    }
+    return this;
   }
 
   /**
@@ -1054,22 +1081,22 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private void handlePubackTimeout(int packetId) {
-      ExpiringPacket expiredMessage;
-      synchronized (this) {
-        expiredMessage = qos1outbound.remove(packetId);
+    ExpiringPacket expiredMessage;
+    synchronized (this) {
+      expiredMessage = qos1outbound.remove(packetId);
 
-        if (expiredMessage == null) {
-          // the message has already been ACKed
-          log.debug("PUBLISH expiration timer fired but QoS 1 message has already been PUBACKed by server");
-          return;
-        }
-      }
-      countInflightQueue--;
-      Handler<Integer> handler = publishCompletionExpirationHandler();
-      if (handler != null) {
-        handler.handle(expiredMessage.packetId);
-      }
+      if (expiredMessage == null) {
+        // the message has already been ACKed
+        log.debug("PUBLISH expiration timer fired but QoS 1 message has already been PUBACKed by server");
+        return;
+     }
     }
+    countInflightQueue--;
+    Handler<Integer> handler = publishCompletionExpirationHandler();
+    if (handler != null) {
+      handler.handle(expiredMessage.packetId);
+    }
+  }
 
   /**
    * Used for calling the pubcomp handler when the server client acknowledge a QoS 2 message with pubcomp
@@ -1099,21 +1126,21 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private void handlePubcompTimeout(int packetId) {
-      ExpiringPacket expiredMessage;
-      synchronized (this) {
-        expiredMessage = qos2outbound.remove(packetId);
+    ExpiringPacket expiredMessage;
+    synchronized (this) {
+      expiredMessage = qos2outbound.remove(packetId);
 
-        if (expiredMessage == null) {
-          log.debug("PUBCOMP expiration timer fired but QoS 2 message has already been PUBCOMPed by server");
-          return;
-        }
-      }
-      countInflightQueue--;
-      Handler<Integer> handler = publishCompletionExpirationHandler();
-      if (handler != null) {
-        handler.handle(expiredMessage.packetId);
+      if (expiredMessage == null) {
+        log.debug("PUBCOMP expiration timer fired but QoS 2 message has already been PUBCOMPed by server");
+        return;
       }
     }
+    countInflightQueue--;
+    Handler<Integer> handler = publishCompletionExpirationHandler();
+    if (handler != null) {
+      handler.handle(expiredMessage.packetId);
+    }
+  }
 
   /**
    * Used for sending the pubrel when a pubrec is received from the server
@@ -1139,21 +1166,21 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private void handlePubrecTimeout(int packetId) {
-      ExpiringPacket expiredMessage;
-      synchronized (this) {
-        expiredMessage = qos2outbound.remove(packetId);
+    ExpiringPacket expiredMessage;
+    synchronized (this) {
+      expiredMessage = qos2outbound.remove(packetId);
 
-        if (expiredMessage == null) {
-          log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
-          return;
-        }
-      }
-      countInflightQueue--;
-      Handler<Integer> handler = publishCompletionExpirationHandler();
-      if (handler != null) {
-        handler.handle(expiredMessage.packetId);
+      if (expiredMessage == null) {
+        log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
+        return;
       }
     }
+    countInflightQueue--;
+    Handler<Integer> handler = publishCompletionExpirationHandler();
+    if (handler != null) {
+      handler.handle(expiredMessage.packetId);
+    }
+  }
 
   /**
    * Used for calling the suback handler when the server acknowledges subscribe to topics
@@ -1364,11 +1391,11 @@ public class MqttClientImpl implements MqttClient {
     ExpiringPacket(Handler<Integer> timeoutHandler, final int packetId) {
       this.packetId = packetId;
       if (options.getAckTimeout() > -1) {
-          this.timerId = vertx.setTimer(options.getAckTimeout() * 1000L, tid -> timeoutHandler.handle(packetId));
+        this.timerId = vertx.setTimer(options.getAckTimeout() * 1000L, tid -> timeoutHandler.handle(packetId));
       } else {
-          // default MQTT client behavior,
-          // don't start a timer for expiring the publish
-          this.timerId = -1;
+        // default MQTT client behavior,
+        // don't start a timer for expiring the publish
+        this.timerId = -1;
       }
     }
 
@@ -1381,7 +1408,7 @@ public class MqttClientImpl implements MqttClient {
      * @return {@code true} if the timer has been canceled.
      */
     boolean cancelTimer() {
-        return vertx.cancelTimer(timerId);
+      return vertx.cancelTimer(timerId);
     }
   }
 }

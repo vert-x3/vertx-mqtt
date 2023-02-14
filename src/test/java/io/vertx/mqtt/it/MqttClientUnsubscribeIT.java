@@ -23,6 +23,9 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttClient;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -35,6 +38,8 @@ public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
   private static final Logger log = LoggerFactory.getLogger(MqttClientUnsubscribeIT.class);
 
   private static final String MQTT_TOPIC = "/my_topic";
+
+  private static final List<String> MQTT_TOPIC_LIST = Stream.of("my_topic1", "my_topic2").collect(Collectors.toList());
 
   private int messageId = 0;
 
@@ -76,6 +81,12 @@ public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
         assertTrue(ar2.succeeded());
         messageId = ar2.result();
         log.info("unsubscribing on [" + MQTT_TOPIC + "] message id = " + messageId);
+      });
+
+      client.unsubscribe(MQTT_TOPIC_LIST, ar2 -> {
+        assertTrue(ar2.succeeded());
+        messageId = ar2.result();
+        log.info("unsubscribing on [" + MQTT_TOPIC_LIST + "] message id = " + messageId);
       });
     });
 
