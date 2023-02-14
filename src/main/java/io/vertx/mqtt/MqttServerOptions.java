@@ -42,6 +42,11 @@ public class MqttServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_MESSAGE_SIZE = 8092;
   public static final int DEFAULT_TIMEOUT_ON_CONNECT = 90;
   public static final int DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = 65536;
+  public static final boolean DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED = true;
+  public static final boolean DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED = true;
+  public static final int DEFAULT_WEBSOCKET_COMPRESSION_LEVEL = 6;
+  public static final boolean DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT = false;
+  public static final boolean DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT = false;
 
 
   public static final String MQTT_SUBPROTOCOL_CSV_LIST = "mqtt, mqttv3.1, mqttv3.1.1";
@@ -57,6 +62,12 @@ public class MqttServerOptions extends NetServerOptions {
   // max WebSocket frame size
   private int webSocketMaxFrameSize;
 
+  private boolean perFrameWebSocketCompressionSupported;
+  private boolean perMessageWebSocketCompressionSupported;
+  private int webSocketCompressionLevel;
+  private boolean webSocketAllowServerNoContext;
+  private boolean webSocketPreferredClientNoContext;
+
   /**
    * Default constructor
    */
@@ -68,6 +79,12 @@ public class MqttServerOptions extends NetServerOptions {
     this.isAutoClientId = true;
     this.timeoutOnConnect = DEFAULT_TIMEOUT_ON_CONNECT;
     this.webSocketMaxFrameSize = DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE;
+
+    this.perFrameWebSocketCompressionSupported = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
+    this.perMessageWebSocketCompressionSupported = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
+    this.webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
+    this.webSocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
+    this.webSocketPreferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
   }
 
   /**
@@ -339,5 +356,104 @@ public class MqttServerOptions extends NetServerOptions {
   public void setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
     Arguments.require(webSocketMaxFrameSize > 0, "WebSocket max frame size must be > 0");
     this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+  }
+
+  /**
+   * Get whether WebSocket the per-frame deflate compression extension is supported.
+   *
+   * @return {@code true} if the http server will accept the per-frame deflate compression extension
+   */
+  public boolean isPerFrameWebSocketCompressionSupported() {
+    return perFrameWebSocketCompressionSupported;
+  }
+
+  /**
+   * Enable or disable support for the WebSocket per-frame deflate compression extension.
+   *
+   * @param supported {@code true} when the per-frame deflate compression extension is supported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MqttServerOptions setPerFrameWebSocketCompressionSupported(boolean supported) {
+    this.perFrameWebSocketCompressionSupported = supported;
+    return this;
+  }
+
+
+  /**
+   * Get whether WebSocket the per-frame deflate compression extension is supported.
+   *
+   * @return {@code true} if the http server will accept the per-frame deflate compression extension
+   */
+  public boolean isPerMessageWebSocketCompressionSupported() {
+    return perMessageWebSocketCompressionSupported;
+  }
+
+  /**
+   * Enable or disable support for WebSocket per-message deflate compression extension.
+   *
+   * @param supported {@code true} when the per-message WebSocket compression extension is supported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MqttServerOptions setPerMessageWebSocketCompressionSupported(boolean supported) {
+    this.perMessageWebSocketCompressionSupported = supported;
+    return this;
+  }
+
+  /**
+   * @return the current WebSocket deflate compression level
+   */
+  public int getWebSocketCompressionLevel() {
+    return webSocketCompressionLevel;
+  }
+
+  /**
+   * Set the WebSocket compression level.
+   *
+   * @param compressionLevel the compression level
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MqttServerOptions setWebSocketCompressionLevel(int compressionLevel) {
+    this.webSocketCompressionLevel = compressionLevel;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the WebSocket server will accept the {@code server_no_context_takeover} parameter for the per-message
+   * deflate compression extension offered by the client
+   */
+  public boolean isWebSocketAllowServerNoContext() {
+    return webSocketAllowServerNoContext;
+  }
+
+  /**
+   * Set whether the WebSocket server will accept the {@code server_no_context_takeover} parameter of the per-message
+   * deflate compression extension offered by the client.
+   *
+   * @param accept {@code true} to accept the {@literal server_no_context_takeover} parameter when the client offers it
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MqttServerOptions setWebSocketAllowServerNoContext(boolean accept) {
+    this.webSocketAllowServerNoContext = accept;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the WebSocket server will accept the {@code client_no_context_takeover} parameter for the per-message
+   * deflate compression extension offered by the client
+   */
+  public boolean isWebSocketPreferredClientNoContext() {
+    return webSocketPreferredClientNoContext;
+  }
+
+  /**
+   * Set whether the WebSocket server will accept the {@code client_no_context_takeover} parameter of the per-message
+   * deflate compression extension offered by the client.
+   *
+   * @param accept {@code true} to accept the {@code client_no_context_takeover} parameter when the client offers it
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MqttServerOptions setWebSocketPreferredClientNoContext(boolean accept) {
+    this.webSocketPreferredClientNoContext = accept;
+    return this;
   }
 }
