@@ -33,14 +33,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents options used by the MQTT server
  */
-@DataObject
+@DataObject(generateConverter = true, publicConverter = false)
 public class MqttServerOptions extends NetServerOptions {
 
   public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
   public static final int DEFAULT_TLS_PORT = 8883; // Default TLS port is 8883 for MQTT
 
   public static final int DEFAULT_MAX_MESSAGE_SIZE = 8092;
+  public static final boolean DEFAULT_AUTO_CLIENT_ID = true;
   public static final int DEFAULT_TIMEOUT_ON_CONNECT = 90;
+  public static final boolean DEFAULT_USE_WEB_SOCKET = false;
   public static final int DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = 65536;
   public static final boolean DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED = true;
   public static final boolean DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED = true;
@@ -61,11 +63,15 @@ public class MqttServerOptions extends NetServerOptions {
   private boolean useWebSocket;
   // max WebSocket frame size
   private int webSocketMaxFrameSize;
-
+  // per frame WebSocket compression supported
   private boolean perFrameWebSocketCompressionSupported;
+  // per message WebSocket compression supported
   private boolean perMessageWebSocketCompressionSupported;
+  // WebSocket compression level
   private int webSocketCompressionLevel;
+  // WebSocket allow server no context
   private boolean webSocketAllowServerNoContext;
+  // WebSocket preferred client no context
   private boolean webSocketPreferredClientNoContext;
 
   /**
@@ -73,13 +79,17 @@ public class MqttServerOptions extends NetServerOptions {
    */
   public MqttServerOptions() {
     super();
+    init();
+  }
+
+  private void init() {
     // override the default port
     this.setPort(DEFAULT_PORT);
     this.maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
-    this.isAutoClientId = true;
+    this.isAutoClientId = DEFAULT_AUTO_CLIENT_ID;
     this.timeoutOnConnect = DEFAULT_TIMEOUT_ON_CONNECT;
+    this.useWebSocket = DEFAULT_USE_WEB_SOCKET;
     this.webSocketMaxFrameSize = DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE;
-
     this.perFrameWebSocketCompressionSupported = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
     this.perMessageWebSocketCompressionSupported = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
     this.webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
@@ -94,12 +104,9 @@ public class MqttServerOptions extends NetServerOptions {
    */
   public MqttServerOptions(JsonObject json) {
     super(json);
-    // override the default port
-    this.setPort(json.getInteger("port", DEFAULT_PORT));
-    this.maxMessageSize =  json.getInteger("maxMessageSize", DEFAULT_MAX_MESSAGE_SIZE);
-    this.isAutoClientId = json.getBoolean("isAutoClientId", true);
-    this.timeoutOnConnect = json.getInteger("timeoutOnConnect", DEFAULT_TIMEOUT_ON_CONNECT);
-    this.webSocketMaxFrameSize = json.getInteger("webSocketMaxFrameSize", DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE);
+    init();
+
+    MqttServerOptionsConverter.fromJson(json, this);
 
     if ((this.maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
       Arguments.require(this.getReceiveBufferSize() >= this.maxMessageSize,
@@ -114,6 +121,17 @@ public class MqttServerOptions extends NetServerOptions {
    */
   public MqttServerOptions(MqttServerOptions other) {
     super(other);
+
+    this.maxMessageSize = other.maxMessageSize;
+    this.isAutoClientId = other.isAutoClientId;
+    this.timeoutOnConnect = other.timeoutOnConnect;
+    this.useWebSocket = other.useWebSocket;
+    this.webSocketMaxFrameSize = other.webSocketMaxFrameSize;
+    this.perFrameWebSocketCompressionSupported = other.perFrameWebSocketCompressionSupported;
+    this.perMessageWebSocketCompressionSupported = other.perMessageWebSocketCompressionSupported;
+    this.webSocketCompressionLevel = other.webSocketCompressionLevel;
+    this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
+    this.webSocketPreferredClientNoContext = other.webSocketAllowServerNoContext;
   }
 
   @Override
@@ -455,5 +473,12 @@ public class MqttServerOptions extends NetServerOptions {
   public MqttServerOptions setWebSocketPreferredClientNoContext(boolean accept) {
     this.webSocketPreferredClientNoContext = accept;
     return this;
+  }
+
+  @Override
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    MqttServerOptionsConverter.toJson(this, json);
+    return json;
   }
 }
