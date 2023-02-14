@@ -191,7 +191,7 @@ public class MqttServerImpl implements MqttServer {
   private void initChannel(ChannelPipeline pipeline) {
 
     pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
-    pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize()));
+    pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder(this.options.getMaxMessageSize(), this.options.getMaxClientIdLength()));
     // adding the idle state handler for timeout on CONNECT packet
     pipeline.addBefore("handler", "idle", new IdleStateHandler(this.options.timeoutOnConnect(), 0, 0));
     pipeline.addBefore("handler", "timeoutOnConnect", new ChannelDuplexHandler() {
