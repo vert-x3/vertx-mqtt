@@ -25,6 +25,11 @@ public class MqttServerOptionsConverter {
             obj.setAutoClientId((Boolean)member.getValue());
           }
           break;
+        case "maxClientIdLength":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxClientIdLength(((Number)member.getValue()).intValue());
+          }
+          break;
         case "maxMessageSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxMessageSize(((Number)member.getValue()).intValue());
@@ -80,6 +85,7 @@ public class MqttServerOptionsConverter {
 
    static void toJson(MqttServerOptions obj, java.util.Map<String, Object> json) {
     json.put("autoClientId", obj.isAutoClientId());
+    json.put("maxClientIdLength", obj.getMaxClientIdLength());
     json.put("maxMessageSize", obj.getMaxMessageSize());
     json.put("perFrameWebSocketCompressionSupported", obj.isPerFrameWebSocketCompressionSupported());
     json.put("perMessageWebSocketCompressionSupported", obj.isPerMessageWebSocketCompressionSupported());
