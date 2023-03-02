@@ -23,9 +23,9 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttClient;
+
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -39,7 +39,7 @@ public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
 
   private static final String MQTT_TOPIC = "/my_topic";
 
-  private static final List<String> MQTT_TOPIC_LIST = Stream.of("my_topic1", "my_topic2").collect(Collectors.toList());
+  private static final List<String> MQTT_TOPIC_LIST = Arrays.asList("my_topic1", "my_topic2");
 
   private int messageId = 0;
 
