@@ -68,6 +68,7 @@ public interface MqttClient {
    * @return  current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
 
   /**
@@ -85,6 +86,7 @@ public interface MqttClient {
    * @return  current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
 
   /**
@@ -106,6 +108,7 @@ public interface MqttClient {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient disconnect(Handler<AsyncResult<Void>> disconnectHandler);
 
   /**
@@ -132,6 +135,7 @@ public interface MqttClient {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
@@ -215,6 +219,7 @@ public interface MqttClient {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient subscribe(String topic, int qos, Handler<AsyncResult<Integer>> subscribeSentHandler);
 
   /**
@@ -234,6 +239,7 @@ public interface MqttClient {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient subscribe(Map<String, Integer> topics, Handler<AsyncResult<Integer>> subscribeSentHandler);
 
 
@@ -270,6 +276,7 @@ public interface MqttClient {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient unsubscribe(List<String> topics, Handler<AsyncResult<Integer>> unsubscribeSentHandler);
 
   /**
@@ -280,6 +287,7 @@ public interface MqttClient {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttClient unsubscribe(String topic, Handler<AsyncResult<Integer>> unsubscribeSentHandler);
 
   /**

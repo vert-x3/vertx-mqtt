@@ -560,6 +560,7 @@ public interface MqttEndpoint {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
@@ -586,6 +587,7 @@ public interface MqttEndpoint {
    * @return current MQTT client instance
    */
   @Fluent
+  @Deprecated
   MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
@@ -603,6 +605,7 @@ public interface MqttEndpoint {
    */
   @Fluent
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Deprecated
   MqttEndpoint publish(String topic,
                        Buffer payload,
                        MqttQoS qosLevel,
