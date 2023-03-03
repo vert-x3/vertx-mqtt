@@ -83,6 +83,7 @@ public interface MqttServer {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler);
 
   /**
@@ -103,6 +104,7 @@ public interface MqttServer {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler);
 
   /**
@@ -113,6 +115,7 @@ public interface MqttServer {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler);
 
   /**
@@ -157,5 +160,6 @@ public interface MqttServer {
    *
    * @param completionHandler the handler called on completion
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> completionHandler);
 }
