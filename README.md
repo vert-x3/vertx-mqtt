@@ -1,6 +1,7 @@
 # Vert.x MQTT
 
-[![Build Status](https://github.com/vert-x3/vertx-mqtt/workflows/CI/badge.svg?branch=master)](https://github.com/vert-x3/vertx-mqtt/actions?query=workflow%3ACI)
+[![Build Status (5.x)](https://github.com/vert-x3/vertx-mqtt/actions/workflows/ci-5.x.yml/badge.svg)](https://github.com/vert-x3/vertx-mqtt/actions/workflows/ci-5.x.yml)
+[![Build Status (4.x)](https://github.com/vert-x3/vertx-mqtt/actions/workflows/ci-4.x.yml/badge.svg)](https://github.com/vert-x3/vertx-mqtt/actions/workflows/ci-4.x.yml)
 
 This project provides the following two different components :
 
