@@ -217,19 +217,12 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
     NetClient client = this.vertx.createNetClient();
     Async async = context.async();
 
-    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
-
-      if (done.succeeded()) {
-
-        done.result().closeHandler(v -> {
-          log.info("No CONNECT sent in " + MQTT_TIMEOUT_ON_CONNECT + " secs. Closing connection.");
-          async.complete();
-        });
-
-      } else {
-        context.fail();
-      }
-    });
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST).onComplete(context.asyncAssertSuccess(res -> {
+      res.closeHandler(v -> {
+        log.info("No CONNECT sent in " + MQTT_TIMEOUT_ON_CONNECT + " secs. Closing connection.");
+        async.complete();
+      });
+    }));
 
     // check that the async is completed (so connection was closed by server) in
     // the specified timeout (+500 ms just for being sure)

@@ -55,9 +55,9 @@ public class MqttConnectTest {
 
   @After
   public void after(TestContext ctx) {
-    proxyServer.close(ctx.asyncAssertSuccess(v1 -> {
-      server.close(ctx.asyncAssertSuccess(v2 -> {
-        vertx.close(ctx.asyncAssertSuccess());
+    proxyServer.close().onComplete(ctx.asyncAssertSuccess(v1 -> {
+      server.close().onComplete(ctx.asyncAssertSuccess(v2 -> {
+        vertx.close().onComplete(ctx.asyncAssertSuccess());
       }));
     }));
   }
@@ -69,16 +69,16 @@ public class MqttConnectTest {
       endpoint.publish("test", Buffer.buffer(), MqttQoS.AT_LEAST_ONCE, false, false);
     });
     Async serverLatch = ctx.async();
-    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(MqttClientOptions.DEFAULT_PORT).onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10000);
     MqttClient client = MqttClient.create(vertx);
     Async msglatch = ctx.async();
-    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertSuccess(ack -> {
       client.publishHandler(msg -> {
         msglatch.complete();
       });
     }));
-    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertFailure(err -> {
       ctx.assertEquals(IllegalStateException.class, err.getClass());
     }));
   }
@@ -89,14 +89,14 @@ public class MqttConnectTest {
       endpoint.accept(false);
     });
     Async serverLatch = ctx.async();
-    server.listen(0, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(0).onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10000);
     int port = server.actualPort();
     MqttClient client = MqttClient.create(vertx);
     NetClient proxyClient = vertx.createNetClient();
     proxyServer.connectHandler(so1 -> {
       so1.pause();
-      proxyClient.connect(port, "localhost", ar -> {
+      proxyClient.connect(port, "localhost").onComplete(ar -> {
         if (ar.succeeded()) {
           NetSocket so2 = ar.result();
           vertx.setTimer(1000, id -> {
@@ -117,12 +117,12 @@ public class MqttConnectTest {
       });
     });
     Async proxyLatch = ctx.async();
-    proxyServer.listen(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(v -> proxyLatch.complete()));
+    proxyServer.listen(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST).onComplete(ctx.asyncAssertSuccess(v -> proxyLatch.complete()));
     proxyLatch.awaitSuccess(10000);
     Async async = ctx.async();
-    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack1 -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST).onComplete(ctx.asyncAssertSuccess(ack1 -> {
       client.closeHandler(v1 -> {
-        client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack2 -> {
+        client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST).onComplete(ctx.asyncAssertSuccess(ack2 -> {
           client.closeHandler(v2 -> {
             async.complete();
           });
@@ -137,13 +137,13 @@ public class MqttConnectTest {
       endpoint.accept(false);
     });
     Async serverLatch = ctx.async();
-    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(MqttClientOptions.DEFAULT_PORT).onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10000);
     MqttClient client = MqttClient.create(vertx);
-    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack1 -> {
-      client.disconnect(ctx.asyncAssertSuccess(v -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertSuccess(ack1 -> {
+      client.disconnect().onComplete(ctx.asyncAssertSuccess(v -> {
         ctx.assertFalse(client.isConnected());
-        client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(ack2 -> {
+        client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertSuccess(ack2 -> {
           ctx.assertTrue(client.isConnected());
         }));
       }));
@@ -154,11 +154,11 @@ public class MqttConnectTest {
   public void disconnectBeforeConnAck(TestContext ctx) {
     MqttClient client = MqttClient.create(vertx);
     Async async = ctx.async();
-    server.endpointHandler(endpoint -> client.disconnect(ctx.asyncAssertSuccess(v -> async.complete())));
+    server.endpointHandler(endpoint -> client.disconnect().onComplete(ctx.asyncAssertSuccess(v -> async.complete())));
     Async serverLatch = ctx.async();
-    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(MqttClientOptions.DEFAULT_PORT).onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10000);
-    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertFailure(err -> {
     }));
   }
 
@@ -172,13 +172,13 @@ public class MqttConnectTest {
       }
     });
     Async serverLatch = ctx.async();
-    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(MqttClientOptions.DEFAULT_PORT).onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10000);
-    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertFailure(err -> {
     }));
-    client.disconnect(ctx.asyncAssertSuccess(v -> {
+    client.disconnect().onComplete(ctx.asyncAssertSuccess(v -> {
       accept.set(true);
-      client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(err -> {
+      client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertSuccess(err -> {
       }));
     }));
   }
@@ -195,10 +195,10 @@ public class MqttConnectTest {
       }
     });
     Async serverLatch = ctx.async();
-    server.listen(MqttClientOptions.DEFAULT_PORT, ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(MqttClientOptions.DEFAULT_PORT).onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10000);
-    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertFailure(err -> {
-      client.connect(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(msg -> {
+    client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertFailure(err -> {
+      client.connect(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertSuccess(msg -> {
       }));
     }));
   }
@@ -208,7 +208,7 @@ public class MqttConnectTest {
     MqttClientOptions options = new MqttClientOptions();
     MqttClient mqttClient = MqttClient.create(Vertx.vertx(), options);
     Async async = ctx.async();
-    mqttClient.connect(1883, "localhost", ctx.asyncAssertFailure(err -> {
+    mqttClient.connect(1883, "localhost").onComplete(ctx.asyncAssertFailure(err -> {
       async.complete();
     }));
     async.awaitSuccess(10_000);
@@ -216,8 +216,8 @@ public class MqttConnectTest {
     server.endpointHandler(endpoint -> {
       endpoint.accept(false);
     });
-    server.listen(MqttClientOptions.DEFAULT_PORT, "localhost", ctx.asyncAssertSuccess(v -> serverLatch.complete()));
+    server.listen(MqttClientOptions.DEFAULT_PORT, "localhost").onComplete(ctx.asyncAssertSuccess(v -> serverLatch.complete()));
     serverLatch.awaitSuccess(10_000);
-    mqttClient.connect(1883, "localhost", ctx.asyncAssertSuccess());
+    mqttClient.connect(1883, "localhost").onComplete(ctx.asyncAssertSuccess());
   }
 }

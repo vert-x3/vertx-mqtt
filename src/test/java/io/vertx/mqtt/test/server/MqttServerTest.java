@@ -63,13 +63,13 @@ public class MqttServerTest {
   @After
   public void after(TestContext context) {
 
-    this.vertx.close(context.asyncAssertSuccess());
+    this.vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   @Test
   public void listenWithoutEndpointHandler(TestContext context) {
     MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
-    server.listen(context.asyncAssertFailure(err -> {
+    server.listen().onComplete(context.asyncAssertFailure(err -> {
       context.assertEquals(IllegalStateException.class, err.getClass());
     }));
   }
@@ -106,7 +106,7 @@ public class MqttServerTest {
           endpoint.accept(false);
           latchConns.countDown();
 
-        }).listen(ar -> {
+        }).listen().onComplete(ar -> {
 
           if (ar.succeeded()) {
             log.info("MQTT server listening on port " + ar.result().actualPort());
@@ -150,10 +150,9 @@ public class MqttServerTest {
       CountDownLatch closeLatch = new CountDownLatch(numServers);
 
       for (MqttServer server : servers) {
-        server.close(ar -> {
-          context.assertTrue(ar.succeeded());
+        server.close().onComplete(context.asyncAssertSuccess(ar -> {
           closeLatch.countDown();
-        });
+        }));
       }
 
       context.assertTrue(closeLatch.await(10, TimeUnit.SECONDS));

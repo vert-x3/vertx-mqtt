@@ -53,7 +53,7 @@ public class MqttClientPingIT extends MqttClientBaseIT {
 
     count = 0;
     MqttClient client = MqttClient.create(vertx, options);
-    client.connect(port, host, c -> {
+    client.connect(port, host).onComplete(c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v ->{
 
@@ -88,7 +88,7 @@ public class MqttClientPingIT extends MqttClientBaseIT {
 
     count = 0;
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
-    client.connect(port, host, c -> {
+    client.connect(port, host).onComplete(c -> {
       assertTrue(c.succeeded());
       client.pingResponseHandler(v -> {
 

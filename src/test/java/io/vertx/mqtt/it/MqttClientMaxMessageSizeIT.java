@@ -67,12 +67,11 @@ public class MqttClientMaxMessageSizeIT extends MqttClientBaseIT {
     });
 
     log.info("CONNECT --->");
-    client.connect(port, host, c -> {
-      assertTrue(c.succeeded());
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
       log.info("CONNACK <---");
       client.subscribe(MQTT_TOPIC, 0);
       log.info("SUBSCRIBE --->");
-    });
+    }));
 
     async.await();
   }

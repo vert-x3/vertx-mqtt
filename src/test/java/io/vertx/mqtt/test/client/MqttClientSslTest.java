@@ -57,7 +57,7 @@ public class MqttClientSslTest {
 
     this.context = context;
     Async async = context.async();
-    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST, s -> client.disconnect(d -> async.countDown()));
+    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST).onComplete(s -> client.disconnect().onComplete(d -> async.countDown()));
     async.await();
   }
 
@@ -75,7 +75,7 @@ public class MqttClientSslTest {
     client.exceptionHandler(t -> context.assertTrue(false));
 
     Async async = context.async();
-    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST, s -> client.disconnect(d -> async.countDown()));
+    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST).onComplete(s -> client.disconnect().onComplete(d -> async.countDown()));
     async.await();
   }
 
@@ -97,7 +97,7 @@ public class MqttClientSslTest {
       log.info("Client connected");
       e.disconnectHandler(d -> log.info("Client disconnected"));
       e.accept(false);
-    }).listen(ctx.asyncAssertSuccess());
+    }).listen().onComplete(ctx.asyncAssertSuccess());
   }
 
   @After

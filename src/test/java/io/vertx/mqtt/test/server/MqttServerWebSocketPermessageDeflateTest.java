@@ -31,7 +31,7 @@ public class MqttServerWebSocketPermessageDeflateTest {
 
   @After
   public void after(TestContext context) {
-    this.vertx.close(context.asyncAssertSuccess());
+    this.vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   @Test
@@ -44,7 +44,7 @@ public class MqttServerWebSocketPermessageDeflateTest {
     Async done = context.async();
     server.endpointHandler(MqttEndpoint::accept);
     Async listen = context.async();
-    server.listen(context.asyncAssertSuccess(s -> listen.complete()));
+    server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
     listen.awaitSuccess(15_000);
 
     vertx.createHttpClient()

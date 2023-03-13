@@ -40,47 +40,35 @@ public class MqttClientIdIT extends MqttClientBaseIT {
   @Test
   public void afterConnectClientIdGenerated(TestContext context) throws InterruptedException {
 
-    Async async = context.async();
-
     MqttClientOptions options = new MqttClientOptions();
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
 
     assertThat(options.getClientId(), nullValue());
 
-    client.connect(port, host, c -> {
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
 
-      assertTrue(c.succeeded());
       assertTrue(client.clientId().length() == 36);
       assertThat(client.clientId(), notNullValue());
       assertFalse(client.clientId().isEmpty());
 
       log.info("Client connected with generated client id = " + client.clientId());
-
-      async.countDown();
-    });
-    async.await();
+    }));
   }
 
   @Test
   public void afterConnectClientId(TestContext context) {
 
-    Async async = context.async();
-
     MqttClientOptions options = new MqttClientOptions();
     options.setClientId("myClient");
     MqttClient client = MqttClient.create(Vertx.vertx(), options);
 
-    client.connect(port, host, c -> {
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
 
-      assertTrue(c.succeeded());
       assertThat(client.clientId(), notNullValue());
       assertFalse(client.clientId().isEmpty());
       assertEquals(client.clientId(), "myClient");
 
       log.info("Client connected with requested client id = " + client.clientId());
-
-      async.countDown();
-    });
-    async.await();
+    }));
   }
 }

@@ -159,22 +159,15 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
     NetClient client = this.vertx.createNetClient();
     Async async = context.async();
 
-    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST).onComplete(context.asyncAssertSuccess(res -> {
+      byte[] packet = new byte[] { (byte)0xF0, (byte)0x00};
 
-      if (done.succeeded()) {
+      res.write(Buffer.buffer(packet));
 
-        byte[] packet = new byte[] { (byte)0xF0, (byte)0x00};
-
-        done.result().write(Buffer.buffer(packet));
-
-        done.result().closeHandler(v -> {
-          async.complete();
-        });
-
-      } else {
-        context.fail();
-      }
-    });
+      res.closeHandler(v -> {
+        async.complete();
+      });
+    }));
 
     async.await();
   }

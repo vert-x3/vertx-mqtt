@@ -83,61 +83,53 @@ public class MqttClientSubscribeIT extends MqttClientBaseIT {
     MqttClient publisher = MqttClient.create(Vertx.vertx());
 
     // subscriber1 connects, subscribe and then un-unsubscribe, it won't get the published message
-    subscriber1.connect(port, host, ar -> {
-
-      assertTrue(ar.succeeded());
+    subscriber1.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
 
       subscriber1.publishHandler(message -> {
         log.error("Subscriber " + subscriber1.clientId() + " received message " + new String(message.payload().getBytes()));
         context.fail();
       });
 
-      subscriber1.subscribe(MQTT_TOPIC, MqttQoS.AT_MOST_ONCE.value(), ar1 -> {
+      subscriber1.subscribe(MQTT_TOPIC, MqttQoS.AT_MOST_ONCE.value()).onComplete(context.asyncAssertSuccess(ar1 -> {
 
-        assertTrue(ar1.succeeded());
         log.info("Subscriber " + subscriber1.clientId() + " subscribed to " + MQTT_TOPIC);
 
-        subscriber1.unsubscribe(MQTT_TOPIC, ar2 -> {
+        subscriber1.unsubscribe(MQTT_TOPIC).onComplete(context.asyncAssertSuccess(ar2 -> {
 
-          assertTrue(ar2.succeeded());
           log.info("Subscriber " + subscriber1.clientId() + " un-subscribed from " + MQTT_TOPIC);
           publish.countDown();
-        });
+        }));
 
-      });
+      }));
 
-    });
+    }));
 
     // subscriber2 connects and subscribe, it will get the published message
-    subscriber2.connect(port, host, ar -> {
-
-      assertTrue(ar.succeeded());
+    subscriber2.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
 
       subscriber2.publishHandler(message -> {
         log.error("Subscriber " + subscriber2.clientId() + " received message " + new String(message.payload().getBytes()));
         async.complete();
       });
 
-      subscriber2.subscribe(MQTT_TOPIC, MqttQoS.AT_MOST_ONCE.value(), ar1 -> {
-
-        assertTrue(ar1.succeeded());
+      subscriber2.subscribe(MQTT_TOPIC, MqttQoS.AT_MOST_ONCE.value()).onComplete(context.asyncAssertSuccess(v2 -> {
         log.info("Subscriber " + subscriber2.clientId() + " subscribed to " + MQTT_TOPIC);
         publish.countDown();
-      });
+      }));
 
-    });
+    }));
 
     // waiting for subscribers to subscribe and then the first client to un-subscribe, before publishing a message
     publish.await();
 
-    publisher.connect(port, host, ar -> {
+    publisher.connect(port, host).onComplete(ar -> {
 
       publisher.publish(
         MQTT_TOPIC,
         Buffer.buffer(MQTT_MESSAGE.getBytes()),
         MqttQoS.AT_MOST_ONCE,
         false,
-        false,
+        false).onComplete(
         ar1 -> {
           assertTrue(ar.succeeded());
           messageId = ar1.result();
@@ -162,8 +154,7 @@ public class MqttClientSubscribeIT extends MqttClientBaseIT {
         async.countDown();
       });
 
-    client.connect(port, host, ar -> {
-      assertTrue(ar.succeeded());
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
       client.subscribe(MQTT_TOPIC, qos.value());
       client.publish(
         MQTT_TOPIC,
@@ -173,7 +164,7 @@ public class MqttClientSubscribeIT extends MqttClientBaseIT {
         false
       );
 
-    });
+    }));
 
     async.await();
   }
@@ -193,15 +184,13 @@ public class MqttClientSubscribeIT extends MqttClientBaseIT {
       async.countDown();
     });
 
-    client.connect(port, host, ar -> {
-      assertTrue(ar.succeeded());
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(ar -> {
 
-      client.subscribe(MQTT_TOPIC, qos.value(), done -> {
-        assertTrue(done.succeeded());
-        messageId = done.result();
+      client.subscribe(MQTT_TOPIC, qos.value()).onComplete(context.asyncAssertSuccess(res -> {
+        messageId = res;
         log.info("subscribing on [" + MQTT_TOPIC + "] with QoS [" + qos.value() + "] message id = " + messageId);
-      });
-    });
+      }));
+    }));
 
     async.await();
   }

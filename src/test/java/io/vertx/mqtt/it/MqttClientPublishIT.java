@@ -67,23 +67,19 @@ public class MqttClientPublishIT extends MqttClientBaseIT {
       async.countDown();
     });
 
-    client.connect(port, host, ar -> {
-
-      assertTrue(ar.succeeded());
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
 
       client.publish(
         MQTT_TOPIC,
         Buffer.buffer(MQTT_MESSAGE.getBytes()),
         qos,
         false,
-        false,
-        ar1 -> {
-          assertTrue(ar.succeeded());
-          messageId = ar1.result();
+        false).onComplete(context.asyncAssertSuccess(res -> {
+          messageId = res;
           log.info("publishing message id = " + messageId);
         }
-      );
-    });
+      ));
+    }));
 
     async.await();
   }

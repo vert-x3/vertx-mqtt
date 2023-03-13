@@ -125,10 +125,10 @@ public class MqttServerPublishTest extends MqttServerBaseTest {
           .map(MqttTopicSubscription::qualityOfService)
           .collect(Collectors.toList()));
 
-      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false, publishSent -> {
-        context.assertTrue(publishSent.succeeded());
+      endpoint.publish(this.topic, Buffer.buffer(this.message), subscribe.topicSubscriptions().get(0).qualityOfService(), false, false)
+        .onComplete(context.asyncAssertSuccess(v -> {
         this.async.complete();
-      });
+      }));
     }).publishAcknowledgeHandler(messageId -> {
 
       log.info("Message [" + messageId + "] acknowledged");

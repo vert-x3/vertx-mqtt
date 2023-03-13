@@ -60,17 +60,17 @@ public class MqttServerWillTest {
     if (server != null) {
       Async async = context.async();
       this.server = null;
-      server.close(context.asyncAssertSuccess(v -> async.countDown()));
+      server.close().onComplete(context.asyncAssertSuccess(v -> async.countDown()));
       async.await(20_000);
     }
     MqttClient client = this.client;
     if (client != null) {
       Async async = context.async();
       this.client = null;
-      client.disconnect(context.asyncAssertSuccess(v -> async.countDown()));
+      client.disconnect().onComplete(context.asyncAssertSuccess(v -> async.countDown()));
       async.await(20_000);
     }
-    this.vertx.close(context.asyncAssertSuccess(v2 -> {
+    this.vertx.close().onComplete(context.asyncAssertSuccess(v2 -> {
       this.vertx = null;
     }));
   }
@@ -83,9 +83,9 @@ public class MqttServerWillTest {
       context.assertNull(will.getWillMessage());
       endpoint.accept(false);
     });
-    server.listen(context.asyncAssertSuccess(v -> {
+    server.listen().onComplete(context.asyncAssertSuccess(v -> {
       client = MqttClient.create(vertx);
-      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(ack -> {
+      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST).onComplete(context.asyncAssertSuccess(ack -> {
       }));
     }));
   }
@@ -100,13 +100,13 @@ public class MqttServerWillTest {
       context.assertEquals("the-message", new String(will.getWillMessageBytes()));
       endpoint.accept(false);
     });
-    server.listen(context.asyncAssertSuccess(v -> {
+    server.listen().onComplete(context.asyncAssertSuccess(v -> {
       client = MqttClient.create(vertx, new MqttClientOptions()
         .setWillFlag(true)
         .setWillQoS(2)
         .setWillMessage("the-message")
       );
-      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(ack -> {
+      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST).onComplete(context.asyncAssertSuccess(ack -> {
       }));
     }));
   }
