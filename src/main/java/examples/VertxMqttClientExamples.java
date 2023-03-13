@@ -26,7 +26,7 @@ import io.vertx.mqtt.MqttClientOptions;
 public class VertxMqttClientExamples {
 
   /**
-   * Example for demonstration of how {@link MqttClient#connect(int, String, Handler)} and  {@link MqttClient#disconnect()} methods
+   * Example for demonstration of how {@link MqttClient#connect(int, String)} and  {@link MqttClient#disconnect()} methods
    * should be used
    *
    * @param vertx
@@ -34,7 +34,7 @@ public class VertxMqttClientExamples {
   public void example1(Vertx vertx) {
     MqttClient client = MqttClient.create(vertx);
 
-    client.connect(1883, "mqtt.eclipse.org", s -> {
+    client.connect(1883, "mqtt.eclipse.org").onComplete(s -> {
       client.disconnect();
     });
   }
@@ -134,7 +134,7 @@ public class VertxMqttClientExamples {
    */
   public void example8(MqttClient client) {
     client.subscribe("temp", 1);
-    client.unsubscribe("temp", id -> {
+    client.unsubscribe("temp").onSuccess(id -> {
         System.out.println("Id of just sent UNSUBSCRIBE packet is " + id);
       });
   }
