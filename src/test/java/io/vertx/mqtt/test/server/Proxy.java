@@ -103,10 +103,10 @@ public class Proxy {
     });
 
     Promise<NetServer> serverPromise = Promise.promise();
-    this.server.listen(SERVER_PORT, SERVER_HOST, serverPromise);
+    this.server.listen(SERVER_PORT, SERVER_HOST).onComplete(serverPromise);
 
     Promise<NetSocket> clientPromise = Promise.promise();
-    this.client.connect(this.mqttServerPort, this.mqttServerHost, clientPromise);
+    this.client.connect(this.mqttServerPort, this.mqttServerHost).onComplete(clientPromise);
 
     CompositeFuture.all(serverPromise.future(), clientPromise.future()).onComplete(ar -> {
 
@@ -162,7 +162,7 @@ public class Proxy {
   public void stop(Handler<AsyncResult<Void>> stopHandler) {
 
     this.client.close();
-    this.server.close(done -> {
+    this.server.close().onComplete(done -> {
       if (done.succeeded()) {
 
         stopHandler.handle(Future.succeededFuture());

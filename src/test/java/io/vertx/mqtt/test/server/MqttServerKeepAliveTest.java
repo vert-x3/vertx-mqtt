@@ -43,7 +43,7 @@ public class MqttServerKeepAliveTest {
 
   private void startServer(TestContext ctx) {
     Async async = ctx.async();
-    server.listen(ctx.asyncAssertSuccess(server -> async.complete()));
+    server.listen().onComplete(ctx.asyncAssertSuccess(server -> async.complete()));
     async.awaitSuccess(10000);
   }
 
@@ -55,8 +55,8 @@ public class MqttServerKeepAliveTest {
 
   @After
   public void after(TestContext ctx) {
-    server.close(ctx.asyncAssertSuccess(v -> {
-      vertx.close(ctx.asyncAssertSuccess());
+    server.close().onComplete(ctx.asyncAssertSuccess(v -> {
+      vertx.close().onComplete(ctx.asyncAssertSuccess());
     }));
   }
 
@@ -71,7 +71,9 @@ public class MqttServerKeepAliveTest {
     options.setAutoKeepAlive(false);    // The client will manage pings manually
     options.setKeepAliveInterval(2); // Tell the server to disconnects the client after 3 seconds of inactivity
     MqttClient client = MqttClient.create(vertx, options);
-    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, ctx.asyncAssertSuccess(ack -> {
+    client
+      .connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST)
+      .onComplete(ctx.asyncAssertSuccess(ack -> {
       Async async = ctx.async();
       client.closeHandler(v -> {
         async.complete();

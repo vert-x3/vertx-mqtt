@@ -73,32 +73,27 @@ public class MqttClientUnsubscribeIT extends MqttClientBaseIT {
     });
 
     client.subscribeCompletionHandler(suback -> {
-      assertTrue(suback.messageId() == messageId);
-      assertTrue(suback.grantedQoSLevels().contains(qos.value()));
+      context.assertTrue(suback.messageId() == messageId);
+      context.assertTrue(suback.grantedQoSLevels().contains(qos.value()));
       log.info("subscribing complete for message id = " + suback.messageId() + " with QoS " + suback.grantedQoSLevels());
 
-      client.unsubscribe(MQTT_TOPIC, ar2 -> {
-        assertTrue(ar2.succeeded());
-        messageId = ar2.result();
+      client.unsubscribe(MQTT_TOPIC).onComplete(context.asyncAssertSuccess(res2 -> {
+        messageId = res2;
         log.info("unsubscribing on [" + MQTT_TOPIC + "] message id = " + messageId);
-      });
+      }));
 
-      client.unsubscribe(MQTT_TOPIC_LIST, ar2 -> {
-        assertTrue(ar2.succeeded());
-        messageId = ar2.result();
+      client.unsubscribe(MQTT_TOPIC_LIST).onComplete(context.asyncAssertSuccess(res2 -> {
+        messageId = res2;
         log.info("unsubscribing on [" + MQTT_TOPIC_LIST + "] message id = " + messageId);
-      });
+      }));
     });
 
-    client.connect(port, host, ar -> {
-      assertTrue(ar.succeeded());
-
-      client.subscribe(MQTT_TOPIC, qos.value(), ar1 -> {
-        assertTrue(ar1.succeeded());
-        messageId = ar1.result();
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
+      client.subscribe(MQTT_TOPIC, qos.value()).onComplete(context.asyncAssertSuccess(res2 -> {
+        messageId = res2;
         log.info("subscribing on [" + MQTT_TOPIC + "] with QoS [" + qos.value() + "] message id = " + messageId);
-      });
-    });
+      }));
+    }));
 
     async.await();
   }

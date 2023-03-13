@@ -47,7 +47,7 @@ username/password, "will" information, clean session flag, protocol version and,
 and CONNECT message properties (for MQTT version 5.0).
 Inside that handler, the _endpoint_ instance provides the {@link io.vertx.mqtt.MqttEndpoint#accept(boolean)} method
 for replying to the remote client with the corresponding CONNACK message : in this way, the connection is established.
-Finally, the server is started using the {@link io.vertx.mqtt.MqttServer#listen(io.vertx.core.Handler)} method with
+Finally, the server is started using the {@link io.vertx.mqtt.MqttServer#listen()} method with
 the default behavior (on localhost and default MQTT port 1883). The same method allows to specify an handler in order
 to check if the server is started properly or not.
 
@@ -213,7 +213,7 @@ by the server internally as described above.
 
 === Closing the server
 
-The {@link io.vertx.mqtt.MqttServer} interface provides the {@link io.vertx.mqtt.MqttServer#close(io.vertx.core.Handler)} method
+The {@link io.vertx.mqtt.MqttServer} interface provides the {@link io.vertx.mqtt.MqttServer#close()} method
 that can be used for closing the server; it stops to listen for incoming connections and closes all the active connections
 with remote clients. This method is asynchronous and one overload provides the possibility to specify a complention handler
 that will be called when the server is really closed.
@@ -265,7 +265,7 @@ Also, you could specify things like the host and port of a server you would like
 to connect to passing instance of {@link io.vertx.mqtt.MqttClientOptions} as a param through constructor.
 
 This example shows how you could connect to a server and disconnect from it using Vert.x MQTT client
-and calling {@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String, io.vertx.core.Handler)} and {@link io.vertx.mqtt.MqttClient#disconnect()} methods.
+and calling {@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String)} and {@link io.vertx.mqtt.MqttClient#disconnect()} methods.
 [source,$lang]
 ----
 {@link examples.VertxMqttClientExamples#example1}

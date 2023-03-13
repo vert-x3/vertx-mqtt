@@ -63,7 +63,8 @@ public class VertxMqttServerExamples {
       endpoint.accept(false);
 
     })
-      .listen(ar -> {
+      .listen()
+      .onComplete(ar -> {
 
         if (ar.succeeded()) {
 
@@ -122,7 +123,8 @@ public class VertxMqttServerExamples {
       endpoint.accept(false);
 
     })
-      .listen(ar -> {
+      .listen()
+      .onComplete(ar -> {
 
         if (ar.succeeded()) {
 
@@ -242,7 +244,7 @@ public class VertxMqttServerExamples {
    */
   public void example9(MqttServer mqttServer) {
 
-    mqttServer.close(v -> {
+    mqttServer.close().onComplete(v -> {
 
       System.out.println("MQTT server closed");
     });
@@ -260,7 +262,8 @@ public class VertxMqttServerExamples {
       mqttServer.endpointHandler(endpoint -> {
         // handling endpoint
       })
-        .listen(ar -> {
+        .listen()
+        .onComplete(ar -> {
 
           // handling start listening
         });
@@ -309,7 +312,8 @@ public class VertxMqttServerExamples {
       endpoint.accept(false);
 
     })
-      .listen(ar -> {
+      .listen()
+      .onComplete(ar -> {
 
         if (ar.succeeded()) {
 

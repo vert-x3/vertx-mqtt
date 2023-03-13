@@ -90,26 +90,23 @@ public class MqttClientTopicValidationIT extends MqttClientBaseIT {
     Async async = context.async(2);
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(port, host, c -> {
-      Assert.assertTrue(c.succeeded());
-
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(c -> {
       client.publish(
         topicName,
         Buffer.buffer(MQTT_MESSAGE.getBytes()),
         MqttQoS.AT_MOST_ONCE,
         false,
-        false,
+        false).onComplete(
         ar1 -> {
           assertThat(ar1.succeeded(), is(mustBeValid));
           log.info("publishing message id = " + ar1.result());
           async.countDown();
           client
-            .disconnect(ar -> {
-              Assert.assertTrue(ar.succeeded());
+            .disconnect().onComplete(context.asyncAssertSuccess(v -> {
               async.countDown();
-            });
+            }));
         });
-    });
+    }));
 
     async.await();
   }
@@ -121,23 +118,22 @@ public class MqttClientTopicValidationIT extends MqttClientBaseIT {
     Async async = context.async(2);
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(port, host, c -> {
-      Assert.assertTrue(c.succeeded());
+    client.connect(port, host).onComplete(context.asyncAssertSuccess(c -> {
 
       client.subscribe(
         topicFilter,
-        0,
+        0).onComplete(
         ar -> {
           assertThat(ar.succeeded(), is(mustBeValid));
           log.info("subscribe message id = " + ar.result());
           async.countDown();
           client
-            .disconnect(ar1 -> {
-              Assert.assertTrue(ar1.succeeded());
+            .disconnect()
+            .onComplete(context.asyncAssertSuccess(v -> {
               async.countDown();
-            });
+            }));
         });
-    });
+    }));
 
     async.await();
   }

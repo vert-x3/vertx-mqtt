@@ -214,7 +214,7 @@ public class Mqtt5ServerConnectionTest extends MqttServerBaseTest {
     NetClient client = this.vertx.createNetClient();
     Async async = context.async();
 
-    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, done -> {
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST).onComplete(done -> {
 
       if (done.succeeded()) {
 

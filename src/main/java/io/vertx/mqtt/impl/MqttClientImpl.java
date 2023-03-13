@@ -223,7 +223,9 @@ public class MqttClientImpl implements MqttClient {
     ctx.runOnContext(v -> {
       log.debug(String.format("Trying to connect with %s:%d", host, port));
 
-      client.connect(port, host, serverName, done -> {
+      client
+        .connect(port, host, serverName)
+        .onComplete(done -> {
 
         // the TCP connection fails
         if (done.failed()) {
@@ -1206,14 +1208,14 @@ public class MqttClientImpl implements MqttClient {
 
     switch (msg.qosLevel()) {
 
-      case AT_MOST_ONCE: 	
+      case AT_MOST_ONCE:
         if (handler != null) {
           handler.handle(msg);
         }
         break;
 
-      case AT_LEAST_ONCE:  
-        if (options.isAutoAck()) {			  
+      case AT_LEAST_ONCE:
+        if (options.isAutoAck()) {
           this.publishAcknowledge(msg.messageId());
         } else {
           ((MqttPublishMessageImpl) msg).setAckCallback(() -> this.publishAcknowledge(msg.messageId()));
@@ -1247,7 +1249,7 @@ public class MqttClientImpl implements MqttClient {
         return;
       }
     }
-    
+
     if (options.isAutoAck()) {
       this.publishComplete(pubrelMessageId);
     } else {

@@ -76,7 +76,9 @@ public class MqttClientOutOfOrderAcksTest {
       async.countDown();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, c -> {
+    client
+      .connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST)
+      .onComplete(c -> {
 
       // publish QoS = 1 message three times
       for (int i = 0; i < 3; i++)
@@ -84,7 +86,7 @@ public class MqttClientOutOfOrderAcksTest {
           Buffer.buffer(MQTT_MESSAGE.getBytes()),
           mqttQoS,
           false,
-          false, h -> log.info("[CLIENT] publishing message id = " + h.result()));
+          false).onComplete(h -> log.info("[CLIENT] publishing message id = " + h.result()));
     });
 
     async.await();
@@ -95,13 +97,15 @@ public class MqttClientOutOfOrderAcksTest {
   public void before(TestContext context) {
     server = MqttServer.create(vertx);
     server.exceptionHandler(t -> context.fail());
-    server.endpointHandler(MqttClientOutOfOrderAcksTest::serverLogic).listen(context.asyncAssertSuccess());
+    server.endpointHandler(MqttClientOutOfOrderAcksTest::serverLogic)
+      .listen()
+      .onComplete(context.asyncAssertSuccess());
   }
 
   @After
   public void after(TestContext ctx) {
-    this.server.close(ctx.asyncAssertSuccess(v -> {
-      this.vertx.close(ctx.asyncAssertSuccess());
+    this.server.close().onComplete(ctx.asyncAssertSuccess(v -> {
+      this.vertx.close().onComplete(ctx.asyncAssertSuccess());
     }));
   }
 

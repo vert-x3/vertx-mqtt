@@ -134,7 +134,7 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
     Async async = context.async();
 
     NetClient client = vertx.createNetClient();
-    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(so -> {
+    client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST).onComplete(context.asyncAssertSuccess(so -> {
       so.write(Buffer.buffer(new byte[]{
         0x10,                         // HEADER
         0x11,                         // MSG LEN

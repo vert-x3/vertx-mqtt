@@ -67,7 +67,9 @@ public abstract class MqttServerBaseTest {
     });
 
     Async async = context.async();
-    this.mqttServer.endpointHandler(endpoint -> endpointHandler(endpoint, context)).listen(context.asyncAssertSuccess(res -> {
+    this.mqttServer.endpointHandler(endpoint -> endpointHandler(endpoint, context))
+      .listen()
+      .onComplete(context.asyncAssertSuccess(res -> {
       log.info("MQTT server listening on port " + res.actualPort());
       async.complete();
     }));
@@ -91,8 +93,8 @@ public abstract class MqttServerBaseTest {
    */
   protected void tearDown(TestContext context) {
 
-    this.mqttServer.close(context.asyncAssertSuccess());
-    this.vertx.close(context.asyncAssertSuccess());
+    this.mqttServer.close().onComplete(context.asyncAssertSuccess());
+    this.vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {

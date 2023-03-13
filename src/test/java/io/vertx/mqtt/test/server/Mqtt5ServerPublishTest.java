@@ -162,8 +162,8 @@ public class Mqtt5ServerPublishTest extends MqttServerBaseTest {
         false,
         false,
         nextMessageId.getAndIncrement(),
-        properties,
-        publishSent -> {
+        properties)
+        .onComplete(publishSent -> {
         context.assertTrue(publishSent.succeeded());
       });
     }).publishAcknowledgeHandler(messageId -> {

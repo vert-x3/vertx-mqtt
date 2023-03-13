@@ -161,7 +161,7 @@ public class MqttServerImpl implements MqttServer {
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
-    server.close(completionHandler);
+    server.close().onComplete(completionHandler);
   }
 
 

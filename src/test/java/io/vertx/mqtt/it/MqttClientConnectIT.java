@@ -38,42 +38,28 @@ public class MqttClientConnectIT extends MqttClientBaseIT {
 
   @Test
   public void connectDisconnect(TestContext context) throws InterruptedException {
-    Async async = context.async();
     MqttClient client = MqttClient.create(Vertx.vertx());
 
-    client.connect(port, host, c -> {
-
-      assertTrue(c.succeeded());
-
-      client
-        .disconnect(ar -> {
-          assertTrue(ar.succeeded());
-          async.countDown();
-        });
-    });
-
-    async.await();
+    client
+      .connect(port, host)
+      .onComplete(context.asyncAssertSuccess(v ->
+        client
+          .disconnect()
+          .onComplete(context.asyncAssertSuccess())));
   }
 
   @Test
   public void connectDisconnectWithIdleOption(TestContext context) {
-    Async async = context.async();
     MqttClientOptions options = new MqttClientOptions();
     options.setKeepAliveInterval(100);
     MqttClient client = MqttClient.create(Vertx.vertx(),options);
 
-    client.connect(port, host, c -> {
-
-      assertTrue(c.succeeded());
-
-      client
-        .disconnect(ar -> {
-          assertTrue(ar.succeeded());
-          async.countDown();
-        });
-    });
-
-    async.await();
+    client
+      .connect(port, host)
+      .onComplete(context.asyncAssertSuccess(v1 ->
+        client
+          .disconnect()
+          .onComplete(context.asyncAssertSuccess())));
   }
 
   @Test
@@ -89,16 +75,11 @@ public class MqttClientConnectIT extends MqttClientBaseIT {
       async.countDown();
     });
 
-    client.connect(port, host, c -> {
-      assertTrue(c.succeeded());
-    });
-
-    async.await();
+    client.connect(port, host).onComplete(context.asyncAssertSuccess());
   }
 
   @Test
   public void tcpConnectionFails(TestContext context) {
-    Async async = context.async();
     MqttClient client = MqttClient.create(Vertx.vertx());
 
     client.closeHandler(v -> {
@@ -106,19 +87,14 @@ public class MqttClientConnectIT extends MqttClientBaseIT {
       context.fail();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, c -> {
-      // connection
-      assertTrue(c.failed());
-      assertFalse(client.isConnected());
-      async.complete();
-    });
-
-    async.await();
+    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST)
+      .onComplete(context.asyncAssertFailure(err -> {
+        assertFalse(client.isConnected());
+      }));
   }
 
   @Test
   public void connackNotOk(TestContext context) {
-    Async async = context.async();
     Async asyncServer = context.async();
     Vertx vertx = Vertx.vertx();
 
@@ -126,7 +102,7 @@ public class MqttClientConnectIT extends MqttClientBaseIT {
     server.endpointHandler(endpoint -> {
       endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
     });
-    server.listen(MqttServerOptions.DEFAULT_PORT, context.asyncAssertSuccess(v -> asyncServer.complete()));
+    server.listen(MqttServerOptions.DEFAULT_PORT).onComplete(context.asyncAssertSuccess(v -> asyncServer.complete()));
     asyncServer.await();
 
     MqttClient client = MqttClient.create(vertx);
@@ -136,15 +112,13 @@ public class MqttClientConnectIT extends MqttClientBaseIT {
       context.fail();
     });
 
-    client.connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST, c -> {
-      assertTrue(c.failed());
-      assertTrue(c.cause() instanceof MqttConnectionException);
-      MqttConnectionException connEx = (MqttConnectionException) c.cause();
-      assertEquals(connEx.code(), MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
-      assertFalse(client.isConnected());
-      async.complete();
-    });
-
-    async.await();
+    client
+      .connect(MqttClientOptions.DEFAULT_PORT, MqttClientOptions.DEFAULT_HOST)
+      .onComplete(context.asyncAssertFailure(err -> {
+        assertTrue(err instanceof MqttConnectionException);
+        MqttConnectionException connEx = (MqttConnectionException) err;
+        assertEquals(connEx.code(), MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+        assertFalse(client.isConnected());
+      }));
   }
 }

@@ -65,7 +65,7 @@ public class MqttServerWebSocketTest {
   @After
   public void after(TestContext context) {
 
-    this.vertx.close(context.asyncAssertSuccess());
+    this.vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
   @Test
@@ -100,7 +100,7 @@ public class MqttServerWebSocketTest {
           endpoint.accept(false);
           latchConns.countDown();
 
-        }).listen(ar -> {
+        }).listen().onComplete(ar -> {
 
           if (ar.succeeded()) {
             log.info("MQTT server listening on port " + ar.result().actualPort());
@@ -144,10 +144,9 @@ public class MqttServerWebSocketTest {
       CountDownLatch closeLatch = new CountDownLatch(numServers);
 
       for (MqttServer server : servers) {
-        server.close(ar -> {
-          context.assertTrue(ar.succeeded());
+        server.close().onComplete(context.asyncAssertSuccess(v -> {
           closeLatch.countDown();
-        });
+        }));
       }
 
       context.assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
@@ -170,7 +169,7 @@ public class MqttServerWebSocketTest {
       endpoint.accept(false);
     });
     Async listen = context.async();
-    server.listen(context.asyncAssertSuccess(s -> listen.complete()));
+    server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
     listen.awaitSuccess(15_000);
     MemoryPersistence persistence = new MemoryPersistence();
     try (MqttClient client = new MqttClient(String.format("ws://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence)) {
