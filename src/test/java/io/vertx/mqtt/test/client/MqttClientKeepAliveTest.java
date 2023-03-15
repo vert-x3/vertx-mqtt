@@ -31,8 +31,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -47,8 +47,8 @@ public class MqttClientKeepAliveTest {
   private Vertx vertx;
   private MqttServer server;
 
-  private void startServer(TestContext ctx) {
-    server.listen().onComplete(ctx.asyncAssertSuccess());
+  private void startServer(TestContext ctx) throws Exception {
+    server.listen().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
   }
 
   @Before
@@ -65,7 +65,7 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
-  public void autoKeepAlive(TestContext ctx) {
+  public void autoKeepAlive(TestContext ctx) throws Exception {
     AtomicInteger pings = new AtomicInteger();
     server.endpointHandler(endpoint -> {
       endpoint.accept(false);
@@ -96,7 +96,7 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
-  public void clientWillDisconnectOnMissingPingResponse(TestContext ctx) {
+  public void clientWillDisconnectOnMissingPingResponse(TestContext ctx) throws Exception {
     AtomicInteger pings = new AtomicInteger();
     server.endpointHandler(endpoint -> {
       endpoint.autoKeepAlive(false); // Tell the server not to respond to PINGREQ
@@ -117,7 +117,7 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
-  public void clientWillDisconnectOnMissingManualPingResponse(TestContext ctx) {
+  public void clientWillDisconnectOnMissingManualPingResponse(TestContext ctx) throws Exception {
     AtomicInteger pings = new AtomicInteger();
     server.endpointHandler(endpoint -> {
       endpoint.accept(false);
@@ -145,7 +145,7 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
-  public void clientSendingRegularMessageDoesNotPreventClientPings(TestContext ctx) {
+  public void clientSendingRegularMessageDoesNotPreventClientPings(TestContext ctx) throws Exception {
     AtomicInteger pings = new AtomicInteger();
     AtomicInteger messages = new AtomicInteger();
     server.endpointHandler(endpoint -> {
@@ -181,7 +181,7 @@ public class MqttClientKeepAliveTest {
   }
 
   @Test
-  public void serverSendingRegularMessageDoesNotPreventClientPings(TestContext ctx) {
+  public void serverSendingRegularMessageDoesNotPreventClientPings(TestContext ctx) throws Exception {
     AtomicInteger pings = new AtomicInteger();
     server.endpointHandler(endpoint -> {
       endpoint.accept(false);
