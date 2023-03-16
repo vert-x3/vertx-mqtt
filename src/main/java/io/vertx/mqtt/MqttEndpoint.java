@@ -23,7 +23,6 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -549,32 +548,6 @@ public interface MqttEndpoint {
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 
   /**
-   * Sends the PUBLISH message to the remote MQTT server
-   *
-   * @param topic              topic on which the message is published
-   * @param payload            message payload
-   * @param qosLevel           QoS level
-   * @param isDup              if the message is a duplicate
-   * @param isRetain           if the message needs to be retained
-   * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
-
-  /**
-   * Like {@link #publish(String, Buffer, MqttQoS, boolean, boolean, int, Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId);
-
-  /**
-   * Like {@link #publish(String, Buffer, MqttQoS, boolean, boolean, int, MqttProperties, Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties);
-
-  /**
    * Sends the PUBLISH message to the remote MQTT server explicitly specifying the messageId
    *
    * @param topic              topic on which the message is published
@@ -583,12 +556,9 @@ public interface MqttEndpoint {
    * @param isDup              if the message is a duplicate
    * @param isRetain           if the message needs to be retained
    * @param messageId          message ID
-   * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
-   * @return current MQTT client instance
+   * @return a future notified after PUBLISH packet sent with a packetId
    */
-  @Fluent
-  @Deprecated
-  MqttEndpoint publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, Handler<AsyncResult<Integer>> publishSentHandler);
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server explicitly specifying the messageId
@@ -600,20 +570,10 @@ public interface MqttEndpoint {
    * @param isRetain           if the message needs to be retained
    * @param messageId          message ID
    * @param properties         PUBLISH message properties
-   * @param publishSentHandler handler called after PUBLISH packet sent with a packetId
-   * @return current MQTT client instance
+   * @return a future notified after PUBLISH packet sent with a packetId
    */
-  @Fluent
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  MqttEndpoint publish(String topic,
-                       Buffer payload,
-                       MqttQoS qosLevel,
-                       boolean isDup,
-                       boolean isRetain,
-                       int messageId,
-                       MqttProperties properties,
-                       Handler<AsyncResult<Integer>> publishSentHandler);
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties);
 
   /**
    * Sends the PINGRESP message to the remote MQTT client

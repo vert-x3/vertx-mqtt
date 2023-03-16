@@ -19,7 +19,6 @@ package io.vertx.mqtt;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -64,15 +63,7 @@ public interface MqttClient {
    *
    * @param port  port of the MQTT server
    * @param host  hostname/ip address of the MQTT server
-   * @param connectHandler  handler called when the asynchronous connect call ends
-   * @return  current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
-
-  /**
-   * Like {@link #connect(int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the connect call ends
    */
   Future<MqttConnAckMessage> connect(int port, String host);
 
@@ -82,15 +73,7 @@ public interface MqttClient {
    * @param port  port of the MQTT server
    * @param host  hostname/ip address of the MQTT server
    * @param serverName  the SNI server name
-   * @param connectHandler  handler called when the asynchronous connect call ends
-   * @return  current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler);
-
-  /**
-   * Like {@link #connect(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the connect call ends
    */
   Future<MqttConnAckMessage> connect(int port, String host, String serverName);
 
@@ -100,16 +83,6 @@ public interface MqttClient {
    * @return a {@code Future} of the asynchronous result
    */
   Future<Void> disconnect();
-
-  /**
-   * Disconnects from the MQTT server calling disconnectHandler after disconnection
-   *
-   * @param disconnectHandler handler called when asynchronous disconnect call ends
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient disconnect(Handler<AsyncResult<Void>> disconnectHandler);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server
@@ -122,21 +95,6 @@ public interface MqttClient {
    * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
    */
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
-
-  /**
-   * Sends the PUBLISH message to the remote MQTT server
-   *
-   * @param topic    topic on which the message is published
-   * @param payload  message payload
-   * @param qosLevel QoS level
-   * @param isDup    if the message is a duplicate
-   * @param isRetain if the message needs to be retained
-   * @param publishSentHandler handler called after PUBLISH packet sent with packetid (not when QoS 0)
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
    * Sets a handler which will be called each time the publishing of a message has been completed.
@@ -211,36 +169,12 @@ public interface MqttClient {
   Future<Integer> subscribe(String topic, int qos);
 
   /**
-   * Subscribes to the topic with a specified QoS level
-   *
-   * @param topic                 topic you subscribe on
-   * @param qos                   QoS level
-   * @param subscribeSentHandler handler called after SUBSCRIBE packet sent with packetid
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient subscribe(String topic, int qos, Handler<AsyncResult<Integer>> subscribeSentHandler);
-
-  /**
    * Subscribes to the topics with related QoS levels
    *
    * @param topics topics and related QoS levels to subscribe to
    * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
    */
   Future<Integer> subscribe(Map<String, Integer> topics);
-
-
-  /**
-   * Subscribes to the topic and adds a handler which will be called after the request is sent
-   *
-   * @param topics                topics you subscribe on
-   * @param subscribeSentHandler  handler called after SUBSCRIBE packet sent with packetid
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient subscribe(Map<String, Integer> topics, Handler<AsyncResult<Integer>> subscribeSentHandler);
 
 
   /**
@@ -267,28 +201,6 @@ public interface MqttClient {
    * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
   Future<Integer> unsubscribe(List<String> topics);
-
-  /**
-   * Unsubscribe from receiving messages on given topics
-   *
-   * @param topics list of topics you want to unsubscribe from
-   * @param unsubscribeSentHandler  handler called after UNSUBSCRIBE packet sent
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient unsubscribe(List<String> topics, Handler<AsyncResult<Integer>> unsubscribeSentHandler);
-
-  /**
-   * Unsubscribe from receiving messages on given topic
-   *
-   * @param topic list of topics you want to unsubscribe from
-   * @param unsubscribeSentHandler  handler called after UNSUBSCRIBE packet sent
-   * @return current MQTT client instance
-   */
-  @Fluent
-  @Deprecated
-  MqttClient unsubscribe(String topic, Handler<AsyncResult<Integer>> unsubscribeSentHandler);
 
   /**
    * Sets handler which will be called after PINGRESP packet receiving

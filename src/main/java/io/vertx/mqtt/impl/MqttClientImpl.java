@@ -170,36 +170,10 @@ public class MqttClientImpl implements MqttClient {
     return this.doConnect(port, host, null);
   }
 
-  /**
-   * See {@link MqttClient#connect(int, String, Handler)} for more details
-   */
-  @Override
-  public MqttClient connect(int port, String host, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
-
-    Future<MqttConnAckMessage> fut = connect(port, host);
-    if (connectHandler != null) {
-      fut.onComplete(connectHandler);
-    }
-    return this;
-  }
-
   @Override
   public Future<MqttConnAckMessage> connect(int port, String host, String serverName) {
 
     return this.doConnect(port, host, serverName);
-  }
-
-  /**
-   * See {@link MqttClient#connect(int, String, String, Handler)} for more details
-   */
-  @Override
-  public MqttClient connect(int port, String host, String serverName, Handler<AsyncResult<MqttConnAckMessage>> connectHandler) {
-
-    Future<MqttConnAckMessage> fut = this.doConnect(port, host, serverName);
-    if (connectHandler != null) {
-      fut.onComplete(connectHandler);
-    }
-    return this;
   }
 
   private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
@@ -374,19 +348,6 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#disconnect(Handler)} for more details
-   */
-  @Override
-  public MqttClient disconnect(Handler<AsyncResult<Void>> disconnectHandler) {
-
-    Future<Void> fut = disconnect();
-    if (disconnectHandler != null) {
-      fut.onComplete(disconnectHandler);
-    }
-    return this;
-  }
-
-  /**
    * See {@link MqttClient#publish(String, Buffer, MqttQoS, boolean, boolean)} for more details
    */
   @Override
@@ -439,19 +400,6 @@ public class MqttClientImpl implements MqttClient {
     }
 
     return this.write(publish).map(variableHeader.packetId());
-  }
-
-  /**
-   * See {@link MqttClient#publish(String, Buffer, MqttQoS, boolean, boolean, Handler)} for more details
-   */
-  @Override
-  public MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
-
-    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain);
-    if (publishSentHandler != null) {
-      fut.onComplete(publishSentHandler);
-    }
-    return this;
   }
 
   /**
@@ -533,14 +481,6 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#subscribe(String, int, Handler)} for more details
-   */
-  @Override
-  public MqttClient subscribe(String topic, int qos, Handler<AsyncResult<Integer>> subscribeSentHandler) {
-    return subscribe(Collections.singletonMap(topic, qos), subscribeSentHandler);
-  }
-
-  /**
    * See {@link MqttClient#subscribe(Map)} for more details
    */
   @Override
@@ -579,19 +519,6 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#subscribe(Map, Handler)} for more details
-   */
-  @Override
-  public MqttClient subscribe(Map<String, Integer> topics, Handler<AsyncResult<Integer>> subscribeSentHandler) {
-
-    Future<Integer> fut = subscribe(topics);
-    if (subscribeSentHandler != null) {
-      fut.onComplete(subscribeSentHandler);
-    }
-    return this;
-  }
-
-  /**
    * See {@link MqttClient#unsubscribeCompletionHandler(Handler)} for more details
    */
   @Override
@@ -618,19 +545,6 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * See {@link MqttClient#unsubscribe(String, Handler)} )} for more details
-   */
-  @Override
-  public MqttClient unsubscribe(String topic, Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
-
-    Future<Integer> fut = unsubscribe(Collections.singletonList(topic));
-    if (unsubscribeSentHandler != null) {
-      fut.onComplete(unsubscribeSentHandler);
-    }
-    return this;
-  }
-
-  /**
    * See {@link MqttClient#unsubscribe(List<String>)} )} for more details
    */
   @Override
@@ -652,23 +566,6 @@ public class MqttClientImpl implements MqttClient {
     this.write(unsubscribe);
 
     return ctx.succeededFuture(variableHeader.messageId());
-  }
-
-  /**
-   * Unsubscribe from receiving messages on given topics
-   *
-   * @param topics                 Topics you want to unsubscribe from
-   * @param unsubscribeSentHandler handler called after UNSUBSCRIBE packet sent
-   * @return current MQTT client instance
-   */
-  @Override
-  public MqttClient unsubscribe(List<String> topics,
-    Handler<AsyncResult<Integer>> unsubscribeSentHandler) {
-    Future<Integer> fut = unsubscribe(topics);
-    if (unsubscribeSentHandler != null) {
-      fut.onComplete(unsubscribeSentHandler);
-    }
-    return this;
   }
 
   /**

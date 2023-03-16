@@ -565,11 +565,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   @Override
-  public MqttEndpointImpl publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler) {
-    return publish(topic, payload, qosLevel, isDup, isRetain, this.nextMessageId(), publishSentHandler);
-  }
-
-  @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId) {
     return publish(topic, payload, qosLevel, isDup, isRetain, messageId, MqttProperties.NO_PROPERTIES);
   }
@@ -590,33 +585,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
     io.netty.handler.codec.mqtt.MqttMessage publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
 
     return this.write(publish).map(variableHeader.packetId());
-  }
-
-  @Override
-  public MqttEndpointImpl publish(String topic,
-                                  Buffer payload,
-                                  MqttQoS qosLevel,
-                                  boolean isDup,
-                                  boolean isRetain,
-                                  int messageId,
-                                  Handler<AsyncResult<Integer>> publishSentHandler) {
-    return publish(topic, payload, qosLevel, isDup, isRetain, messageId, MqttProperties.NO_PROPERTIES, publishSentHandler);
-  }
-
-  @Override
-  public MqttEndpointImpl publish(String topic,
-                                  Buffer payload,
-                                  MqttQoS qosLevel,
-                                  boolean isDup,
-                                  boolean isRetain,
-                                  int messageId,
-                                  MqttProperties properties,
-                                  Handler<AsyncResult<Integer>> publishSentHandler) {
-    Future<Integer> fut = publish(topic, payload, qosLevel, isDup, isRetain, messageId, properties);
-    if (publishSentHandler != null) {
-      fut.onComplete(publishSentHandler);
-    }
-    return this;
   }
 
   public MqttEndpointImpl pong() {

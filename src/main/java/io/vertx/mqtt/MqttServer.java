@@ -18,7 +18,6 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -74,19 +73,6 @@ public interface MqttServer {
   Future<MqttServer> listen(int port, String host);
 
   /**
-   * Start the server listening for incoming connections on the port and host specified
-   * It ignores any options specified through the constructor
-   *
-   * @param port          the port to listen on
-   * @param host          the host to listen on
-   * @param listenHandler handler called when the asynchronous listen call ends
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler);
-
-  /**
    * Start the server listening for incoming connections on the port specified but on
    * "0.0.0.0" as host. It ignores any options specified through the constructor
    *
@@ -94,29 +80,6 @@ public interface MqttServer {
    * @return a {@code Future} completed with this server instance
    */
   Future<MqttServer> listen(int port);
-
-  /**
-   * Start the server listening for incoming connections on the port specified but on
-   * "0.0.0.0" as host. It ignores any options specified through the constructor
-   *
-   * @param port          the port to listen on
-   * @param listenHandler handler called when the asynchronous listen call ends
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler);
-
-  /**
-   * Start the server listening for incoming connections using the specified options
-   * through the constructor
-   *
-   * @param listenHandler handler called when the asynchronous listen call ends
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler);
 
   /**
    * Set the endpoint handler for the server. If an MQTT client connect to the server a
@@ -155,11 +118,4 @@ public interface MqttServer {
    */
   Future<Void> close();
 
-  /**
-   * Close the server supplying an handler that will be called when the server is actually closed (or has failed).
-   *
-   * @param completionHandler the handler called on completion
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> completionHandler);
 }

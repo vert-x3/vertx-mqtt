@@ -118,26 +118,6 @@ public class MqttServerImpl implements MqttServer {
   }
 
   @Override
-  public MqttServer listen(int port, Handler<AsyncResult<MqttServer>> listenHandler) {
-    return listen(port, this.options.getHost(), listenHandler);
-  }
-
-  @Override
-  public MqttServer listen(Handler<AsyncResult<MqttServer>> listenHandler) {
-    return listen(this.options.getPort(), listenHandler);
-  }
-
-  @Override
-  public MqttServer listen(int port, String host, Handler<AsyncResult<MqttServer>> listenHandler) {
-
-    Future<MqttServer> fut = listen(port, host);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  @Override
   public synchronized MqttServer endpointHandler(Handler<MqttEndpoint> handler) {
     endpointHandler = handler;
     return this;
@@ -158,12 +138,6 @@ public class MqttServerImpl implements MqttServer {
   public Future<Void> close() {
     return server.close();
   }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    server.close().onComplete(completionHandler);
-  }
-
 
   static class WebSocketFrameToByteBufDecoder extends MessageToMessageDecoder<BinaryWebSocketFrame> {
 
