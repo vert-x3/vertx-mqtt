@@ -42,7 +42,6 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -179,7 +178,7 @@ public class MqttClientImpl implements MqttClient {
   private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
 
     ContextInternal ctx = vertx.getOrCreateContext();
-    NetClient client = new NetClientBuilder(vertx, options).closeFuture(new CloseFuture()).build();
+    NetClient client = new NetClientBuilder(vertx, options).build();
     PromiseInternal<MqttConnAckMessage> connectPromise = ctx.promise();
     PromiseInternal<Void> disconnectPromise = ctx.promise();
 
