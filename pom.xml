@@ -7,7 +7,7 @@
     <version>38</version>
   </parent>
   <artifactId>vertx-mqtt</artifactId>
-  <version>3.9.16-SNAPSHOT</version>
+  <version>3.9.16</version>
   <developers>
     <developer>
       <name>Paolo Patierno</name>
@@ -17,7 +17,7 @@
     </developer>
   </developers>
   <properties>
-    <stack.version>3.9.16-SNAPSHOT</stack.version>
+    <stack.version>3.9.16</stack.version>
     <junit.version>4.13.1</junit.version>
     <mockito.version>3.3.3</mockito.version>
     <paho.version>1.1.0</paho.version>
