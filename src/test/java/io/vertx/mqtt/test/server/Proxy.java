@@ -17,7 +17,6 @@
 package io.vertx.mqtt.test.server;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -108,7 +107,7 @@ public class Proxy {
     Promise<NetSocket> clientPromise = Promise.promise();
     this.client.connect(this.mqttServerPort, this.mqttServerHost).onComplete(clientPromise);
 
-    CompositeFuture.all(serverPromise.future(), clientPromise.future()).onComplete(ar -> {
+    Future.all(serverPromise.future(), clientPromise.future()).onComplete(ar -> {
 
       // server started and client connected successfully
       if (ar.succeeded()) {
