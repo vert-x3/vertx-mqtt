@@ -18,8 +18,6 @@ package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -41,8 +39,6 @@ import java.util.List;
  */
 @RunWith(VertxUnitRunner.class)
 public class MqttServerSubscribeTest extends MqttServerBaseTest {
-
-  private static final Logger log = LoggerFactory.getLogger(MqttServerSubscribeTest.class);
 
   private Async async;
 

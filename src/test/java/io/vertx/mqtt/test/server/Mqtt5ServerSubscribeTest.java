@@ -17,17 +17,13 @@
 package io.vertx.mqtt.test.server;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
-import io.vertx.mqtt.messages.codes.MqttReasonCode;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
@@ -41,15 +37,12 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MQTT server testing about clients subscription
  */
 @RunWith(VertxUnitRunner.class)
 public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
-
-  private static final Logger log = LoggerFactory.getLogger(Mqtt5ServerSubscribeTest.class);
 
   private Async async;
 
