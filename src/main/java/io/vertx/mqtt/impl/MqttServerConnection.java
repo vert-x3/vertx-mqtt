@@ -21,23 +21,19 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttProperties;
-import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
-import io.netty.handler.codec.mqtt.MqttUnacceptableProtocolVersionException;
-import io.netty.handler.codec.mqtt.MqttVersion;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
@@ -46,11 +42,7 @@ import io.vertx.mqtt.MqttWill;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
-import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
-import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
-import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
-import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
-import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.codes.*;
 
 import java.util.UUID;
 
@@ -240,7 +232,7 @@ public class MqttServerConnection {
       msg.variableHeader().hasPassword()) ?
       new MqttAuth(
         msg.payload().userName(),
-        msg.payload().password()) : null;
+        new String(msg.payload().passwordInBytes(), CharsetUtil.UTF_8)) : null;
 
     // check if remote MQTT client didn't specify a client-id
     boolean isZeroBytes = (msg.payload().clientIdentifier() == null) ||

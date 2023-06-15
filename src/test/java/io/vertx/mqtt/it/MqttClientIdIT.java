@@ -19,16 +19,16 @@ package io.vertx.mqtt.it;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertFalse;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * MQTT client testing on client identifier
@@ -47,7 +47,7 @@ public class MqttClientIdIT extends MqttClientBaseIT {
 
     client.connect(port, host).onComplete(context.asyncAssertSuccess(v -> {
 
-      assertTrue(client.clientId().length() == 36);
+      assertEquals(36, client.clientId().length());
       assertThat(client.clientId(), notNullValue());
       assertFalse(client.clientId().isEmpty());
 

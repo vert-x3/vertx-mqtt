@@ -24,13 +24,12 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttClient;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 public class MqttClientTopicValidationIT extends MqttClientBaseIT {
 
