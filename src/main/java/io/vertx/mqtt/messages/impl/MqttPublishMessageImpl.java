@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
 /**
@@ -34,7 +35,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   private final String topicName;
   private final Buffer payload;
   private final MqttProperties properties;
-  
+
   private boolean isAcked;
   private MqttPubAckCallback ackCallback;
 
@@ -55,7 +56,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
     this.isDup = isDup;
     this.isRetain = isRetain;
     this.topicName = topicName;
-    this.payload = Buffer.buffer(payload);
+    this.payload = BufferInternal.buffer(payload);
     this.properties = properties;
   }
 
@@ -82,15 +83,15 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   public Buffer payload() {
     return this.payload;
   }
-  
+
   /**
-   * Set the ack operation that will be execute on {@link MqttPublishMessage#ack()} invocation. 
+   * Set the ack operation that will be execute on {@link MqttPublishMessage#ack()} invocation.
    * @param ackCallback
    */
   public void setAckCallback(MqttPubAckCallback ackCallback) {
     this.ackCallback = ackCallback;
   }
-  
+
   @Override
   public void ack() {
     if (this.qosLevel == MqttQoS.AT_LEAST_ONCE || this.qosLevel == MqttQoS.EXACTLY_ONCE) {
@@ -108,7 +109,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   public MqttProperties properties() {
     return this.properties;
   }
-  
+
   /**
    * Define the callback action to do when the manual ack in involved.
    */
@@ -119,7 +120,7 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
      *  To use only when the AutoAck is false.
      */
     void ack();
-      
+
   }
-  
+
 }
