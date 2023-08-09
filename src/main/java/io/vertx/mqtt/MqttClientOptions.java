@@ -461,7 +461,17 @@ public class MqttClientOptions extends NetClientOptions {
   @Deprecated
   @Override
   public MqttClientOptions setIdleTimeout(int idleTimeout) {
-    return setKeepAliveInterval(idleTimeout);
+    if (idleTimeout > 0) {
+      return setKeepAliveInterval(idleTimeout);
+    } else {
+      return this;
+    }
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    // Disabled
+    return 0;
   }
 
   @Override
