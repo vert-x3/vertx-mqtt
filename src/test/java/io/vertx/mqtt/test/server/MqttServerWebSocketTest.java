@@ -19,7 +19,6 @@ package io.vertx.mqtt.test.server;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
@@ -75,7 +74,7 @@ public class MqttServerWebSocketTest {
     int numConnections = numServers * 20;
 
     List<MqttServer> servers = new ArrayList<>();
-    Set<MqttServer> connectedServers = new ConcurrentHashSet<>();
+    Set<MqttServer> connectedServers = ConcurrentHashMap.newKeySet();
 
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
