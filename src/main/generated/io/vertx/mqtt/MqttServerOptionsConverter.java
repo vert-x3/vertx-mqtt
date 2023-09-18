@@ -20,6 +20,11 @@ public class MqttServerOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, MqttServerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "maxMessageSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxMessageSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "autoClientId":
           if (member.getValue() instanceof Boolean) {
             obj.setAutoClientId((Boolean)member.getValue());
@@ -28,21 +33,6 @@ public class MqttServerOptionsConverter {
         case "maxClientIdLength":
           if (member.getValue() instanceof Number) {
             obj.setMaxClientIdLength(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxMessageSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxMessageSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "perFrameWebSocketCompressionSupported":
-          if (member.getValue() instanceof Boolean) {
-            obj.setPerFrameWebSocketCompressionSupported((Boolean)member.getValue());
-          }
-          break;
-        case "perMessageWebSocketCompressionSupported":
-          if (member.getValue() instanceof Boolean) {
-            obj.setPerMessageWebSocketCompressionSupported((Boolean)member.getValue());
           }
           break;
         case "timeoutOnConnect":
@@ -55,9 +45,19 @@ public class MqttServerOptionsConverter {
             obj.setUseWebSocket((Boolean)member.getValue());
           }
           break;
-        case "webSocketAllowServerNoContext":
+        case "webSocketMaxFrameSize":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketMaxFrameSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "perFrameWebSocketCompressionSupported":
           if (member.getValue() instanceof Boolean) {
-            obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
+            obj.setPerFrameWebSocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "perMessageWebSocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerMessageWebSocketCompressionSupported((Boolean)member.getValue());
           }
           break;
         case "webSocketCompressionLevel":
@@ -65,9 +65,9 @@ public class MqttServerOptionsConverter {
             obj.setWebSocketCompressionLevel(((Number)member.getValue()).intValue());
           }
           break;
-        case "webSocketMaxFrameSize":
-          if (member.getValue() instanceof Number) {
-            obj.setWebSocketMaxFrameSize(((Number)member.getValue()).intValue());
+        case "webSocketAllowServerNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
           }
           break;
         case "webSocketPreferredClientNoContext":
@@ -84,15 +84,15 @@ public class MqttServerOptionsConverter {
   }
 
    static void toJson(MqttServerOptions obj, java.util.Map<String, Object> json) {
+    json.put("maxMessageSize", obj.getMaxMessageSize());
     json.put("autoClientId", obj.isAutoClientId());
     json.put("maxClientIdLength", obj.getMaxClientIdLength());
-    json.put("maxMessageSize", obj.getMaxMessageSize());
+    json.put("useWebSocket", obj.isUseWebSocket());
+    json.put("webSocketMaxFrameSize", obj.getWebSocketMaxFrameSize());
     json.put("perFrameWebSocketCompressionSupported", obj.isPerFrameWebSocketCompressionSupported());
     json.put("perMessageWebSocketCompressionSupported", obj.isPerMessageWebSocketCompressionSupported());
-    json.put("useWebSocket", obj.isUseWebSocket());
-    json.put("webSocketAllowServerNoContext", obj.isWebSocketAllowServerNoContext());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
-    json.put("webSocketMaxFrameSize", obj.getWebSocketMaxFrameSize());
+    json.put("webSocketAllowServerNoContext", obj.isWebSocketAllowServerNoContext());
     json.put("webSocketPreferredClientNoContext", obj.isWebSocketPreferredClientNoContext());
   }
 }

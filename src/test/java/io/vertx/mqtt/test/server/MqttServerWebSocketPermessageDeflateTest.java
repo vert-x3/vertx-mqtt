@@ -47,8 +47,8 @@ public class MqttServerWebSocketPermessageDeflateTest {
     server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
     listen.awaitSuccess(15_000);
 
-    vertx.createHttpClient()
-      .webSocket(new WebSocketConnectOptions()
+    vertx.createWebSocketClient()
+      .connect(new WebSocketConnectOptions()
         .setPort(MQTT_SERVER_PORT)
         .setHost(MQTT_SERVER_HOST)
         .setURI("/mqtt")
