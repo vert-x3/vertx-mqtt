@@ -281,7 +281,7 @@ public class MqttClientImpl implements MqttClient {
           MqttConnectPayload payload = new MqttConnectPayload(
             options.getClientId() == null ? "" : options.getClientId(),
             options.getWillTopic(),
-            options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
+            options.getWillMessage() != null ? options.getWillMessage().getBytes() : null,
             options.hasUsername() ? options.getUsername() : null,
             options.hasPassword() ? options.getPassword().getBytes() : null
           );

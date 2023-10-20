@@ -17,6 +17,7 @@
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
@@ -27,6 +28,9 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Represents options used by the MQTT client.
@@ -51,7 +55,7 @@ public class MqttClientOptions extends NetClientOptions {
   private String username;
   private String password;
   private String willTopic;
-  private String willMessage;
+  private Buffer willMessage;
   private boolean cleanSession = DEFAULT_CLEAN_SESSION;
   private boolean willFlag = DEFAULT_WILL_FLAG;
   private int willQoS = DEFAULT_WILL_QOS;
@@ -202,8 +206,23 @@ public class MqttClientOptions extends NetClientOptions {
   /**
    * @return will message content
    */
-  public String getWillMessage() {
+  @GenIgnore
+  public Buffer getWillMessage() {
     return willMessage;
+  }
+
+  /**
+   * @return will message content as string
+   */
+  public String getWillMessageAsString() {
+    return getWillMessageAsString(StandardCharsets.UTF_8);
+  }
+
+  /**
+   * @return will message content as string
+   */
+  public String getWillMessageAsString(Charset chartSet) {
+    return willMessage.toString(chartSet);
   }
 
   /**
@@ -257,6 +276,18 @@ public class MqttClientOptions extends NetClientOptions {
    * @return current options instance
    */
   public MqttClientOptions setWillMessage(String willMessage) {
+    this.willMessage = Buffer.buffer(willMessage.getBytes(StandardCharsets.UTF_8));
+    return this;
+  }
+
+  /**
+   * Set the content of the will message
+   *
+   * @param willMessage content of the will message
+   * @return current options instance
+   */
+  @GenIgnore
+  public MqttClientOptions setWillMessage(Buffer willMessage) {
     this.willMessage = willMessage;
     return this;
   }
@@ -553,7 +584,7 @@ public class MqttClientOptions extends NetClientOptions {
       ", username='" + username + '\'' +
       ", password='" + password + '\'' +
       ", willTopic='" + willTopic + '\'' +
-      ", willMessage='" + willMessage + '\'' +
+      ", willMessage='" + getWillMessageAsString() + '\'' +
       ", cleanSession=" + cleanSession +
       ", willFlag=" + willFlag +
       ", willQoS=" + willQoS +
