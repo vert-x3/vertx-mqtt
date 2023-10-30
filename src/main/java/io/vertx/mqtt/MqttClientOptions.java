@@ -219,6 +219,7 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   /**
+   * @param chartSet chart set to convert will message content to string
    * @return will message content as string
    */
   public String getWillMessageAsString(Charset chartSet) {
