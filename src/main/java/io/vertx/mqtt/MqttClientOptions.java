@@ -28,7 +28,6 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
