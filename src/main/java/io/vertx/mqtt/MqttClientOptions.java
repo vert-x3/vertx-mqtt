@@ -28,7 +28,6 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -206,24 +205,26 @@ public class MqttClientOptions extends NetClientOptions {
   /**
    * @return will message content
    */
-  @GenIgnore
-  public Buffer getWillMessage() {
-    return willMessage;
-  }
-
-  /**
-   * @return will message content as string
-   */
-  public String getWillMessageAsString() {
-    return getWillMessageAsString(StandardCharsets.UTF_8);
+  @Deprecated
+  public String getWillMessage() {
+    return getWillMessage(StandardCharsets.UTF_8);
   }
 
   /**
    * @param chartSet chart set to convert will message content to string
    * @return will message content as string
    */
-  public String getWillMessageAsString(Charset chartSet) {
+  @Deprecated
+  public String getWillMessage(Charset chartSet) {
     return willMessage.toString(chartSet);
+  }
+
+  /**
+   * @return will message bytes content
+   */
+  @GenIgnore
+  public Buffer getWillMessageBytes() {
+    return willMessage;
   }
 
   /**
@@ -276,6 +277,7 @@ public class MqttClientOptions extends NetClientOptions {
    * @param willMessage content of the will message
    * @return current options instance
    */
+  @Deprecated
   public MqttClientOptions setWillMessage(String willMessage) {
     this.willMessage = Buffer.buffer(willMessage.getBytes(StandardCharsets.UTF_8));
     return this;
@@ -288,7 +290,7 @@ public class MqttClientOptions extends NetClientOptions {
    * @return current options instance
    */
   @GenIgnore
-  public MqttClientOptions setWillMessage(Buffer willMessage) {
+  public MqttClientOptions setWillMessageBytes(Buffer willMessage) {
     this.willMessage = willMessage;
     return this;
   }
@@ -585,7 +587,7 @@ public class MqttClientOptions extends NetClientOptions {
       ", username='" + username + '\'' +
       ", password='" + password + '\'' +
       ", willTopic='" + willTopic + '\'' +
-      ", willMessage='" + getWillMessageAsString() + '\'' +
+      ", willMessage='" + willMessage + '\'' +
       ", cleanSession=" + cleanSession +
       ", willFlag=" + willFlag +
       ", willQoS=" + willQoS +

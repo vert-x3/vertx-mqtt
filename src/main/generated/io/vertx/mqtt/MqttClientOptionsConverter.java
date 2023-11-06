@@ -65,8 +65,6 @@ public class MqttClientOptionsConverter {
             obj.setWillTopic((String)member.getValue());
           }
           break;
-        case "willMessageAsString":
-          break;
         case "willMessage":
           if (member.getValue() instanceof String) {
             obj.setWillMessage((String)member.getValue());
@@ -128,8 +126,8 @@ public class MqttClientOptionsConverter {
     if (obj.getWillTopic() != null) {
       json.put("willTopic", obj.getWillTopic());
     }
-    if (obj.getWillMessageAsString() != null) {
-      json.put("willMessageAsString", obj.getWillMessageAsString());
+    if (obj.getWillMessage() != null) {
+      json.put("willMessage", obj.getWillMessage());
     }
     json.put("ackTimeout", obj.getAckTimeout());
     json.put("maxInflightQueue", obj.getMaxInflightQueue());
