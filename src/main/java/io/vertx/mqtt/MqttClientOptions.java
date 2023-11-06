@@ -207,16 +207,7 @@ public class MqttClientOptions extends NetClientOptions {
    */
   @Deprecated
   public String getWillMessage() {
-    return getWillMessage(StandardCharsets.UTF_8);
-  }
-
-  /**
-   * @param chartSet chart set to convert will message content to string
-   * @return will message content as string
-   */
-  @Deprecated
-  public String getWillMessage(Charset chartSet) {
-    return willMessage.toString(chartSet);
+    return willMessage.toString(StandardCharsets.UTF_8);
   }
 
   /**
