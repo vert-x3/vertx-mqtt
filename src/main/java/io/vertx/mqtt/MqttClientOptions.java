@@ -20,6 +20,8 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -35,6 +37,8 @@ import java.nio.charset.StandardCharsets;
  */
 @DataObject(generateConverter = true, publicConverter = false)
 public class MqttClientOptions extends NetClientOptions {
+
+  private static final Logger log = LoggerFactory.getLogger(MqttClientOptions.class);
 
   public static final int DEFAULT_PORT = 1883;
   public static final int DEFAULT_TSL_PORT = 8883;
@@ -53,6 +57,7 @@ public class MqttClientOptions extends NetClientOptions {
   private String username;
   private String password;
   private String willTopic;
+  @GenIgnore
   private Buffer willMessage;
   private boolean cleanSession = DEFAULT_CLEAN_SESSION;
   private boolean willFlag = DEFAULT_WILL_FLAG;
@@ -97,6 +102,11 @@ public class MqttClientOptions extends NetClientOptions {
     super(json);
     init();
     MqttClientOptionsConverter.fromJson(json, this);
+    if (json.containsKey("willMessage")) {
+      String willMessageString = json.getString("willMessage");
+      willMessage = Buffer.buffer(willMessageString);
+      log.warn(String.format("converting json value willMessage: %s to buffer", willMessageString));
+    }
   }
 
   /**
@@ -212,7 +222,6 @@ public class MqttClientOptions extends NetClientOptions {
   /**
    * @return will message bytes content
    */
-  @GenIgnore
   public Buffer getWillMessageBytes() {
     return willMessage;
   }

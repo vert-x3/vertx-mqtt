@@ -70,6 +70,8 @@ public class MqttClientOptionsConverter {
             obj.setWillMessage((String)member.getValue());
           }
           break;
+        case "willMessageBytes":
+          break;
         case "ackTimeout":
           if (member.getValue() instanceof Number) {
             obj.setAckTimeout(((Number)member.getValue()).intValue());
@@ -128,6 +130,9 @@ public class MqttClientOptionsConverter {
     }
     if (obj.getWillMessage() != null) {
       json.put("willMessage", obj.getWillMessage());
+    }
+    if (obj.getWillMessageBytes() != null) {
+      json.put("willMessageBytes", BASE64_ENCODER.encodeToString(obj.getWillMessageBytes().getBytes()));
     }
     json.put("ackTimeout", obj.getAckTimeout());
     json.put("maxInflightQueue", obj.getMaxInflightQueue());
