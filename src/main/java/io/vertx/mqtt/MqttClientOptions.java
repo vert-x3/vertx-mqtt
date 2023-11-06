@@ -102,8 +102,8 @@ public class MqttClientOptions extends NetClientOptions {
     super(json);
     init();
     MqttClientOptionsConverter.fromJson(json, this);
-    if (json.containsKey("willMessageBytes")) {
-      String willMessageString = json.getString("willMessageBytes");
+    if (json.containsKey("willMessage")) {
+      String willMessageString = json.getString("willMessage");
       willMessage = Buffer.buffer(willMessageString);
       log.warn(String.format("converting json value willMessage: %s to buffer", willMessageString));
     }
