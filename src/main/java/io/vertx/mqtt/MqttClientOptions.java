@@ -287,7 +287,6 @@ public class MqttClientOptions extends NetClientOptions {
    * @param willMessage content of the will message
    * @return current options instance
    */
-  @GenIgnore
   public MqttClientOptions setWillMessageBytes(Buffer willMessage) {
     this.willMessage = willMessage;
     return this;
