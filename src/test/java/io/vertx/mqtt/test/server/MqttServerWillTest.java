@@ -20,16 +20,10 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import io.vertx.mqtt.MqttClient;
-import io.vertx.mqtt.MqttClientOptions;
-import io.vertx.mqtt.MqttServer;
-import io.vertx.mqtt.MqttServerOptions;
-import io.vertx.mqtt.MqttWill;
+import io.vertx.mqtt.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +98,7 @@ public class MqttServerWillTest {
       client = MqttClient.create(vertx, new MqttClientOptions()
         .setWillFlag(true)
         .setWillQoS(2)
-        .setWillMessage("the-message")
+        .setWillMessageBytes(Buffer.buffer("the-message"))
       );
       client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(ack -> {
       }));

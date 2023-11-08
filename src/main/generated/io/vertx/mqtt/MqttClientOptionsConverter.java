@@ -80,9 +80,9 @@ public class MqttClientOptionsConverter {
             obj.setWillFlag((Boolean)member.getValue());
           }
           break;
-        case "willMessage":
+        case "willMessageBytes":
           if (member.getValue() instanceof String) {
-            obj.setWillMessage((String)member.getValue());
+            obj.setWillMessageBytes(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
         case "willQoS":
@@ -127,8 +127,8 @@ public class MqttClientOptionsConverter {
       json.put("username", obj.getUsername());
     }
     json.put("willFlag", obj.isWillFlag());
-    if (obj.getWillMessage() != null) {
-      json.put("willMessage", obj.getWillMessage());
+    if (obj.getWillMessageBytes() != null) {
+      json.put("willMessageBytes", BASE64_ENCODER.encodeToString(obj.getWillMessageBytes().getBytes()));
     }
     json.put("willQoS", obj.getWillQoS());
     json.put("willRetain", obj.isWillRetain());

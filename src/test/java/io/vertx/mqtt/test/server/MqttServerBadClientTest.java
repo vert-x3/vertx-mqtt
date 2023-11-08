@@ -27,16 +27,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
-import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageFactory;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
@@ -216,7 +207,7 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
     MqttConnectPayload payload = new MqttConnectPayload(
       options.getClientId() == null ? "" : options.getClientId(),
       options.getWillTopic(),
-      options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
+      options.getWillMessageBytes() != null ? options.getWillMessageBytes().getBytes() : null,
       options.hasUsername() ? options.getUsername() : null,
       options.hasPassword() ? options.getPassword().getBytes(StandardCharsets.UTF_8) : null
     );

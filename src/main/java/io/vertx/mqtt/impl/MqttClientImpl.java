@@ -21,22 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessageFactory;
-import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
-import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttProperties;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttSubscribePayload;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -46,11 +31,11 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.net.impl.NetClientBuilder;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
+import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
@@ -63,14 +48,7 @@ import io.vertx.mqtt.messages.MqttSubAckMessage;
 import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -306,7 +284,7 @@ public class MqttClientImpl implements MqttClient {
           MqttConnectPayload payload = new MqttConnectPayload(
             options.getClientId() == null ? "" : options.getClientId(),
             options.getWillTopic(),
-            options.getWillMessage() != null ? options.getWillMessage().getBytes(StandardCharsets.UTF_8) : null,
+            options.getWillMessageBytes() != null ? options.getWillMessageBytes().getBytes() : null,
             options.hasUsername() ? options.getUsername() : null,
             options.hasPassword() ? options.getPassword().getBytes() : null
           );
@@ -1206,14 +1184,14 @@ public class MqttClientImpl implements MqttClient {
 
     switch (msg.qosLevel()) {
 
-      case AT_MOST_ONCE: 	
+      case AT_MOST_ONCE:
         if (handler != null) {
           handler.handle(msg);
         }
         break;
 
-      case AT_LEAST_ONCE:  
-        if (options.isAutoAck()) {			  
+      case AT_LEAST_ONCE:
+        if (options.isAutoAck()) {
           this.publishAcknowledge(msg.messageId());
         } else {
           ((MqttPublishMessageImpl) msg).setAckCallback(() -> this.publishAcknowledge(msg.messageId()));
@@ -1247,7 +1225,7 @@ public class MqttClientImpl implements MqttClient {
         return;
       }
     }
-    
+
     if (options.isAutoAck()) {
       this.publishComplete(pubrelMessageId);
     } else {

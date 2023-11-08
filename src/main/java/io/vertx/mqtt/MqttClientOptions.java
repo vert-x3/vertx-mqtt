@@ -17,16 +17,13 @@
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * Represents options used by the MQTT client.
@@ -51,7 +48,7 @@ public class MqttClientOptions extends NetClientOptions {
   private String username;
   private String password;
   private String willTopic;
-  private String willMessage;
+  private Buffer willMessageBytes;
   private boolean cleanSession = DEFAULT_CLEAN_SESSION;
   private boolean willFlag = DEFAULT_WILL_FLAG;
   private int willQoS = DEFAULT_WILL_QOS;
@@ -95,6 +92,9 @@ public class MqttClientOptions extends NetClientOptions {
     super(json);
     init();
     MqttClientOptionsConverter.fromJson(json, this);
+    if (!json.containsKey("willMessageBytes") && json.containsKey("willMessage")) {
+      willMessageBytes = Buffer.buffer(json.getString("willMessage"));
+    }
   }
 
   /**
@@ -108,7 +108,7 @@ public class MqttClientOptions extends NetClientOptions {
     this.username = other.username;
     this.password = other.password;
     this.willTopic = other.willTopic;
-    this.willMessage = other.willMessage;
+    this.willMessageBytes = other.willMessageBytes;
     this.cleanSession = other.cleanSession;
     this.willFlag = other.willFlag;
     this.willQoS = other.willQoS;
@@ -202,8 +202,17 @@ public class MqttClientOptions extends NetClientOptions {
   /**
    * @return will message content
    */
+  @Deprecated
+  @GenIgnore
   public String getWillMessage() {
-    return willMessage;
+    return willMessageBytes.toString(StandardCharsets.UTF_8);
+  }
+
+  /**
+   * @return will message bytes content
+   */
+  public Buffer getWillMessageBytes() {
+    return willMessageBytes;
   }
 
   /**
@@ -256,8 +265,21 @@ public class MqttClientOptions extends NetClientOptions {
    * @param willMessage content of the will message
    * @return current options instance
    */
+  @Deprecated
+  @GenIgnore
   public MqttClientOptions setWillMessage(String willMessage) {
-    this.willMessage = willMessage;
+    this.willMessageBytes = Buffer.buffer(willMessage.getBytes(StandardCharsets.UTF_8));
+    return this;
+  }
+
+  /**
+   * Set the content of the will message
+   *
+   * @param willMessage content of the will message
+   * @return current options instance
+   */
+  public MqttClientOptions setWillMessageBytes(Buffer willMessage) {
+    this.willMessageBytes = willMessage;
     return this;
   }
 
@@ -572,7 +594,7 @@ public class MqttClientOptions extends NetClientOptions {
       ", username='" + username + '\'' +
       ", password='" + password + '\'' +
       ", willTopic='" + willTopic + '\'' +
-      ", willMessage='" + willMessage + '\'' +
+      ", willMessageBytes='" + willMessageBytes + '\'' +
       ", cleanSession=" + cleanSession +
       ", willFlag=" + willFlag +
       ", willQoS=" + willQoS +
