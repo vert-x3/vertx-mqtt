@@ -214,6 +214,7 @@ public class MqttClientOptions extends NetClientOptions {
    * @return will message content
    */
   @Deprecated
+  @GenIgnore
   public String getWillMessage() {
     return willMessage.toString(StandardCharsets.UTF_8);
   }
