@@ -65,9 +65,9 @@ public class MqttClientOptionsConverter {
             obj.setWillTopic((String)member.getValue());
           }
           break;
-        case "willMessage":
+        case "willMessageBytes":
           if (member.getValue() instanceof String) {
-            obj.setWillMessage((String)member.getValue());
+            obj.setWillMessageBytes(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
         case "ackTimeout":
@@ -126,8 +126,8 @@ public class MqttClientOptionsConverter {
     if (obj.getWillTopic() != null) {
       json.put("willTopic", obj.getWillTopic());
     }
-    if (obj.getWillMessage() != null) {
-      json.put("willMessage", obj.getWillMessage());
+    if (obj.getWillMessageBytes() != null) {
+      json.put("willMessageBytes", BASE64_ENCODER.encodeToString(obj.getWillMessageBytes().getBytes()));
     }
     json.put("ackTimeout", obj.getAckTimeout());
     json.put("maxInflightQueue", obj.getMaxInflightQueue());
