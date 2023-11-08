@@ -276,6 +276,7 @@ public class MqttClientOptions extends NetClientOptions {
    * @return current options instance
    */
   @Deprecated
+  @GenIgnore
   public MqttClientOptions setWillMessage(String willMessage) {
     this.willMessage = Buffer.buffer(willMessage.getBytes(StandardCharsets.UTF_8));
     return this;
