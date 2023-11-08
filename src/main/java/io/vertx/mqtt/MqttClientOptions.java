@@ -57,7 +57,6 @@ public class MqttClientOptions extends NetClientOptions {
   private String username;
   private String password;
   private String willTopic;
-  @GenIgnore
   private Buffer willMessage;
   private boolean cleanSession = DEFAULT_CLEAN_SESSION;
   private boolean willFlag = DEFAULT_WILL_FLAG;
