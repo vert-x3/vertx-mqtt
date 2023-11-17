@@ -484,12 +484,6 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   @Override
-  public MqttClientOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
-    return this;
-  }
-
-  @Override
   public MqttClientOptions setTrustAll(boolean trustAll) {
     super.setTrustAll(trustAll);
     return this;
@@ -502,38 +496,8 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   @Override
-  public MqttClientOptions setKeyStoreOptions(JksOptions options) {
-     super.setKeyStoreOptions(options);
-     return this;
-  }
-
-  @Override
-  public MqttClientOptions setPfxKeyCertOptions(PfxOptions options) {
-     super.setPfxKeyCertOptions(options);
-     return this;
-  }
-
-  @Override
-  public MqttClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-     super.setPemKeyCertOptions(options);
-     return this;
-  }
-
-  @Override
   public MqttClientOptions setTrustOptions(TrustOptions options) {
      super.setTrustOptions(options);
-     return this;
-  }
-
-  @Override
-  public MqttClientOptions setPemTrustOptions(PemTrustOptions options) {
-     super.setPemTrustOptions(options);
-     return this;
-  }
-
-  @Override
-  public MqttClientOptions setPfxTrustOptions(PfxOptions options) {
-     super.setPfxTrustOptions(options);
      return this;
   }
 

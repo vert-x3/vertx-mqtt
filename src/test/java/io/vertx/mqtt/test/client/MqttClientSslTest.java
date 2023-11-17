@@ -69,7 +69,7 @@ public class MqttClientSslTest {
 
     MqttClientOptions clientOptions = new MqttClientOptions()
       .setSsl(true)
-      .setTrustStoreOptions(jksOptions);
+      .setTrustOptions(jksOptions);
 
     MqttClient client = MqttClient.create(vertx, clientOptions);
     client.exceptionHandler(t -> context.assertTrue(false));

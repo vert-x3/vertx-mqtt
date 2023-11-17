@@ -170,44 +170,8 @@ public class MqttServerOptions extends NetServerOptions {
   }
 
   @Override
-  public MqttServerOptions setKeyStoreOptions(JksOptions options) {
-    super.setKeyStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public MqttServerOptions setPfxKeyCertOptions(PfxOptions options) {
-    super.setPfxKeyCertOptions(options);
-    return this;
-  }
-
-  @Override
-  public MqttServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    super.setPemKeyCertOptions(options);
-    return this;
-  }
-
-  @Override
   public MqttServerOptions setTrustOptions(TrustOptions options) {
     super.setTrustOptions(options);
-    return this;
-  }
-
-  @Override
-  public MqttServerOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public MqttServerOptions setPemTrustOptions(PemTrustOptions options) {
-    super.setPemTrustOptions(options);
-    return this;
-  }
-
-  @Override
-  public MqttServerOptions setPfxTrustOptions(PfxOptions options) {
-    super.setPfxTrustOptions(options);
     return this;
   }
 
