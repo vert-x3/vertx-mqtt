@@ -17,6 +17,7 @@
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.Arguments;
@@ -33,7 +34,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents options used by the MQTT server
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class MqttServerOptions extends NetServerOptions {
 
   public static final int DEFAULT_PORT = 1883; // Default port is 1883 for MQTT
