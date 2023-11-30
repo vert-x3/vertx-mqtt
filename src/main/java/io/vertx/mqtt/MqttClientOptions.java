@@ -18,6 +18,7 @@ package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
@@ -28,7 +29,8 @@ import java.nio.charset.StandardCharsets;
 /**
  * Represents options used by the MQTT client.
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class MqttClientOptions extends NetClientOptions {
 
   public static final int DEFAULT_PORT = 1883;
