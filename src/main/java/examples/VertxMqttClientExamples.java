@@ -20,6 +20,8 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 
@@ -148,6 +150,18 @@ public class VertxMqttClientExamples {
     client.pingResponseHandler(s -> {
       //The handler will be called time to time by default
       System.out.println("We have just received PINGRESP packet");
+    });
+  }
+
+  public void tls(Vertx vertx, String algo) {
+    MqttClientOptions options = new MqttClientOptions();
+    options
+      .setSsl(true)
+      .setTrustOptions(new PemTrustOptions().addCertPath("/path/to/server.crt"))
+      .setHostnameVerificationAlgorithm(algo);
+    MqttClient client = MqttClient.create(vertx);
+    client.connect(1883, "mqtt.eclipse.org").onComplete(s -> {
+      client.disconnect();
     });
   }
 }
