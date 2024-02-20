@@ -158,6 +158,7 @@ public class VertxMqttClientExamples {
     options
       .setSsl(true)
       .setTrustOptions(new PemTrustOptions().addCertPath("/path/to/server.crt"))
+      // Algo can be the empty string "" or "HTTPS" to verify the server hostname
       .setHostnameVerificationAlgorithm(algo);
     MqttClient client = MqttClient.create(vertx);
     client.connect(1883, "mqtt.eclipse.org").onComplete(s -> {
