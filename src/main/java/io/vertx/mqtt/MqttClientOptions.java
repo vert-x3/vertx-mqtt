@@ -511,6 +511,12 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   @Override
+  public MqttClientOptions setHostnameVerificationAlgorithm(String hostnameVerificationAlgorithm) {
+    super.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
+    return this;
+  }
+
+  @Override
   public MqttClientOptions setTrustAll(boolean trustAll) {
     super.setTrustAll(trustAll);
     return this;

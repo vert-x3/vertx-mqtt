@@ -50,15 +50,16 @@ public class MqttClientSslTest {
   public void clientSslTrustAllTest(TestContext context) {
     MqttClientOptions clientOptions = new MqttClientOptions()
       .setSsl(true)
-      .setTrustAll(true);
+      .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("");
 
     MqttClient client = MqttClient.create(vertx, clientOptions);
     client.exceptionHandler(t -> context.assertTrue(false));
 
     this.context = context;
-    Async async = context.async();
-    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST, s -> client.disconnect(d -> async.countDown()));
-    async.await();
+    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST)
+      .compose(msg -> client.disconnect())
+      .onComplete(context.asyncAssertSuccess());
   }
 
   @Test
@@ -69,14 +70,15 @@ public class MqttClientSslTest {
 
     MqttClientOptions clientOptions = new MqttClientOptions()
       .setSsl(true)
-      .setTrustStoreOptions(jksOptions);
+      .setTrustStoreOptions(jksOptions)
+      .setHostnameVerificationAlgorithm("");
 
     MqttClient client = MqttClient.create(vertx, clientOptions);
     client.exceptionHandler(t -> context.assertTrue(false));
 
-    Async async = context.async();
-    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST, s -> client.disconnect(d -> async.countDown()));
-    async.await();
+    client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST)
+      .compose(msg -> client.disconnect())
+      .onComplete(context.asyncAssertSuccess());
   }
 
   @Before

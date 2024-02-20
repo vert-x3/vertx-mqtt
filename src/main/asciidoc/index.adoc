@@ -346,6 +346,21 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 {@link examples.VertxMqttClientExamples#example9}
 ----
 
+== Connecting using TLS
+
+You can connect to an MQTT server using TLS by configuring the client TCP options, make sure to set:
+
+- the ssl flag
+- the server certificate or the trust all flag
+- the hostname verification algorithm to `"HTTPS"` if you want to verify the server identity otherwise `""`
+
+[source,$lang]
+----
+{@link examples.VertxMqttClientExamples#tls}
+----
+
+NOTE: more details on the TLS client config can be found https://vertx.io/docs/vertx-core/java/#_enabling_ssltls_on_the_client[here]
+
 === Use proxy protocol
 
 [source,$lang]
