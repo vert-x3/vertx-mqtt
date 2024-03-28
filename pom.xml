@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>vertx-mqtt</artifactId>
-  <version>4.4.9</version>
+  <version>4.4.10-SNAPSHOT</version>
 
   <developers>
     <developer>
@@ -21,7 +21,7 @@
   </developers>
 
   <properties>
-    <stack.version>4.4.9</stack.version>
+    <stack.version>4.4.10-SNAPSHOT</stack.version>
     <junit.version>4.13.1</junit.version>
     <mockito.version>3.3.3</mockito.version>
     <paho.version>1.2.5</paho.version>
