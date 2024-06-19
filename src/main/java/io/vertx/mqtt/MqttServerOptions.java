@@ -20,7 +20,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -115,8 +114,9 @@ public class MqttServerOptions extends NetServerOptions {
     MqttServerOptionsConverter.fromJson(json, this);
 
     if ((this.maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
-      Arguments.require(this.getReceiveBufferSize() >= this.maxMessageSize,
-        "Receiver buffer size can't be lower than max message size");
+      if (this.getReceiveBufferSize() < this.maxMessageSize) {
+        throw new IllegalArgumentException("Receiver buffer size can't be lower than max message size");
+      }
     }
   }
 
@@ -204,8 +204,9 @@ public class MqttServerOptions extends NetServerOptions {
   @Override
   public MqttServerOptions setReceiveBufferSize(int receiveBufferSize) {
     if ((this.maxMessageSize > 0) && (receiveBufferSize > 0)) {
-      Arguments.require(receiveBufferSize >= this.maxMessageSize,
-        "Receiver buffer size can't be lower than max message size");
+      if (receiveBufferSize < this.maxMessageSize) {
+        throw new IllegalArgumentException("Receiver buffer size can't be lower than max message size");
+      }
     }
     super.setReceiveBufferSize(receiveBufferSize);
     return this;
@@ -224,10 +225,13 @@ public class MqttServerOptions extends NetServerOptions {
    * @return  MQTT server options instance
    */
   public MqttServerOptions setMaxMessageSize(int maxMessageSize) {
-    Arguments.require(maxMessageSize > 0, "maxMessageSize must be > 0");
-    if (this.getReceiveBufferSize() > 0) {
-      Arguments.require(this.getReceiveBufferSize() >= maxMessageSize,
-        "Receiver buffer size can't be lower than max message size");
+    if (maxMessageSize <= 0 && maxMessageSize != DEFAULT_MAX_MESSAGE_SIZE) {
+      throw new IllegalArgumentException( "maxMessageSize must be > 0");
+    }
+    if ((maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
+      if (this.getReceiveBufferSize() < maxMessageSize) {
+        throw new IllegalArgumentException("Receiver buffer size can't be lower than max message size");
+      }
     }
     this.maxMessageSize = maxMessageSize;
     return this;
@@ -272,7 +276,9 @@ public class MqttServerOptions extends NetServerOptions {
    * @return  MQTT server options instance
    */
   public MqttServerOptions setMaxClientIdLength(int maxClientIdLength) {
-    Arguments.require(maxClientIdLength > 0, "maxClientIdLength must be > 0");
+    if (maxClientIdLength <= 0) {
+      throw new IllegalArgumentException("maxClientIdLength must be > 0");
+    }
     this.maxClientIdLength = maxClientIdLength;
     return this;
   }
@@ -362,7 +368,9 @@ public class MqttServerOptions extends NetServerOptions {
    * @param webSocketMaxFrameSize the new frame size
    */
   public void setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
-    Arguments.require(webSocketMaxFrameSize > 0, "WebSocket max frame size must be > 0");
+    if (webSocketMaxFrameSize <= 0) {
+      throw new IllegalArgumentException("WebSocket max frame size must be > 0");
+    }
     this.webSocketMaxFrameSize = webSocketMaxFrameSize;
   }
 

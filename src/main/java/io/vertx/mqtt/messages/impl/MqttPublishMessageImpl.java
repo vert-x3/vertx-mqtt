@@ -96,9 +96,9 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
   public void ack() {
     if (this.qosLevel == MqttQoS.AT_LEAST_ONCE || this.qosLevel == MqttQoS.EXACTLY_ONCE) {
       if (ackCallback == null) {
-        throw new IllegalStateException("Callback not present. Check that Auto Ack is disabled.");
+        throw new IllegalArgumentException("Callback not present. Check that Auto Ack is disabled.");
       } else if (isAcked) {
-        throw new IllegalStateException("Ack of message " + messageId + " altready sent.");
+        throw new IllegalArgumentException("Ack of message " + messageId + " altready sent.");
       } else {
         isAcked = true;
         ackCallback.ack();

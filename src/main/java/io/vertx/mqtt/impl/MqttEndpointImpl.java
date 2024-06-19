@@ -410,7 +410,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public MqttEndpointImpl accept(boolean sessionPresent, MqttProperties properties) {
     synchronized (conn) {
       if (this.isConnected) {
-        throw new IllegalStateException("Connection already accepted");
+        throw new IllegalArgumentException("Connection already accepted");
       }
 
       return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent, properties);
@@ -889,7 +889,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private void checkClosed() {
 
     if (this.isClosed) {
-      throw new IllegalStateException("MQTT endpoint is closed");
+      throw new IllegalArgumentException("MQTT endpoint is closed");
     }
   }
 
@@ -899,7 +899,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private void checkConnected() {
 
     if (!this.isConnected) {
-      throw new IllegalStateException("Connection not accepted yet");
+      throw new IllegalArgumentException("Connection not accepted yet");
     }
   }
 

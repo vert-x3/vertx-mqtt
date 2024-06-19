@@ -20,7 +20,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
@@ -456,8 +455,9 @@ public class MqttClientOptions extends NetClientOptions {
   @Override
   public MqttClientOptions setReceiveBufferSize(int receiveBufferSize) {
     if ((this.maxMessageSize > 0) && (receiveBufferSize > 0)) {
-      Arguments.require(receiveBufferSize >= this.maxMessageSize,
-        "Receiver buffer size can't be lower than max message size");
+      if (receiveBufferSize < this.maxMessageSize) {
+        throw new IllegalArgumentException("Receiver buffer size can't be lower than max message size");
+      }
     }
     super.setReceiveBufferSize(receiveBufferSize);
     return this;
@@ -470,10 +470,13 @@ public class MqttClientOptions extends NetClientOptions {
    * @return  MQTT client options instance
    */
   public MqttClientOptions setMaxMessageSize(int maxMessageSize) {
-    Arguments.require(maxMessageSize > 0 || maxMessageSize == DEFAULT_MAX_MESSAGE_SIZE, "maxMessageSize must be > 0");
+    if (maxMessageSize <= 0 && maxMessageSize != DEFAULT_MAX_MESSAGE_SIZE) {
+      throw new IllegalArgumentException( "maxMessageSize must be > 0");
+    }
     if ((maxMessageSize > 0) && (this.getReceiveBufferSize() > 0)) {
-      Arguments.require(this.getReceiveBufferSize() >= maxMessageSize,
-        "Receiver buffer size can't be lower than max message size");
+      if (this.getReceiveBufferSize() < maxMessageSize) {
+        throw new IllegalArgumentException("Receiver buffer size can't be lower than max message size");
+      }
     }
     this.maxMessageSize = maxMessageSize;
     return this;

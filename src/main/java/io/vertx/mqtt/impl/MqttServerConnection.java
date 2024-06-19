@@ -457,7 +457,7 @@ public class MqttServerConnection {
         return true;
       } else {
         so.close();
-        throw new IllegalStateException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
+        throw new IllegalArgumentException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
       }
     }
   }
