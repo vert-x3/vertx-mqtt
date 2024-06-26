@@ -180,6 +180,12 @@ public class MqttServerConnection {
           this.handlePubcomp(pubcompVariableHeader.messageId(), MqttPubCompReasonCode.valueOf(pubcompVariableHeader.reasonCode()), pubcompVariableHeader.properties());
           break;
 
+        case AUTH:
+          MqttReasonCodeAndPropertiesVariableHeader header = (MqttReasonCodeAndPropertiesVariableHeader) mqttMessage.variableHeader();
+          MqttAuthenticateReasonCode reasonCode = MqttAuthenticateReasonCode.valueOf(header.reasonCode());
+          this.handleAuth(reasonCode, header.properties());
+          break;
+
         case PINGREQ:
 
           this.handlePingreq();
@@ -410,6 +416,17 @@ public class MqttServerConnection {
     synchronized (this.so) {
       if (this.checkConnected()) {
         this.endpoint.handlePubcomp(pubcompMessageId, code, properties);
+      }
+    }
+  }
+
+  /**
+   * Used internally for handling the auth from the remote MQTT client
+   */
+  void handleAuth(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
+    synchronized (this.so) {
+      if (this.checkConnected()) {
+        this.endpoint.handleAuth(reasonCode, properties);
       }
     }
   }

@@ -24,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.impl.MqttClientImpl;
+import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
@@ -201,6 +202,23 @@ public interface MqttClient {
    * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
   Future<Integer> unsubscribe(List<String> topics);
+
+  /**
+   * Sets handler which will be called after AUTH packet receiving
+   *
+   * @param authenticationExchangeHandler handler to call
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler);
+
+  /**
+   * Unsubscribe from receiving messages on given list of topic
+   *
+   * @param message authentication exchange message
+   * @return a {@code Future} completed after AUTH packet sent
+   */
+  Future<Void> authenticationExchange(MqttAuthenticationExchangeMessage message);
 
   /**
    * Sets handler which will be called after PINGRESP packet receiving
