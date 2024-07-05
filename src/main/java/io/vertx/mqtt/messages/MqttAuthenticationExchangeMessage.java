@@ -21,7 +21,7 @@ public interface MqttAuthenticationExchangeMessage {
    * @param properties mqtt properties.
    * @return Vert.x auth message
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MqttAuthenticationExchangeMessage create(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
     return new MqttAuthenticationExchangeMessageImpl(reasonCode, properties);
   }
