@@ -27,6 +27,8 @@ import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.MqttTopicSubscription;
+import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 
 import java.nio.charset.Charset;
@@ -324,5 +326,17 @@ public class VertxMqttServerExamples {
           ar.cause().printStackTrace();
         }
       });
+  }
+
+  /**
+   * Example for authentication exchange
+   * @param endpoint
+   */
+  public void example14(MqttEndpoint endpoint) {
+    endpoint.authenticationExchange(MqttAuthenticationExchangeMessage.create(MqttAuthenticateReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES));
+    // handling auth from client
+    endpoint.authenticationExchangeHandler(auth -> {
+      System.out.println("AUTH packet received from client. code: " + auth.reasonCode());
+    });
   }
 }
