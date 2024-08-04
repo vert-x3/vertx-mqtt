@@ -426,7 +426,7 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public MqttEndpointImpl accept(boolean sessionPresent, MqttProperties properties) {
     synchronized (conn) {
       if (this.isConnected) {
-        throw new IllegalArgumentException("Connection already accepted");
+        throw new IllegalStateException("Connection already accepted");
       }
 
       return this.connack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent, properties);
