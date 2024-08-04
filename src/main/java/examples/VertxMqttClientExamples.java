@@ -16,6 +16,7 @@
 
 package examples;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -24,6 +25,8 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
+import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 
 public class VertxMqttClientExamples {
 
@@ -150,6 +153,19 @@ public class VertxMqttClientExamples {
     client.pingResponseHandler(s -> {
       //The handler will be called time to time by default
       System.out.println("We have just received PINGRESP packet");
+    });
+  }
+
+  /**
+   * Example for authenticationExchangeHandler and authenticationExchange method demonstration
+   *
+   * @param client
+   */
+  public void example10(MqttClient client) {
+    client.authenticationExchange(MqttAuthenticationExchangeMessage.create(MqttAuthenticateReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES));
+    client.authenticationExchangeHandler(auth -> {
+      //The handler will be called time to time by default
+      System.out.println("We have just received AUTH packet: " + auth.reasonCode());
     });
   }
 

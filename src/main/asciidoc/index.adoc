@@ -223,6 +223,22 @@ that will be called when the server is really closed.
 {@link examples.VertxMqttServerExamples#example9}
 ----
 
+=== Handling client auth packet/Sending AUTH packet to remote client(Only in MQTT version 5)
+
+After a connection is established between client and server, the client can send an auth packet to server using the
+AUTH message. The {@link io.vertx.mqtt.MqttEndpoint} interface allows to specify a handler for the incoming auth packet
+using the {@link io.vertx.mqtt.MqttEndpoint#authenticationExchangeHandler(io.vertx.core.Handler)} method. Such handler
+receives an instance of the {@link io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage} interface which brings the
+reason code, the authentication method and data. The server could continue to send AUTH packet using
+the {@link io.vertx.mqtt.MqttEndpoint#authenticationExchange(io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage)}
+for authentication or just passed it.
+
+[source,$lang]
+----
+{@link examples.VertxMqttServerExamples#example14}
+----
+
+
 === Automatic clean-up in verticles
 
 If you’re creating MQTT servers from inside verticles, those servers will be automatically closed when the verticle is undeployed.
@@ -294,6 +310,21 @@ Let's take a look at the example:
 {@link examples.VertxMqttClientExamples#example3}
 ----
 In the example we send message to topic with name "temperature".
+
+=== Handling server auth request/Sending AUTH packet to server(Only in MQTT version 5)
+
+After a connection is established between client and server, the client can send an auth request to server using
+the {@link io.vertx.mqtt.MqttClient#authenticationExchange(io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage)}
+for authentication. The Server may return an AUTH packet. The {@link io.vertx.mqtt.MqttClient} interface allows to
+specify a handler for the incoming auth packet using
+the {@link io.vertx.mqtt.MqttClient#authenticationExchangeHandler(io.vertx.core.Handler)} method.
+Such handler receives an instance of the {@link io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage} interface
+which brings the reason code, the authentication method and data.
+
+[source,$lang]
+----
+{@link examples.VertxMqttClientExamples#example10}
+----
 
 === Keep connection with server alive
 In order to keep connection with server you should time to time send something to server otherwise server will close the connection.

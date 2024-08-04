@@ -36,6 +36,7 @@ import io.vertx.mqtt.messages.MqttPubRelMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
@@ -338,6 +339,16 @@ public interface MqttEndpoint {
   MqttEndpoint publishCompletionMessageHandler(Handler<MqttPubCompMessage> handler);
 
   /**
+   * Set the auth handler on the MQTT endpoint. This handler is called when a AUTH message is
+   * received by the remote MQTT client
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> handler);
+
+  /**
    * Set the pingreq handler on the MQTT endpoint. This handler is called when a PINGREQ
    * message is received by the remote MQTT client. In any case the endpoint sends the
    * PINGRESP internally after executing this handler.
@@ -574,6 +585,16 @@ public interface MqttEndpoint {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, int messageId, MqttProperties properties);
+
+
+  /**
+   * Sends the AUTH message to the remote MQTT client
+   *
+   * @param message
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  MqttEndpoint authenticationExchange(MqttAuthenticationExchangeMessage message);
 
   /**
    * Sends the PINGRESP message to the remote MQTT client

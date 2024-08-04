@@ -24,6 +24,7 @@ import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
@@ -49,6 +50,7 @@ import io.vertx.mqtt.messages.MqttPubAckMessage;
 import io.vertx.mqtt.messages.MqttPubCompMessage;
 import io.vertx.mqtt.messages.MqttPubRecMessage;
 import io.vertx.mqtt.messages.MqttPubRelMessage;
+import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
@@ -56,10 +58,12 @@ import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttUnsubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 
 import javax.net.ssl.SSLSession;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -106,6 +110,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
   // handler to call when a pubcomp message comes in
   private Handler<Integer> pubcompHandler;
   private Handler<MqttPubCompMessage> pubcompHandlerWithMessage;
+  // handler to call when an auth message comes in
+  private Handler<MqttAuthenticationExchangeMessage> authHandler;
+
   // handler to call when a disconnect request comes in
   private Handler<Void> disconnectHandler;
   private Handler<MqttDisconnectMessage> disconnectHandlerWithMessage;
@@ -349,6 +356,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
     }
   }
 
+  @Override
+  public MqttEndpoint authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> handler) {
+    synchronized (this.conn) {
+      this.checkClosed();
+      this.authHandler = handler;
+      return this;
+    }
+  }
+
 
   public MqttEndpointImpl pingHandler(Handler<Void> handler) {
 
@@ -585,6 +601,25 @@ public class MqttEndpointImpl implements MqttEndpoint {
     return this.write(publish).map(variableHeader.packetId());
   }
 
+  @Override
+  public MqttEndpoint authenticationExchange(MqttAuthenticationExchangeMessage message) {
+    if (this.protocolVersion != MqttVersion.MQTT_5.protocolLevel()) {
+      Optional<MqttVersion> current = Optional.empty();
+      for (MqttVersion value : MqttVersion.values()) {
+        if (this.protocolVersion == value.protocolLevel()) {
+          current = Optional.of(value);
+          break;
+        }
+      }
+      throw new IllegalArgumentException("Enhanced authentication can only be sent under the MQTTv5 protocol, " +
+        "and the current client version(" + current.map(MqttVersion::toString).orElse("Unknown") + ") is not applicable.");
+    }
+    io.netty.handler.codec.mqtt.MqttMessage auth = MqttMessageBuilders.auth()
+      .reasonCode(message.reasonCode().value()).properties(message.properties()).build();
+    this.write(auth);
+    return this;
+  }
+
   public MqttEndpointImpl pong() {
 
     MqttFixedHeader fixedHeader =
@@ -758,6 +793,17 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
       if (this.pubcompHandlerWithMessage != null) {
         this.pubcompHandlerWithMessage.handle(MqttPubCompMessage.create(pubcompMessageId, code, properties));
+      }
+    }
+  }
+
+  /**
+   * Used for calling the auth handler when the remote MQTT client with auth
+   */
+  void handleAuth(MqttAuthenticateReasonCode code, MqttProperties properties) {
+    synchronized (this.conn) {
+      if (this.authHandler != null) {
+        this.authHandler.handle(MqttAuthenticationExchangeMessage.create(code, properties));
       }
     }
   }
