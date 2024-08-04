@@ -341,6 +341,7 @@ public interface MqttEndpoint {
   /**
    * Set the auth handler on the MQTT endpoint. This handler is called when a AUTH message is
    * received by the remote MQTT client
+   *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
@@ -588,6 +589,7 @@ public interface MqttEndpoint {
 
   /**
    * Sends the AUTH message to the remote MQTT client
+   *
    * @param message
    * @return a reference to this, so the API can be used fluently
    */

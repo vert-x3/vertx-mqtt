@@ -38,7 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
- * MQTT server testing about server publish
+ * MQTT server testing about server auth
  */
 public class Mqtt5ServerAuthTest extends MqttServerBaseTest {
 

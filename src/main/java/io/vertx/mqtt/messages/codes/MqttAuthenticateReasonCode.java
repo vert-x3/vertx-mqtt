@@ -6,8 +6,7 @@ public enum MqttAuthenticateReasonCode implements MqttReasonCode {
 
   CONTINUE_AUTHENTICATION((byte) 0x18),
 
-  RE_AUTHENTICATE((byte) 0x19),
-  ;
+  RE_AUTHENTICATE((byte) 0x19);
 
   MqttAuthenticateReasonCode(byte byteValue) {
     this.byteValue = byteValue;

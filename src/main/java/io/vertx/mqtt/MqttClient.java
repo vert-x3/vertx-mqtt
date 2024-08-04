@@ -213,7 +213,7 @@ public interface MqttClient {
   MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler);
 
   /**
-   * Unsubscribe from receiving messages on given list of topic
+   * It is used for Enhanced Authentication and is able to carry an authentication method and authentication data.
    *
    * @param message authentication exchange message
    * @return a {@code Future} completed after AUTH packet sent

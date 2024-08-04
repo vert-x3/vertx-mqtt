@@ -330,6 +330,7 @@ public class VertxMqttServerExamples {
 
   /**
    * Example for authentication exchange
+   *
    * @param endpoint
    */
   public void example14(MqttEndpoint endpoint) {
