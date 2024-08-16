@@ -126,7 +126,7 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
       <scope>test</scope>
-      <version>1.15.1</version>
+      <version>1.20.1</version>
     </dependency>
   </dependencies>
 
