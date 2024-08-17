@@ -3,6 +3,7 @@ package io.vertx.mqtt.test.server;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketClient;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -22,6 +23,7 @@ public class MqttServerWebSocketPermessageDeflateTest {
   protected static final String MQTT_SERVER_HOST = "localhost";
   protected static final int MQTT_SERVER_PORT = 1883;
 
+  private WebSocketClient client;
   private Vertx vertx;
 
   @Before
@@ -31,6 +33,7 @@ public class MqttServerWebSocketPermessageDeflateTest {
 
   @After
   public void after(TestContext context) {
+    this.client = null;
     this.vertx.close().onComplete(context.asyncAssertSuccess());
   }
 
@@ -47,23 +50,18 @@ public class MqttServerWebSocketPermessageDeflateTest {
     server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
     listen.awaitSuccess(15_000);
 
-    vertx.createWebSocketClient()
+    client = vertx.createWebSocketClient();
+    client
       .connect(new WebSocketConnectOptions()
         .setPort(MQTT_SERVER_PORT)
         .setHost(MQTT_SERVER_HOST)
         .setURI("/mqtt")
         .setHeaders(MultiMap.caseInsensitiveMultiMap().add("sec-websocket-extensions", "permessage-deflate"))
       )
-      .onComplete(handler -> {
-        if (handler.succeeded()) {
-          WebSocket webSocket = handler.result();
-          MultiMap handshakeHeaders = webSocket.headers();
-
-          context.assertEquals("permessage-deflate", handshakeHeaders.get("sec-websocket-extensions"));
-          done.complete();
-        } else {
-          context.fail();
-        }
-      });
+      .onComplete(context.asyncAssertSuccess(webSocket -> {
+        MultiMap handshakeHeaders = webSocket.headers();
+        context.assertEquals("permessage-deflate", handshakeHeaders.get("sec-websocket-extensions"));
+        done.complete();
+      }));
   }
 }
