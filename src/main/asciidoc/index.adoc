@@ -23,7 +23,7 @@ of your build descriptor:
 compile io.vertx:vertx-mqtt:${maven.version}
 ----
 
-= Vert.x MQTT server
+== Vert.x MQTT server
 
 This component provides a server which is able to handle connections, communication and messages exchange with remote
 link:http://mqtt.org/[MQTT] clients. Its API provides a bunch of events related to raw protocol messages received by
@@ -34,8 +34,6 @@ At the moment of writing, it supports all MQTT version 5.0 features except AUTH 
 It's not a fully featured MQTT broker but can be used for building something like that or for protocol translation.
 
 WARNING: this module has the tech preview status, this means the API can change between versions.
-
-== Getting Started
 
 === Handling client connection/disconnection
 
@@ -250,14 +248,12 @@ or using a verticle specifying the number of instances:
 What's really happen is that even only MQTT server is deployed but as incoming connections arrive, Vert.x distributes
 them in a round-robin fashion to any of the connect handlers executed on different cores.
 
-= Vert.x MQTT client
+== Vert.x MQTT client
 
 This component provides an link:http://mqtt.org/[MQTT] client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
 for connecting/disconnecting to a broker, publishing messages (with all three different levels of QoS) and subscribing to topics.
 
 WARNING: this module has the tech preview status, this means the API can change between versions.
-
-== Getting started
 
 === Connect/Disconnect
 The client gives you opportunity to connect to a server and disconnect from it.
