@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
@@ -30,11 +29,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttAuth;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServerOptions;
@@ -137,7 +135,7 @@ public class MqttServerConnection {
         case PUBLISH:
 
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload());
+          Buffer newBuf = BufferInternal.safeBuffer(publish.payload());
 
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),
@@ -441,7 +439,7 @@ public class MqttServerConnection {
   }
 
   void handleHandshakeComplete(WebSocketServerProtocolHandler.HandshakeComplete handshake) {
-    httpHeaders = new HeadersAdaptor(handshake.requestHeaders());
+    httpHeaders = io.vertx.core.internal.http.HttpHeadersInternal.headers(handshake.requestHeaders());
     httpRequestUri = handshake.requestUri();
   }
 

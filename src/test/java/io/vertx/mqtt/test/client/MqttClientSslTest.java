@@ -20,12 +20,15 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,38 +44,35 @@ public class MqttClientSslTest {
   private static final int MQTT_SERVER_TLS_PORT = 8883;
   private static final String MQTT_SERVER_HOST = "localhost";
 
-  Vertx vertx = Vertx.vertx();
+  Vertx vertx;
   MqttServer server;
-  TestContext context;
+  MqttClient client;
 
   @Test
-  public void clientSslTrustAllTest(TestContext context) {
+  public void clientSslTrustAllTest() {
     MqttClientOptions clientOptions = new MqttClientOptions()
       .setSsl(true)
       .setHostnameVerificationAlgorithm("")
       .setTrustAll(true);
 
-    MqttClient client = MqttClient.create(vertx, clientOptions);
-    client.exceptionHandler(t -> context.assertTrue(false));
+    client = MqttClient.create(vertx, clientOptions);
 
-    this.context = context;
     client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST)
       .compose(msg -> client.disconnect())
-      .onComplete(context.asyncAssertSuccess());
+      .await();
   }
 
   @Test
   public void clientSslClientTruststoreTest(TestContext context) {
 
-    this.context = context;
-    JksOptions jksOptions = new JksOptions().setPath("tls/client-truststore.jks");
+    JksOptions jksOptions = Trust.SERVER_JKS.get();
 
     MqttClientOptions clientOptions = new MqttClientOptions()
       .setSsl(true)
       .setHostnameVerificationAlgorithm("")
       .setTrustOptions(jksOptions);
 
-    MqttClient client = MqttClient.create(vertx, clientOptions);
+    client = MqttClient.create(vertx, clientOptions);
     client.exceptionHandler(t -> context.assertTrue(false));
 
     client.connect(MQTT_SERVER_TLS_PORT, MQTT_SERVER_HOST)
@@ -81,10 +81,10 @@ public class MqttClientSslTest {
   }
 
   @Before
-  public void before(TestContext ctx) {
-    PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions()
-      .setKeyPath("tls/server-key.pem")
-      .setCertPath("tls/server-cert.pem");
+  public void before() {
+    this.vertx = Vertx.vertx();
+
+    PemKeyCertOptions pemKeyCertOptions = Cert.SERVER_PEM.get();
 
     MqttServerOptions serverOptions = new MqttServerOptions()
       .setPort(MQTT_SERVER_TLS_PORT)
@@ -93,12 +93,11 @@ public class MqttClientSslTest {
       .setSsl(true);
 
     server = MqttServer.create(vertx, serverOptions);
-    server.exceptionHandler(t -> context.assertTrue(false));
     server.endpointHandler(e -> {
       log.info("Client connected");
       e.disconnectHandler(d -> log.info("Client disconnected"));
       e.accept(false);
-    }).listen().onComplete(ctx.asyncAssertSuccess());
+    }).listen().await();
   }
 
   @After

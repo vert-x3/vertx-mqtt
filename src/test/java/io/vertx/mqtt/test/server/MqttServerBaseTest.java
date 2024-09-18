@@ -25,6 +25,8 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.*;
@@ -112,7 +114,7 @@ public abstract class MqttServerBaseTest {
    */
   protected SSLSocketFactory getSocketFactory(String trustStoreName, String keyStoreName) throws Exception {
 
-    InputStream clientTrustStoreInput = this.getClass().getResourceAsStream(trustStoreName);
+    InputStream clientTrustStoreInput = Trust.class.getResourceAsStream(trustStoreName);
 
     KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
     trustStore.load(clientTrustStoreInput, "wibble".toCharArray());
@@ -123,7 +125,7 @@ public abstract class MqttServerBaseTest {
     KeyManager[] keyManagers = null;
 
     if (keyStoreName != null) {
-      InputStream clientKeyStoreInput = this.getClass().getResourceAsStream(keyStoreName);
+      InputStream clientKeyStoreInput = Cert.class.getResourceAsStream(keyStoreName);
 
       KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
       keyStore.load(clientKeyStoreInput, "wibble".toCharArray());
