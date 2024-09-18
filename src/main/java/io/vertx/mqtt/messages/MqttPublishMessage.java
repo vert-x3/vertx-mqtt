@@ -16,7 +16,6 @@
 
 package io.vertx.mqtt.messages;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.CacheReturn;
@@ -43,11 +42,11 @@ public interface MqttPublishMessage extends MqttMessage {
    * @return Vert.x publish message
    */
   @GenIgnore
-  static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload) {
+  static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, Buffer payload) {
 
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, MqttProperties.NO_PROPERTIES);
   }
-  
+
   /**
    * Create a concrete instance of a Vert.x publish message
    *
@@ -61,7 +60,7 @@ public interface MqttPublishMessage extends MqttMessage {
    * @return Vert.x publish message
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload, MqttProperties properties) {
+  static MqttPublishMessage create(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, Buffer payload, MqttProperties properties) {
 
     return new MqttPublishMessageImpl(messageId, qosLevel, isDup, isRetain, topicName, payload, properties);
   }
@@ -95,7 +94,7 @@ public interface MqttPublishMessage extends MqttMessage {
    */
   @CacheReturn
   Buffer payload();
-  
+
   /**
    * Send the PUBACK/PUBCOMP to the broker. Use this method only if autoAck option is set to false.
    * @throws IllegalStateException if you are ack a message (with QoS > 0) when the Auto Ack is true

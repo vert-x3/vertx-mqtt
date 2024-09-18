@@ -16,11 +16,9 @@
 
 package io.vertx.mqtt.messages.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
 /**
@@ -50,13 +48,13 @@ public class MqttPublishMessageImpl implements MqttPublishMessage {
    * @param payload    payload message
    * @param properties MQTT properties
    */
-  public MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, ByteBuf payload, MqttProperties properties) {
+  public MqttPublishMessageImpl(int messageId, MqttQoS qosLevel, boolean isDup, boolean isRetain, String topicName, Buffer payload, MqttProperties properties) {
     this.messageId = messageId;
     this.qosLevel = qosLevel;
     this.isDup = isDup;
     this.isRetain = isRetain;
     this.topicName = topicName;
-    this.payload = BufferInternal.buffer(payload);
+    this.payload = payload;
     this.properties = properties;
   }
 

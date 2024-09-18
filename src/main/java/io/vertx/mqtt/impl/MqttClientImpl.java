@@ -45,12 +45,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
-import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
@@ -177,7 +176,7 @@ public class MqttClientImpl implements MqttClient {
   private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
 
     ContextInternal ctx = vertx.getOrCreateContext();
-    NetClient client = new NetClientBuilder(vertx, options).build();
+    NetClient client = vertx.createNetClient(options);
     PromiseInternal<MqttConnAckMessage> connectPromise = ctx.promise();
     PromiseInternal<Void> disconnectPromise = ctx.promise();
 
@@ -861,7 +860,7 @@ public class MqttClientImpl implements MqttClient {
         case PUBLISH:
 
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
-          ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload());
+          Buffer newBuf = BufferInternal.safeBuffer(publish.payload());
 
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),
