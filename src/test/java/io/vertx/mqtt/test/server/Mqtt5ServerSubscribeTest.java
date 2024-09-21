@@ -25,7 +25,8 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttTopicSubscription;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
-import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
@@ -54,6 +55,7 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
   private static final String MQTT_TOPIC = "/my_topic";
   private static final String MQTT_TOPIC_FAILURE = "/my_topic/failure";
   private static final String MQTT_FAILURE_REASON = "test reason";
+  private static final int SUBSCRIPTION_IDENTIFIER = 42;
 
   @Before
   public void before(TestContext context) {
@@ -97,8 +99,9 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.connect();
+      MqttAsyncClient client = new MqttAsyncClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      IMqttToken token = client.connect();
+      token.waitForCompletion();
 
       MqttSubscription subscription = new MqttSubscription(topic, expectedQos);
       this.requestedQos = expectedQos;
@@ -108,7 +111,10 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
       this.requestedNoLocal = noLocal;
       this.requestedRetainAsPublished = retainAsPublished;
       this.requestedRetainHandling = retainHandling;
-      client.subscribe(new MqttSubscription[]{ subscription });
+      org.eclipse.paho.mqttv5.common.packet.MqttProperties mqttProperties = new org.eclipse.paho.mqttv5.common.packet.MqttProperties();
+      mqttProperties.setSubscriptionIdentifier(SUBSCRIPTION_IDENTIFIER);
+      token = client.subscribe(new MqttSubscription[]{ subscription }, null, null, mqttProperties);
+      token.waitForCompletion();
 
       this.async.await();
     } catch (MqttException e) {
@@ -166,6 +172,7 @@ public class Mqtt5ServerSubscribeTest extends MqttServerBaseTest {
       context.assertEquals(requestedNoLocal, subscription.subscriptionOption().isNoLocal());
       context.assertEquals(requestedRetainAsPublished, subscription.subscriptionOption().isRetainAsPublished());
       context.assertEquals(requestedRetainHandling, subscription.subscriptionOption().retainHandling().value());
+      context.assertEquals(SUBSCRIPTION_IDENTIFIER, subscribe.properties().getProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value()).value());
 
       List<MqttSubAckReasonCode> reasonCodes = new ArrayList<>();
       MqttProperties subackProperties = new MqttProperties();
