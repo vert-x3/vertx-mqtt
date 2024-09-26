@@ -128,7 +128,8 @@ public class MqttServerConnection {
 
           MqttSubscribeMessage mqttSubscribeMessage = MqttSubscribeMessage.create(
             subscribe.variableHeader().messageId(),
-            subscribe.payload().topicSubscriptions());
+            subscribe.payload().topicSubscriptions(),
+            subscribe.idAndPropertiesVariableHeader().properties());
           this.handleSubscribe(mqttSubscribeMessage);
           break;
 
@@ -138,7 +139,8 @@ public class MqttServerConnection {
 
           MqttUnsubscribeMessage mqttUnsubscribeMessage = MqttUnsubscribeMessage.create(
             unsubscribe.variableHeader().messageId(),
-            unsubscribe.payload().topics());
+            unsubscribe.payload().topics(),
+            unsubscribe.idAndPropertiesVariableHeader().properties());
           this.handleUnsubscribe(mqttUnsubscribeMessage);
           break;
 
