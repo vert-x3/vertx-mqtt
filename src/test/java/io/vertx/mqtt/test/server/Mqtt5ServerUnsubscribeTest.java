@@ -26,10 +26,13 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttUnsubAckReasonCode;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.packet.MqttReturnCode;
+import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,6 +56,9 @@ public class Mqtt5ServerUnsubscribeTest extends MqttServerBaseTest {
 
   private static final String MQTT_REASON_STRING = "because I've said so";
 
+  private static final String USER_PROPERTY_KEY = "key";
+  private static final String USER_PROPERTY_VALUE = "value";
+
   @Before
   public void before(TestContext context) {
 
@@ -70,15 +76,22 @@ public class Mqtt5ServerUnsubscribeTest extends MqttServerBaseTest {
 
     try {
       MemoryPersistence persistence = new MemoryPersistence();
-      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
-      client.connect();
+      MqttAsyncClient client = new MqttAsyncClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      IMqttToken token = client.connect();
+      token.waitForCompletion();
 
       expectedReasonCodes = Collections.singletonList(MqttUnsubAckReasonCode.SUCCESS);
       String[] topics = new String[]{MQTT_TOPIC};
       int[] qos = new int[]{0};
-      client.subscribe(topics, qos);
+      token = client.subscribe(topics, qos);
+      token.waitForCompletion();
 
-      client.unsubscribe(topics);
+      org.eclipse.paho.mqttv5.common.packet.MqttProperties mqttProperties = new org.eclipse.paho.mqttv5.common.packet.MqttProperties();
+      List<UserProperty> userProperties = new ArrayList<>();
+      userProperties.add(new UserProperty(USER_PROPERTY_KEY, USER_PROPERTY_VALUE));
+      mqttProperties.setUserProperties(userProperties);
+      token = client.unsubscribe(topics, null, null, mqttProperties);
+      token.waitForCompletion();
 
       context.assertTrue(true);
 
@@ -120,6 +133,12 @@ public class Mqtt5ServerUnsubscribeTest extends MqttServerBaseTest {
       endpoint.subscribeAcknowledge(subscribe.messageId(), qos);
 
     }).unsubscribeHandler(unsubscribe -> {
+
+      if(expectedReasonCodes.get(0) == MqttUnsubAckReasonCode.SUCCESS) {
+        MqttProperties.UserProperties userProperties = (MqttProperties.UserProperties) unsubscribe.properties().getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
+        context.assertEquals(userProperties.value().get(0).key, USER_PROPERTY_KEY);
+        context.assertEquals(userProperties.value().get(0).value, USER_PROPERTY_VALUE);
+      }
 
       MqttProperties props = new MqttProperties();
       if(expectedReasonCodes.get(0) != MqttUnsubAckReasonCode.SUCCESS) {
