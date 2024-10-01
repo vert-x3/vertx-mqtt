@@ -31,12 +31,14 @@ import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribePayload;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -58,6 +60,8 @@ import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 import java.io.UnsupportedEncodingException;
@@ -109,6 +113,9 @@ public class MqttClientImpl implements MqttClient {
   private Handler<MqttPublishMessage> publishHandler;
   // handler to call when a subscribe request is completed
   private Handler<MqttSubAckMessage> subscribeCompletionHandler;
+  // handler to call when an auth message comes in
+  private Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler;
+
   // handler to call when a connection request is completed
   private Promise<MqttConnAckMessage> connectPromise;
   // handler to call when a connection disconnects
@@ -565,6 +572,24 @@ public class MqttClientImpl implements MqttClient {
     return ctx.succeededFuture(variableHeader.messageId());
   }
 
+  private synchronized Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler() {
+    return this.authenticationExchangeHandler;
+  }
+
+  @Override
+  public MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler) {
+    this.authenticationExchangeHandler = authenticationExchangeHandler;
+    return this;
+  }
+
+  @Override
+  public Future<Void> authenticationExchange(MqttAuthenticationExchangeMessage message) {
+    io.netty.handler.codec.mqtt.MqttMessage auth = MqttMessageBuilders.auth()
+      .reasonCode(message.reasonCode().value()).properties(message.properties()).build();
+    this.write(auth);
+    return ctx.succeededFuture();
+  }
+
   /**
    * See {@link MqttClient#pingResponseHandler(Handler)} for more details
    */
@@ -902,6 +927,13 @@ public class MqttClientImpl implements MqttClient {
           handleUnsuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
           break;
 
+        case AUTH:
+          MqttReasonCodeAndPropertiesVariableHeader header = (MqttReasonCodeAndPropertiesVariableHeader) mqttMessage.variableHeader();
+          MqttAuthenticateReasonCode reasonCode = MqttAuthenticateReasonCode.valueOf(header.reasonCode());
+          MqttAuthenticationExchangeMessage message = MqttAuthenticationExchangeMessage.create(reasonCode, header.properties());
+          handleAuth(message);
+          break;
+
         case PINGRESP:
           handlePingresp();
           break;
@@ -1155,6 +1187,18 @@ public class MqttClientImpl implements MqttClient {
       handler.handle((MqttPublishMessage) message);
     }
 
+  }
+
+  /**
+   * Used for calling the auth handler when the server sent an AUTH message
+   *
+   * @param msg AUTH message
+   */
+  private void handleAuth(MqttAuthenticationExchangeMessage msg) {
+    Handler<MqttAuthenticationExchangeMessage> handler = this.authenticationExchangeHandler();
+    if (handler != null) {
+      handler.handle(msg);
+    }
   }
 
   /**
