@@ -31,7 +31,6 @@
     <mockito.version>3.3.3</mockito.version>
     <paho.version>1.2.5</paho.version>
     <fabric8-docker-plugin.version>0.21.0</fabric8-docker-plugin.version>
-    <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
 
   <dependencyManagement>
