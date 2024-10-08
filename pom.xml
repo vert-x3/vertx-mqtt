@@ -1,248 +1,135 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-      
-    <modelVersion>4.0.0</modelVersion>
-      
-    <parent>
-            
-        <groupId>io.vertx</groupId>
-            
-        <artifactId>vertx-ext-parent</artifactId>
-            
-        <version>38</version>
-          
-    </parent>
-      
-    <artifactId>vertx-mqtt</artifactId>
-      
-    <version>4.5.11-SNAPSHOT</version>
-      
-    <developers>
-            
-        <developer>
-                  
-            <name>Paolo Patierno</name>
-                  
-            <email>ppatierno@live.com</email>
-                  
-            <organization>Red Hat</organization>
-                  
-            <organizationUrl>http://www.redhat.com</organizationUrl>
-                
-        </developer>
-          
-    </developers>
-      
-    <properties>
-            
-        <stack.version>4.5.11-SNAPSHOT</stack.version>
-            
-        <junit.version>4.13.1</junit.version>
-            
-        <mockito.version>3.3.3</mockito.version>
-            
-        <paho.version>1.2.5</paho.version>
-            
-        <fabric8-docker-plugin.version>0.21.0</fabric8-docker-plugin.version>
-            
-        <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
-          
-    </properties>
-      
-    <dependencyManagement>
-            
-        <dependencies>
-                  
-            <dependency>
-                        
-                <groupId>io.vertx</groupId>
-                        
-                <artifactId>vertx-dependencies</artifactId>
-                        
-                <version>${stack.version}</version>
-                        
-                <type>pom</type>
-                        
-                <scope>import</scope>
-                      
-            </dependency>
-                
-        </dependencies>
-          
-    </dependencyManagement>
-      
-    <name>Vert.x MQTT</name>
-      
-    <description>Vert.x MQTT reactive client and server</description>
-      
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-ext-parent</artifactId>
+    <version>38</version>
+  </parent>
+
+  <artifactId>vertx-mqtt</artifactId>
+  <version>4.5.11-SNAPSHOT</version>
+
+  <developers>
+    <developer>
+      <name>Paolo Patierno</name>
+      <email>ppatierno@live.com</email>
+      <organization>Red Hat</organization>
+      <organizationUrl>http://www.redhat.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <properties>
+    <stack.version>4.5.11-SNAPSHOT</stack.version>
+    <junit.version>4.13.1</junit.version>
+    <mockito.version>3.3.3</mockito.version>
+    <paho.version>1.2.5</paho.version>
+    <fabric8-docker-plugin.version>0.21.0</fabric8-docker-plugin.version>
+    <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
+  </properties>
+
+  <dependencyManagement>
     <dependencies>
-            
-        <dependency>
-                  
-            <groupId>io.netty</groupId>
-                  
-            <artifactId>netty-common</artifactId>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.netty</groupId>
-                  
-            <artifactId>netty-transport</artifactId>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.netty</groupId>
-                  
-            <artifactId>netty-handler</artifactId>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.netty</groupId>
-                  
-            <artifactId>netty-codec-mqtt</artifactId>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.netty</groupId>
-                  
-            <artifactId>netty-codec-haproxy</artifactId>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.vertx</groupId>
-                  
-            <artifactId>vertx-codegen</artifactId>
-                  
-            <optional>true</optional>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.vertx</groupId>
-                  
-            <artifactId>vertx-docgen</artifactId>
-                  
-            <optional>true</optional>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.vertx</groupId>
-                  
-            <artifactId>vertx-core</artifactId>
-                
-        </dependency>
-            
-        <!-- Testing -->
-            
-        <dependency>
-                  
-            <groupId>junit</groupId>
-                  
-            <artifactId>junit</artifactId>
-                  
-            <version>${junit.version}</version>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.vertx</groupId>
-                  
-            <artifactId>vertx-unit</artifactId>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>io.vertx</groupId>
-                  
-            <artifactId>vertx-core</artifactId>
-                  
-            <type>test-jar</type>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>org.eclipse.paho</groupId>
-                  
-            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-                  
-            <version>${paho.version}</version>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>org.eclipse.paho</groupId>
-                  
-            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
-                  
-            <version>${paho.version}</version>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>org.mockito</groupId>
-                  
-            <artifactId>mockito-core</artifactId>
-                  
-            <version>${mockito.version}</version>
-                  
-            <scope>test</scope>
-                
-        </dependency>
-            
-        <dependency>
-                  
-            <groupId>org.testcontainers</groupId>
-                  
-            <artifactId>testcontainers</artifactId>
-                  
-            <scope>test</scope>
-                  
-            <version>1.15.1</version>
-                
-        </dependency>
-          
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-dependencies</artifactId>
+        <version>${stack.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
-      
-    <licenses>
-            
-        <license>
-                  
-            <name>The Apache License, Version 2.0</name>
-                  
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-                
-        </license>
-          
-    </licenses>
-    
+  </dependencyManagement>
+
+  <name>Vert.x MQTT</name>
+  <description>Vert.x MQTT reactive client and server</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-mqtt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-haproxy</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-docgen</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-unit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+      <version>${paho.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
+      <version>${paho.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+      <version>1.15.1</version>
+    </dependency>
+  </dependencies>
+
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
 </project>
