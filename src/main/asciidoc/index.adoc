@@ -20,7 +20,7 @@ of your build descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.vertx:vertx-mqtt:${maven.version}
+compile "io.vertx:vertx-mqtt:${maven.version}"
 ----
 
 == Vert.x MQTT server
@@ -269,7 +269,7 @@ them in a round-robin fashion to any of the connect handlers executed on differe
 This component provides an link:http://mqtt.org/[MQTT] client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
 for connecting/disconnecting to a broker, publishing messages (with all three different levels of QoS) and subscribing to topics.
 
-WARNING: this module has the tech preview status, this means the API can change between versions.
+WARNING: This module has the tech preview status, this means the API can change between versions.
 
 === Connect/Disconnect
 The client gives you opportunity to connect to a server and disconnect from it.
@@ -282,7 +282,7 @@ and calling {@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String)} and 
 ----
 {@link examples.VertxMqttClientExamples#example1}
 ----
-NOTE: default address of server provided by {@link io.vertx.mqtt.MqttClientOptions} is localhost:1883 and localhost:8883 if you are using SSL/TSL.
+NOTE: The default address of the server provided by {@link io.vertx.mqtt.MqttClientOptions} is localhost:1883 and localhost:8883 if you are using SSL/TSL.
 
 === Subscribe to a topic
 
@@ -305,7 +305,7 @@ Let's take a look at the example:
 ----
 {@link examples.VertxMqttClientExamples#example3}
 ----
-In the example we send message to topic with name "temperature".
+In the example, we send message to topic with name "temperature".
 
 === Handling server auth request/Sending AUTH packet to server(Only in MQTT version 5)
 
@@ -326,7 +326,7 @@ which brings the reason code, the authentication method and data.
 In order to keep connection with server you should time to time send something to server otherwise server will close the connection.
 The right way to keep connection alive is a {@link io.vertx.mqtt.MqttClient#ping()} method.
 
-IMPORTANT: by default you client keep connections with server automatically. That means that you don't need to call {@link io.vertx.mqtt.MqttClient#ping()} in order to keep connections with server.
+IMPORTANT: By default, your client keep connections with server automatically. That means that you don't need to call {@link io.vertx.mqtt.MqttClient#ping()} in order to keep connections with server.
 The {@link io.vertx.mqtt.MqttClient} will do it for you.
 
 If you want to disable this feature then you should call {@link io.vertx.mqtt.MqttClientOptions#setAutoKeepAlive(boolean)} with `false` as argument:
@@ -340,10 +340,12 @@ If you want to disable this feature then you should call {@link io.vertx.mqtt.Mq
 +
 You could provide handler by calling {@link io.vertx.mqtt.MqttClient#publishCompletionHandler(io.vertx.core.Handler)}. The handler will be called each time publish is completed.
 This one is pretty useful because you could see the packetId of just received PUBACK or PUBCOMP packet.
++
 [source,$lang]
 ----
 {@link examples.VertxMqttClientExamples#example5}
 ----
++
 WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 
 * subscribe completed
@@ -377,7 +379,7 @@ WARNING: The handler WILL NOT BE CALLED if sent publish packet with QoS=0.
 
 You can connect to an MQTT server using TLS by configuring the client TCP options, make sure to set:
 
-- the ssl flag
+- the SSL flag
 - the server certificate or the trust all flag
 - the hostname verification algorithm to `"HTTPS"` if you want to verify the server identity otherwise `""`
 
@@ -386,7 +388,7 @@ You can connect to an MQTT server using TLS by configuring the client TCP option
 {@link examples.VertxMqttClientExamples#tls}
 ----
 
-NOTE: more details on the TLS client config can be found https://vertx.io/docs/vertx-core/java/#_enabling_ssltls_on_the_client[here]
+NOTE: More details on the TLS client config can be found https://vertx.io/docs/vertx-core/java/#_enabling_ssltls_on_the_client[here]
 
 === Use proxy protocol
 
@@ -397,7 +399,7 @@ NOTE: more details on the TLS client config can be found https://vertx.io/docs/v
 
 If your servers are behind haproxy or nginx and you want to get the client's original ip and port, then you need to set `setUseProxyProtocol` to `true`
 
-IMPORTANT: to enable this feature, you need to add dependency `netty-codec-haproxy`, but it is not introduced by default, so you need to manually add it
+IMPORTANT: To enable this feature, you need to add dependency `netty-codec-haproxy`, but it is not introduced by default, so you need to manually add it
 
 * Maven (in your `pom.xml`):
 
@@ -414,5 +416,5 @@ IMPORTANT: to enable this feature, you need to add dependency `netty-codec-hapro
 
 [source,groovy,subs="+attributes"]
 ----
-compile io.netty:netty-codec-haproxy:${maven.version}
+compile "io.netty:netty-codec-haproxy:${maven.version}"
 ----
