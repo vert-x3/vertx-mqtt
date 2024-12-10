@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@ModuleGen(name = "vertx-mqtt", groupPackage = "io.vertx", useFutures = true)
+@ModuleGen(name = "vertx-mqtt", groupPackage = "io.vertx")
 package io.vertx.mqtt;
 
 import io.vertx.codegen.annotations.ModuleGen;
