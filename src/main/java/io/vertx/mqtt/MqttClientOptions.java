@@ -201,15 +201,6 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   /**
-   * @return will message content
-   */
-  @Deprecated
-  @GenIgnore
-  public String getWillMessage() {
-    return willMessageBytes.toString(StandardCharsets.UTF_8);
-  }
-
-  /**
    * @return will message bytes content
    */
   public Buffer getWillMessageBytes() {
@@ -257,19 +248,6 @@ public class MqttClientOptions extends NetClientOptions {
    */
   public MqttClientOptions setWillTopic(String willTopic) {
     this.willTopic = willTopic;
-    return this;
-  }
-
-  /**
-   * Set the content of the will message
-   *
-   * @param willMessage content of the will message
-   * @return current options instance
-   */
-  @Deprecated
-  @GenIgnore
-  public MqttClientOptions setWillMessage(String willMessage) {
-    this.willMessageBytes = Buffer.buffer(willMessage.getBytes(StandardCharsets.UTF_8));
     return this;
   }
 
