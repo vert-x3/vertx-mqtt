@@ -119,6 +119,9 @@ public class MqttClientConnectIT extends MqttClientBaseIT {
         MqttConnectionException connEx = (MqttConnectionException) err;
         assertEquals(connEx.code(), MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
         assertFalse(client.isConnected());
+        // Ensure server and Vertx are closed
+        server.close().onComplete(context.asyncAssertSuccess());
+        vertx.close();
       }));
   }
 }
