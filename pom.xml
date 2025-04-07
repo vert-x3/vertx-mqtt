@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>vertx-mqtt</artifactId>
-  <version>5.0.0.CR6</version>
+  <version>5.0.0-SNAPSHOT</version>
 
   <scm>
     <connection>scm:git:git@github.com:vert-x3/vertx-mqtt.git</connection>
