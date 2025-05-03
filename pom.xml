@@ -43,6 +43,12 @@
   <name>Vert.x MQTT</name>
   <description>Vert.x MQTT reactive client and server</description>
 
+  <scm>
+    <connection>scm:git:git@github.com:vert-x3/vertx-mqtt.git</connection>
+    <developerConnection>scm:git:git@github.com:vert-x3/vertx-mqtt.git</developerConnection>
+    <url>git@github.com:vert-x3/vertx-mqtt.git</url>
+  </scm>
+
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
