@@ -168,6 +168,18 @@ public class MqttClientImpl implements MqttClient {
     }
   }
 
+  
+  @Override
+  public SocketAddress localAddress() {
+    return connection.localAddress();
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    return connection.remoteAddress();
+  }
+
+
   @Override
   public Future<MqttConnAckMessage> connect(int port, String host) {
 
