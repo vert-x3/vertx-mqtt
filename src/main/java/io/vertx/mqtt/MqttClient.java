@@ -19,6 +19,7 @@ package io.vertx.mqtt;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -268,4 +269,18 @@ public interface MqttClient {
    * @return if the connection between client and remote server is established/open
    */
   boolean isConnected();
+
+    /**
+   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket).
+   * If {@code useProxyProtocol} is set to {@code true}, the address returned will be of the actual connecting client.
+   */
+  @CacheReturn
+  SocketAddress remoteAddress();
+
+  /**
+   * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
+   * If {@code useProxyProtocol} is set to {@code true}, the address returned will be of the proxy.
+   */
+  @CacheReturn
+  SocketAddress localAddress();
 }
