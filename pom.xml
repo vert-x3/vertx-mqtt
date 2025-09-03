@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>vertx-mqtt</artifactId>
-  <version>4.5.21-SNAPSHOT</version>
+  <version>4.5.21</version>
 
   <developers>
     <developer>
