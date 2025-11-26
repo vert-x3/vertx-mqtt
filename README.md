@@ -31,7 +31,7 @@ Run all tests. The client is tested with a Docker container started by Maven on 
 > mvn verify -Plocal_test
 ```
 
-Like above but with an manual Docker container start/stop.
+Like above but with a manual Docker container start/stop.
 
 ```
 > docker run -d -p 1884:1883 ansi/mosquitto
