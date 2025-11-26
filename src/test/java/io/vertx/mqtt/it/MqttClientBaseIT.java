@@ -30,7 +30,7 @@ import org.testcontainers.utility.DockerImageName;
 public abstract class MqttClientBaseIT {
 
   @Rule
-  public GenericContainer redis = new GenericContainer(DockerImageName.parse("ansi/mosquitto"))
+  public GenericContainer<?> mosquitto = new GenericContainer<>(DockerImageName.parse("ansi/mosquitto"))
     .withExposedPorts(1883);
 
   protected int port;
@@ -38,7 +38,7 @@ public abstract class MqttClientBaseIT {
 
   @Before
   public void setUp() {
-    port = redis.getMappedPort(1883);
-    host = redis.getHost();
+    port = mosquitto.getMappedPort(1883);
+    host = mosquitto.getHost();
   }
 }
