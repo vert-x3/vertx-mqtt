@@ -18,6 +18,7 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
@@ -76,6 +77,7 @@ public class MqttClientImpl implements MqttClient {
   private final VertxInternal vertx;
   private final MqttClientOptions options;
   private NetSocketInternal connection;
+  private ChannelConfig connOption;
   private ContextInternal ctx;
 
   // handler to call when a publish is complete
@@ -245,6 +247,7 @@ public class MqttClientImpl implements MqttClient {
           initChannel(soi);
           synchronized (MqttClientImpl.this) {
             this.connection = soi;
+            this.connOption = soi.channelHandlerContext().channel().config();
           }
 
           soi.messageHandler(msg -> this.handleMessage(soi.channelHandlerContext(), msg));
@@ -252,6 +255,7 @@ public class MqttClientImpl implements MqttClient {
             client.close();
             synchronized (MqttClientImpl.this) {
               this.connection = null;
+              this.connOption = null;
               this.status = Status.CLOSED;
               this.connectPromise = null;
               this.disconnectPromise = null;
@@ -722,6 +726,20 @@ public class MqttClientImpl implements MqttClient {
   }
 
   @Override
+  public synchronized void pause() {
+    connOption.setAutoRead(false);
+  }
+
+  public synchronized boolean isPaused() {
+    return connOption.isAutoRead();
+  }
+
+  @Override
+  public synchronized void resume() {
+    connOption.setAutoRead(true);
+  }
+
+  @Override
   public synchronized String clientId() {
     return this.options.getClientId();
   }
@@ -881,6 +899,7 @@ public class MqttClientImpl implements MqttClient {
       this.disconnectPromise = null;
       this.status = Status.CLOSED;
       this.connection = null;
+      this.connOption = null;
       this.ctx = null;
       this.client = null;
       this.pings = new ArrayDeque<>();
@@ -1274,6 +1293,7 @@ public class MqttClientImpl implements MqttClient {
         this.disconnectPromise = null;
         this.status = Status.CLOSED;
         this.connection = null;
+        this.connOption = null;
         this.client = null;
       }
       connection.closeHandler(null);
