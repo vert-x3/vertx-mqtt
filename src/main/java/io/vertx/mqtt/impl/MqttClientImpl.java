@@ -665,6 +665,16 @@ public class MqttClientImpl implements MqttClient {
   }
 
   @Override
+  public void pause() {
+    connection.pause();
+  }
+
+  @Override
+  public void resume() {
+    connection.resume();
+  }
+
+  @Override
   public synchronized String clientId() {
     return this.options.getClientId();
   }
