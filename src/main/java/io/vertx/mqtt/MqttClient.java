@@ -260,6 +260,23 @@ public interface MqttClient {
   MqttClient ping();
 
   /**
+   * Pause the reading channel, so no new byte are read from the server.
+   * Available after connection is established.
+   * <p>
+   * This simply delegates to {@link io.vertx.core.net.NetSocket#pause()}.
+   */
+  void pause();
+
+
+  /**
+   * Resume the reading channel. see {@link #pause()}
+   * Available after connection is established.
+   * <p>
+   * This simply delegates to {@link io.vertx.core.net.NetSocket#resume()}.
+   */
+  void resume();
+
+  /**
    * @return the client identifier
    */
   String clientId();
