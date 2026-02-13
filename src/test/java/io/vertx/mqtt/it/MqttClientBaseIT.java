@@ -18,7 +18,6 @@ package io.vertx.mqtt.it;
 
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -29,8 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 @RunWith(VertxUnitRunner.class)
 public abstract class MqttClientBaseIT {
 
-  @Rule
-  public GenericContainer<?> mosquitto = new GenericContainer<>(DockerImageName.parse("ansi/mosquitto"))
+  public GenericContainer mosquitto = new GenericContainer(DockerImageName.parse("ansi/mosquitto"))
     .withExposedPorts(1883);
 
   protected int port;
@@ -38,6 +36,7 @@ public abstract class MqttClientBaseIT {
 
   @Before
   public void setUp() {
+    mosquitto.start();
     port = mosquitto.getMappedPort(1883);
     host = mosquitto.getHost();
   }
