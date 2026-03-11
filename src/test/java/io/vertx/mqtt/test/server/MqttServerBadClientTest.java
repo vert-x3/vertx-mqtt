@@ -201,7 +201,7 @@ public class MqttServerBadClientTest extends MqttServerBaseTest {
       options.hasPassword(),
       options.isWillRetain(),
       options.getWillQoS(),
-      options.isWillFlag(),
+      options.getWillTopic() != null && options.getWillMessageBytes() != null,
       options.isCleanSession(),
       options.getKeepAliveInterval()
     );

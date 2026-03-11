@@ -19,6 +19,7 @@ package io.vertx.mqtt;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -28,6 +29,13 @@ import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.messages.MqttUnsubAckMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
 
 import java.util.List;
 import java.util.Map;
@@ -77,6 +85,17 @@ public interface MqttClient {
    * @return a future notified when the connect call ends
    */
   Future<MqttConnAckMessage> connect(int port, String host, String serverName);
+  
+  /**
+   * Connects to an MQTT server calling connectHandler after connection
+   *
+   * @param port  port of the MQTT server
+   * @param host  hostname/ip address of the MQTT server
+   * @param serverName  the SNI server name
+   * @param userProperties Connect User Properties
+   * @return a future notified when the connect call ends
+   */
+  Future<MqttConnAckMessage> connect(int port, String host, String serverName, Map<String, String> userProperties);
 
   /**
    * Disconnects from the MQTT server
@@ -84,6 +103,16 @@ public interface MqttClient {
    * @return a {@code Future} of the asynchronous result
    */
   Future<Void> disconnect();
+
+  /**
+   * Disconnects from the MQTT server
+   *
+   * @param code reason code for the disconnect
+   * @param properties MQTT properties
+   * @return a {@code Future} of the asynchronous result
+   */
+  @GenIgnore
+  Future<Void> disconnect(MqttDisconnectReasonCode code, MqttProperties properties);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server
@@ -133,6 +162,50 @@ public interface MqttClient {
   MqttClient publishCompletionExpirationHandler(Handler<Integer> publishCompletionExpirationHandler);
 
   /**
+   * Sends PUBACK packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBACK packet sent
+   */
+  @GenIgnore
+  Future<Void> publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties properties);
+
+  /**
+   * Sends PUBREC packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBREC packet sent
+   */
+  @GenIgnore
+  Future<Void> publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties);
+
+  /**
+   * Sends PUBREL packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBREL packet sent
+   */
+  @GenIgnore
+  Future<Void> publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties);
+
+  /**
+   * Sends PUBCOMP packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBCOMP packet sent
+   */
+  @GenIgnore
+  Future<Void> publishComplete(int publishMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties);
+
+  /**
    * Sets a handler which will be called when the client receives a PUBACK/PUBREC/PUBCOMP with an unknown
    * packet ID.
    *
@@ -177,6 +250,16 @@ public interface MqttClient {
    */
   Future<Integer> subscribe(Map<String, Integer> topics);
 
+  /**
+   * Subscribes to the topics with related QoS levels
+   *
+   * @param topics topics and related QoS levels to subscribe to
+   * @param properties MQTT properties
+   * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
+   */
+  @GenIgnore
+  Future<Integer> subscribe(Map<String, Integer> topics, MqttProperties properties);
+
 
   /**
    * Sets handler which will be called after UNSUBACK packet receiving
@@ -186,6 +269,15 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient unsubscribeCompletionHandler(Handler<Integer> unsubscribeCompletionHandler);
+
+  /**
+   * Sets handler which will be called after UNSUBACK packet receiving
+   *
+   * @param unsubscribeCompletionMessageHandler handler to call with the unsubscribe message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient unsubscribeCompletionMessageHandler(Handler<MqttUnsubAckMessage> unsubscribeCompletionMessageHandler);
 
   /**
    * Unsubscribe from receiving messages on given topic
@@ -202,6 +294,16 @@ public interface MqttClient {
    * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
   Future<Integer> unsubscribe(List<String> topics);
+
+  /**
+   * Unsubscribe from receiving messages on given list of topic
+   *
+   * @param topics list of topics you want to unsubscribe from
+   * @param properties MQTT properties
+   * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
+   */
+  @GenIgnore
+  Future<Integer> unsubscribe(List<String> topics, MqttProperties properties);
 
   /**
    * Sets handler which will be called after AUTH packet receiving
