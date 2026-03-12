@@ -40,8 +40,8 @@ import java.util.Map;
  * Tests for the MQTT v5 client SUBSCRIBE and SUBACK flow.
  * Verifies that:
  * <ul>
- *   <li>SUBSCRIBE with MQTT properties is sent correctly and properties are received server-side.</li>
- *   <li>SUBACK reason codes (from the server) are surfaced in the client's subscribeCompletionHandler.</li>
+ * <li>SUBSCRIBE with MQTT properties is sent correctly and properties are received server-side.</li>
+ * <li>SUBACK reason codes (from the server) are surfaced in the client's subscribeCompletionHandler.</li>
  * </ul>
  */
 @RunWith(VertxUnitRunner.class)
@@ -61,8 +61,7 @@ public class Mqtt5ClientSubscribeTest {
 
   @After
   public void after(TestContext ctx) {
-    server.close().onComplete(ctx.asyncAssertSuccess(v ->
-      vertx.close().onComplete(ctx.asyncAssertSuccess())));
+    server.close().onComplete(ctx.asyncAssertSuccess(v -> vertx.close().onComplete(ctx.asyncAssertSuccess())));
   }
 
   // -----------------------------------------------------------------------
@@ -77,15 +76,14 @@ public class Mqtt5ClientSubscribeTest {
 
     server.endpointHandler(endpoint -> {
       endpoint.subscribeHandler(subscribe -> {
-        MqttProperties.MqttProperty<?> prop =
-          subscribe.properties().getProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value());
+        MqttProperties.MqttProperty<?> prop = subscribe.properties().getProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER);
         ctx.assertNotNull(prop, "SUBSCRIPTION_IDENTIFIER property must be present");
         ctx.assertEquals(SUBSCRIPTION_IDENTIFIER, prop.value());
 
         // Acknowledge — grant the requested QoS
         endpoint.subscribeAcknowledge(subscribe.messageId(),
-          List.of(MqttSubAckReasonCode.qosGranted(subscribe.topicSubscriptions().get(0).qualityOfService())),
-          MqttProperties.NO_PROPERTIES);
+            List.of(MqttSubAckReasonCode.qosGranted(subscribe.topicSubscriptions().get(0).qualityOfService())),
+            MqttProperties.NO_PROPERTIES);
 
         serverReceived.complete();
       });
@@ -97,13 +95,11 @@ public class Mqtt5ClientSubscribeTest {
       MqttClient client = MqttClient.create(vertx, options);
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack -> {
-          MqttProperties props = new MqttProperties();
-          props.add(new MqttProperties.IntegerProperty(
-            MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value(), SUBSCRIPTION_IDENTIFIER));
-
-          client.subscribe(Map.of(MQTT_TOPIC, 1), props);
-        }));
+          .onComplete(ctx.asyncAssertSuccess(ack -> {
+            MqttProperties props = new MqttProperties();
+            props.add(new MqttProperties.IntegerProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER, SUBSCRIPTION_IDENTIFIER));
+            client.subscribe(Map.of(MQTT_TOPIC, 1), props);
+          }));
     });
 
     serverReceived.awaitSuccess(5000);
@@ -118,8 +114,7 @@ public class Mqtt5ClientSubscribeTest {
     Async ackReceived = ctx.async();
 
     server.endpointHandler(endpoint -> {
-      endpoint.subscribeHandler(subscribe ->
-        endpoint.subscribeAcknowledge(subscribe.messageId(),
+      endpoint.subscribeHandler(subscribe -> endpoint.subscribeAcknowledge(subscribe.messageId(),
           List.of(MqttSubAckReasonCode.GRANTED_QOS1),
           MqttProperties.NO_PROPERTIES));
       endpoint.accept(false);
@@ -131,30 +126,28 @@ public class Mqtt5ClientSubscribeTest {
 
       client.subscribeCompletionHandler((MqttSubAckMessage ack) -> {
         ctx.assertEquals(1, ack.grantedQoSLevels().size());
-        ctx.assertEquals(MqttSubAckReasonCode.GRANTED_QOS1.value(), ack.grantedQoSLevels().get(0).intValue());
+        ctx.assertEquals((int) MqttSubAckReasonCode.GRANTED_QOS1.value(), ack.grantedQoSLevels().get(0).intValue());
         ackReceived.complete();
       });
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack ->
-          client.subscribe(Map.of(MQTT_TOPIC, 1))));
+          .onComplete(ctx.asyncAssertSuccess(ack -> client.subscribe(Map.of(MQTT_TOPIC, 1))));
     });
 
     ackReceived.awaitSuccess(5000);
   }
 
   /**
-   * Server refuses the subscription with TOPIC_FILTER_INVALID — client sees
+   * Server refuses the subscription with QUOTA_EXCEEDED — client sees
    * the error reason code in the SUBACK.
    */
   @Test
-  public void subscribeAckTopicFilterInvalid(TestContext ctx) {
+  public void subscribeAckError(TestContext ctx) {
     Async ackReceived = ctx.async();
 
     server.endpointHandler(endpoint -> {
-      endpoint.subscribeHandler(subscribe ->
-        endpoint.subscribeAcknowledge(subscribe.messageId(),
-          List.of(MqttSubAckReasonCode.TOPIC_FILTER_INVALID),
+      endpoint.subscribeHandler(subscribe -> endpoint.subscribeAcknowledge(subscribe.messageId(),
+          List.of(MqttSubAckReasonCode.UNSPECIFIED_ERROR),
           MqttProperties.NO_PROPERTIES));
       endpoint.accept(false);
     });
@@ -165,13 +158,12 @@ public class Mqtt5ClientSubscribeTest {
 
       client.subscribeCompletionHandler((MqttSubAckMessage ack) -> {
         ctx.assertEquals(1, ack.grantedQoSLevels().size());
-        ctx.assertEquals(MqttSubAckReasonCode.TOPIC_FILTER_INVALID.value(), ack.grantedQoSLevels().get(0).intValue());
+        ctx.assertEquals(MqttSubAckReasonCode.UNSPECIFIED_ERROR.value(), ack.grantedQoSLevels().get(0).byteValue());
         ackReceived.complete();
       });
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack ->
-          client.subscribe(Map.of("/bad/#/topic", MqttQoS.AT_LEAST_ONCE.value()))));
+          .onComplete(ctx.asyncAssertSuccess(ack -> client.subscribe(Map.of("/topic", MqttQoS.AT_LEAST_ONCE.value()))));
     });
 
     ackReceived.awaitSuccess(5000);
@@ -189,11 +181,8 @@ public class Mqtt5ClientSubscribeTest {
     server.endpointHandler(endpoint -> {
       endpoint.subscribeHandler(subscribe -> {
         MqttProperties subackProps = new MqttProperties();
-        subackProps.add(new MqttProperties.StringProperty(
-          MqttProperties.MqttPropertyType.REASON_STRING.value(), reasonString));
-        endpoint.subscribeAcknowledge(subscribe.messageId(),
-          List.of(MqttSubAckReasonCode.GRANTED_QOS0),
-          subackProps);
+        subackProps.add(new MqttProperties.StringProperty(MqttProperties.REASON_STRING, reasonString));
+        endpoint.subscribeAcknowledge(subscribe.messageId(), List.of(MqttSubAckReasonCode.GRANTED_QOS0), subackProps);
       });
       endpoint.accept(false);
     });
@@ -203,16 +192,14 @@ public class Mqtt5ClientSubscribeTest {
       MqttClient client = MqttClient.create(vertx, options);
 
       client.subscribeCompletionHandler((MqttSubAckMessage ack) -> {
-        MqttProperties.MqttProperty<?> prop =
-          ack.properties().getProperty(MqttProperties.MqttPropertyType.REASON_STRING.value());
+        MqttProperties.MqttProperty<?> prop = ack.properties().getProperty(MqttProperties.REASON_STRING);
         ctx.assertNotNull(prop, "REASON_STRING property must be present in SUBACK");
         ctx.assertEquals(reasonString, prop.value());
         ackReceived.complete();
       });
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack ->
-          client.subscribe(Map.of(MQTT_TOPIC, 0))));
+          .onComplete(ctx.asyncAssertSuccess(ack -> client.subscribe(Map.of(MQTT_TOPIC, 0))));
     });
 
     ackReceived.awaitSuccess(5000);

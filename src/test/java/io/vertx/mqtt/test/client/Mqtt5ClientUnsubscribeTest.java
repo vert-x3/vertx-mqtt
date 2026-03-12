@@ -40,9 +40,9 @@ import java.util.Map;
  * Tests for the MQTT v5 client UNSUBSCRIBE and UNSUBACK flow.
  * Verifies that:
  * <ul>
- *   <li>UNSUBSCRIBE with MQTT properties is sent correctly and properties reach the server.</li>
- *   <li>UNSUBACK reason codes (from the server) are surfaced in the client via
- *       {@link MqttClient#unsubscribeCompletionMessageHandler}.</li>
+ * <li>UNSUBSCRIBE with MQTT properties is sent correctly and properties reach the server.</li>
+ * <li>UNSUBACK reason codes (from the server) are surfaced in the client via
+ * {@link MqttClient#unsubscribeCompletionMessageHandler}.</li>
  * </ul>
  */
 @RunWith(VertxUnitRunner.class)
@@ -61,15 +61,14 @@ public class Mqtt5ClientUnsubscribeTest {
 
   @After
   public void after(TestContext ctx) {
-    server.close().onComplete(ctx.asyncAssertSuccess(v ->
-      vertx.close().onComplete(ctx.asyncAssertSuccess())));
+    server.close().onComplete(ctx.asyncAssertSuccess(v -> vertx.close().onComplete(ctx.asyncAssertSuccess())));
   }
 
   // -----------------------------------------------------------------------
 
   /**
    * Client subscribes, then unsubscribes — server should fire unsubscribeHandler
-   * and acknowledge with SUCCESS.  The client's unsubscribeCompletionMessageHandler
+   * and acknowledge with SUCCESS. The client's unsubscribeCompletionMessageHandler
    * must receive an MqttUnsubAckMessage with the SUCCESS reason code.
    */
   @Test
@@ -77,12 +76,10 @@ public class Mqtt5ClientUnsubscribeTest {
     Async ackReceived = ctx.async();
 
     server.endpointHandler(endpoint -> {
-      endpoint.subscribeHandler(subscribe ->
-        endpoint.subscribeAcknowledge(subscribe.messageId(),
+      endpoint.subscribeHandler(subscribe -> endpoint.subscribeAcknowledge(subscribe.messageId(),
           List.of(MqttSubAckReasonCode.GRANTED_QOS0), MqttProperties.NO_PROPERTIES));
 
-      endpoint.unsubscribeHandler(unsubscribe ->
-        endpoint.unsubscribeAcknowledge(unsubscribe.messageId(),
+      endpoint.unsubscribeHandler(unsubscribe -> endpoint.unsubscribeAcknowledge(unsubscribe.messageId(),
           List.of(MqttUnsubAckReasonCode.SUCCESS), MqttProperties.NO_PROPERTIES));
 
       endpoint.accept(false);
@@ -94,15 +91,13 @@ public class Mqtt5ClientUnsubscribeTest {
 
       client.unsubscribeCompletionMessageHandler((MqttUnsubAckMessage ack) -> {
         ctx.assertEquals(1, ack.reasonCodes().size());
-        ctx.assertEquals(MqttUnsubAckReasonCode.SUCCESS.value(), ack.reasonCodes().get(0));
+        ctx.assertEquals(MqttUnsubAckReasonCode.SUCCESS.value(), ack.reasonCodes().get(0).byteValue());
         ackReceived.complete();
       });
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(connAck ->
-          client.subscribe(Map.of(MQTT_TOPIC, 0))
-            .onComplete(ctx.asyncAssertSuccess(subId ->
-              client.unsubscribe(List.of(MQTT_TOPIC))))));
+          .onComplete(ctx.asyncAssertSuccess(connAck -> client.subscribe(Map.of(MQTT_TOPIC, 0))
+              .onComplete(ctx.asyncAssertSuccess(subId -> client.unsubscribe(List.of(MQTT_TOPIC))))));
     });
 
     ackReceived.awaitSuccess(5000);
@@ -117,8 +112,7 @@ public class Mqtt5ClientUnsubscribeTest {
     Async ackReceived = ctx.async();
 
     server.endpointHandler(endpoint -> {
-      endpoint.unsubscribeHandler(unsubscribe ->
-        endpoint.unsubscribeAcknowledge(unsubscribe.messageId(),
+      endpoint.unsubscribeHandler(unsubscribe -> endpoint.unsubscribeAcknowledge(unsubscribe.messageId(),
           List.of(MqttUnsubAckReasonCode.NO_SUBSCRIPTION_EXISTED), MqttProperties.NO_PROPERTIES));
 
       endpoint.accept(false);
@@ -130,13 +124,12 @@ public class Mqtt5ClientUnsubscribeTest {
 
       client.unsubscribeCompletionMessageHandler((MqttUnsubAckMessage ack) -> {
         ctx.assertEquals(1, ack.reasonCodes().size());
-        ctx.assertEquals(MqttUnsubAckReasonCode.NO_SUBSCRIPTION_EXISTED.value(), ack.reasonCodes().get(0));
+        ctx.assertEquals(MqttUnsubAckReasonCode.NO_SUBSCRIPTION_EXISTED.value(), ack.reasonCodes().get(0).byteValue());
         ackReceived.complete();
       });
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(connAck ->
-          client.unsubscribe(List.of(MQTT_TOPIC))));
+          .onComplete(ctx.asyncAssertSuccess(connAck -> client.unsubscribe(List.of(MQTT_TOPIC))));
     });
 
     ackReceived.awaitSuccess(5000);
@@ -155,7 +148,7 @@ public class Mqtt5ClientUnsubscribeTest {
       endpoint.unsubscribeHandler(unsubscribe -> {
         // Echo back that we received the message (testing the send-side)
         endpoint.unsubscribeAcknowledge(unsubscribe.messageId(),
-          List.of(MqttUnsubAckReasonCode.SUCCESS), MqttProperties.NO_PROPERTIES);
+            List.of(MqttUnsubAckReasonCode.SUCCESS), MqttProperties.NO_PROPERTIES);
         serverReceived.complete();
       });
       endpoint.accept(false);
@@ -166,12 +159,11 @@ public class Mqtt5ClientUnsubscribeTest {
       MqttClient client = MqttClient.create(vertx, options);
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(connAck -> {
-          MqttProperties props = new MqttProperties();
-          props.add(new MqttProperties.UserProperty(userPropKey, userPropValue));
-
-          client.unsubscribe(List.of(MQTT_TOPIC), props);
-        }));
+          .onComplete(ctx.asyncAssertSuccess(connAck -> {
+            MqttProperties props = new MqttProperties();
+            props.add(new MqttProperties.UserProperty(userPropKey, userPropValue));
+            client.unsubscribe(List.of(MQTT_TOPIC), props);
+          }));
     });
 
     serverReceived.awaitSuccess(5000);
@@ -189,10 +181,9 @@ public class Mqtt5ClientUnsubscribeTest {
     server.endpointHandler(endpoint -> {
       endpoint.unsubscribeHandler(unsubscribe -> {
         MqttProperties subackProps = new MqttProperties();
-        subackProps.add(new MqttProperties.StringProperty(
-          MqttProperties.MqttPropertyType.REASON_STRING.value(), reasonString));
+        subackProps.add(new MqttProperties.StringProperty(MqttProperties.REASON_STRING, reasonString));
         endpoint.unsubscribeAcknowledge(unsubscribe.messageId(),
-          List.of(MqttUnsubAckReasonCode.NO_SUBSCRIPTION_EXISTED), subackProps);
+            List.of(MqttUnsubAckReasonCode.NO_SUBSCRIPTION_EXISTED), subackProps);
       });
       endpoint.accept(false);
     });
@@ -202,16 +193,14 @@ public class Mqtt5ClientUnsubscribeTest {
       MqttClient client = MqttClient.create(vertx, options);
 
       client.unsubscribeCompletionMessageHandler((MqttUnsubAckMessage ack) -> {
-        MqttProperties.MqttProperty<?> prop =
-          ack.properties().getProperty(MqttProperties.MqttPropertyType.REASON_STRING.value());
+        MqttProperties.MqttProperty<?> prop = ack.properties().getProperty(MqttProperties.REASON_STRING);
         ctx.assertNotNull(prop, "REASON_STRING must be present in UNSUBACK");
         ctx.assertEquals(reasonString, prop.value());
         ackReceived.complete();
       });
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(connAck ->
-          client.unsubscribe(List.of(MQTT_TOPIC))));
+          .onComplete(ctx.asyncAssertSuccess(connAck -> client.unsubscribe(List.of(MQTT_TOPIC))));
     });
 
     ackReceived.awaitSuccess(5000);

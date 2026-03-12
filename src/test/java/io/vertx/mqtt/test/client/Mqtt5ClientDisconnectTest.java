@@ -48,8 +48,7 @@ public class Mqtt5ClientDisconnectTest {
 
   @After
   public void after(TestContext ctx) {
-    server.close().onComplete(ctx.asyncAssertSuccess(v ->
-      vertx.close().onComplete(ctx.asyncAssertSuccess())));
+    server.close().onComplete(ctx.asyncAssertSuccess(v -> vertx.close().onComplete(ctx.asyncAssertSuccess())));
   }
 
   // -----------------------------------------------------------------------
@@ -72,9 +71,8 @@ public class Mqtt5ClientDisconnectTest {
 
       MqttClient client = MqttClient.create(vertx, options);
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack ->
-          client.disconnect(MqttDisconnectReasonCode.NORMAL, MqttProperties.NO_PROPERTIES)
-            .onComplete(ctx.asyncAssertSuccess())));
+          .onComplete(ctx.asyncAssertSuccess(ack -> client.disconnect(MqttDisconnectReasonCode.NORMAL, MqttProperties.NO_PROPERTIES)
+              .onComplete(ctx.asyncAssertSuccess())));
     });
 
     disconnected.awaitSuccess(5000);
@@ -99,9 +97,8 @@ public class Mqtt5ClientDisconnectTest {
 
       MqttClient client = MqttClient.create(vertx, options);
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack ->
-          client.disconnect(MqttDisconnectReasonCode.SESSION_TAKEN_OVER, MqttProperties.NO_PROPERTIES)
-            .onComplete(ctx.asyncAssertSuccess())));
+          .onComplete(ctx.asyncAssertSuccess(ack -> client.disconnect(MqttDisconnectReasonCode.SESSION_TAKEN_OVER, MqttProperties.NO_PROPERTIES)
+              .onComplete(ctx.asyncAssertSuccess())));
     });
 
     disconnected.awaitSuccess(5000);
@@ -122,16 +119,15 @@ public class Mqtt5ClientDisconnectTest {
 
       MqttClient client = MqttClient.create(vertx, options);
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack1 ->
-          client.disconnect(MqttDisconnectReasonCode.NORMAL, MqttProperties.NO_PROPERTIES)
-            .onComplete(ctx.asyncAssertSuccess(v -> {
-              ctx.assertFalse(client.isConnected());
-              client.connect(server.actualPort(), "localhost")
-                .onComplete(ctx.asyncAssertSuccess(ack2 -> {
-                  ctx.assertTrue(client.isConnected());
-                  reconnected.complete();
-                }));
-            }))));
+          .onComplete(ctx.asyncAssertSuccess(ack1 -> client.disconnect(MqttDisconnectReasonCode.NORMAL, MqttProperties.NO_PROPERTIES)
+              .onComplete(ctx.asyncAssertSuccess(v -> {
+                ctx.assertFalse(client.isConnected());
+                client.connect(server.actualPort(), "localhost")
+                    .onComplete(ctx.asyncAssertSuccess(ack2 -> {
+                      ctx.assertTrue(client.isConnected());
+                      reconnected.complete();
+                    }));
+              }))));
     });
 
     reconnected.awaitSuccess(8000);
