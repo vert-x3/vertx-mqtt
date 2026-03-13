@@ -127,6 +127,16 @@ public class MqttClientOptionsConverter {
             obj.setRequestProblemInformation((Boolean)member.getValue());
           }
           break;
+        case "authenticationMethod":
+          if (member.getValue() instanceof String) {
+            obj.setAuthenticationMethod((String)member.getValue());
+          }
+          break;
+        case "authenticationData":
+          if (member.getValue() instanceof String) {
+            obj.setAuthenticationData(io.vertx.core.buffer.Buffer.fromJson((String)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -182,6 +192,12 @@ public class MqttClientOptionsConverter {
     }
     if (obj.getRequestProblemInformation() != null) {
       json.put("requestProblemInformation", obj.getRequestProblemInformation());
+    }
+    if (obj.getAuthenticationMethod() != null) {
+      json.put("authenticationMethod", obj.getAuthenticationMethod());
+    }
+    if (obj.getAuthenticationData() != null) {
+      json.put("authenticationData", obj.getAuthenticationData().toJson());
     }
   }
 }

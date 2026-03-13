@@ -67,6 +67,8 @@ public class MqttClientOptions extends NetClientOptions {
   private Integer topicAliasMaximum = DEFAULT_TOPIC_ALIAS_MAXIMUM;
   private Boolean requestResponseInformation = null;
   private Boolean requestProblemInformation = null;
+  private String authenticationMethod = null;
+  private Buffer authenticationData = null;
 
   /**
    * Default constructor
@@ -131,6 +133,8 @@ public class MqttClientOptions extends NetClientOptions {
     this.topicAliasMaximum = other.topicAliasMaximum;
     this.requestResponseInformation = other.requestResponseInformation;
     this.requestProblemInformation = other.requestProblemInformation;
+    this.authenticationMethod = other.authenticationMethod;
+    this.authenticationData = other.authenticationData;
   }
 
   /**
@@ -562,6 +566,22 @@ public class MqttClientOptions extends NetClientOptions {
     this.requestProblemInformation = requestProblemInformation;
   }
 
+  public String getAuthenticationMethod() {
+    return authenticationMethod;
+  }
+
+  public void setAuthenticationMethod(String authenticationMethod) {
+    this.authenticationMethod = authenticationMethod;
+  }
+
+  public Buffer getAuthenticationData() {
+    return authenticationData;
+  }
+
+  public void setAuthenticationData(Buffer authenticationData) {
+    this.authenticationData = authenticationData;
+  }
+
   @Override
   public MqttClientOptions setSsl(boolean ssl) {
     super.setSsl(ssl);
@@ -641,6 +661,8 @@ public class MqttClientOptions extends NetClientOptions {
       ", topicAliasMaximum=" + topicAliasMaximum +
       ", requestResponseInformation=" + requestResponseInformation +
       ", requestProblemInformation=" + requestProblemInformation +
+      ", authenticationMethod=" + authenticationMethod +
+      ", authenticationData=" + (authenticationData != null ? "[" + authenticationData.length() + " bytes]" : "null") +
       '}';
   }
 }

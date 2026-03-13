@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import java.util.List;
 import java.util.Map;
 
@@ -299,6 +300,215 @@ public class Mqtt5ClientPublishTest {
     });
 
     serverPublishAcked.awaitSuccess(5000);
+  }
+
+  // -----------------------------------------------------------------------
+  // PUBLISH with MQTT 5.0 properties
+  // -----------------------------------------------------------------------
+
+  /**
+   * Client publishes QoS 0 with USER_PROPERTY; server verifies the property arrives.
+   */
+  @Test
+  public void publishWithUserProperties(TestContext ctx) {
+    Async serverReceived = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.publishHandler(msg -> {
+        MqttProperties.MqttProperty<?> prop = msg.properties().getProperty(MqttProperties.USER_PROPERTY);
+        ctx.assertNotNull(prop);
+        List<MqttProperties.StringPair> pairs = (List<MqttProperties.StringPair>) prop.value();
+        ctx.assertFalse(pairs.isEmpty());
+        ctx.assertEquals("k1", pairs.get(0).key);
+        ctx.assertEquals("v1", pairs.get(0).value);
+        serverReceived.complete();
+      });
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.UserProperties(
+            List.of(new MqttProperties.StringPair("k1", "v1"))));
+          client.publish(MQTT_TOPIC, Buffer.buffer("user-props"), MqttQoS.AT_MOST_ONCE, false, false, props);
+        }));
+    });
+
+    serverReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * Client publishes with MESSAGE_EXPIRY_INTERVAL; server verifies the property arrives.
+   */
+  @Test
+  public void publishWithMessageExpiryInterval(TestContext ctx) {
+    Async serverReceived = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.publishHandler(msg -> {
+        MqttProperties.MqttProperty<?> prop = msg.properties().getProperty(MqttProperties.PUBLICATION_EXPIRY_INTERVAL);
+        ctx.assertNotNull(prop);
+        ctx.assertEquals(60L, Integer.toUnsignedLong((Integer) prop.value()));
+        serverReceived.complete();
+      });
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.IntegerProperty(MqttProperties.PUBLICATION_EXPIRY_INTERVAL, 60));
+          client.publish(MQTT_TOPIC, Buffer.buffer("expiry"), MqttQoS.AT_MOST_ONCE, false, false, props);
+        }));
+    });
+
+    serverReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * Client publishes with CONTENT_TYPE; server verifies the property arrives.
+   */
+  @Test
+  public void publishWithContentType(TestContext ctx) {
+    Async serverReceived = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.publishHandler(msg -> {
+        MqttProperties.MqttProperty<?> prop = msg.properties().getProperty(MqttProperties.CONTENT_TYPE);
+        ctx.assertNotNull(prop);
+        ctx.assertEquals("application/json", prop.value());
+        serverReceived.complete();
+      });
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.StringProperty(MqttProperties.CONTENT_TYPE, "application/json"));
+          client.publish(MQTT_TOPIC, Buffer.buffer("{\"key\":\"val\"}"), MqttQoS.AT_MOST_ONCE, false, false, props);
+        }));
+    });
+
+    serverReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * Client publishes with RESPONSE_TOPIC and CORRELATION_DATA (request-response pattern).
+   * Server verifies both properties arrive.
+   */
+  @Test
+  public void publishWithResponseTopicAndCorrelationData(TestContext ctx) {
+    Async serverReceived = ctx.async();
+    String responseTopic = "/reply/topic";
+    byte[] correlationData = new byte[]{0x01, 0x02, 0x03};
+
+    server.endpointHandler(endpoint -> {
+      endpoint.publishHandler(msg -> {
+        MqttProperties.MqttProperty<?> rtProp = msg.properties().getProperty(MqttProperties.RESPONSE_TOPIC);
+        MqttProperties.MqttProperty<?> cdProp = msg.properties().getProperty(MqttProperties.CORRELATION_DATA);
+        ctx.assertNotNull(rtProp);
+        ctx.assertEquals(responseTopic, rtProp.value());
+        ctx.assertNotNull(cdProp);
+        ctx.assertEquals(Buffer.buffer(correlationData), Buffer.buffer((byte[]) cdProp.value()));
+        serverReceived.complete();
+      });
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.StringProperty(MqttProperties.RESPONSE_TOPIC, responseTopic));
+          props.add(new MqttProperties.BinaryProperty(MqttProperties.CORRELATION_DATA, correlationData));
+          client.publish(MQTT_TOPIC, Buffer.buffer("request"), MqttQoS.AT_MOST_ONCE, false, false, props);
+        }));
+    });
+
+    serverReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * Client publishes with PAYLOAD_FORMAT_INDICATOR=1 (UTF-8); server verifies.
+   */
+  @Test
+  public void publishWithPayloadFormatIndicator(TestContext ctx) {
+    Async serverReceived = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.publishHandler(msg -> {
+        MqttProperties.MqttProperty<?> prop = msg.properties().getProperty(MqttProperties.PAYLOAD_FORMAT_INDICATOR);
+        ctx.assertNotNull(prop);
+        ctx.assertEquals(1, prop.value());
+        serverReceived.complete();
+      });
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.IntegerProperty(MqttProperties.PAYLOAD_FORMAT_INDICATOR, 1));
+          client.publish(MQTT_TOPIC, Buffer.buffer("UTF-8 text"), MqttQoS.AT_MOST_ONCE, false, false, props);
+        }));
+    });
+
+    serverReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * Server publishes to client with USER_PROPERTY; client verifies the property arrives
+   * via the publishHandler properties().
+   */
+  @Test
+  public void serverPublishWithPropertiesReceivedByClient(TestContext ctx) {
+    Async clientReceived = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.subscribeHandler(subscribe -> {
+        endpoint.subscribeAcknowledge(subscribe.messageId(),
+          List.of(MqttSubAckReasonCode.GRANTED_QOS0),
+          MqttProperties.NO_PROPERTIES);
+
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.StringProperty(MqttProperties.CONTENT_TYPE, "text/plain"));
+        endpoint.publish(MQTT_TOPIC, Buffer.buffer("server-msg"), MqttQoS.AT_MOST_ONCE, false, false, 0, props);
+      });
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.publishHandler(msg -> {
+        MqttProperties.MqttProperty<?> prop = msg.properties().getProperty(MqttProperties.CONTENT_TYPE);
+        ctx.assertNotNull(prop);
+        ctx.assertEquals("text/plain", prop.value());
+        clientReceived.complete();
+      });
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack ->
+          client.subscribe(Map.of(MQTT_TOPIC, 0))));
+    });
+
+    clientReceived.awaitSuccess(5000);
   }
 
   // -----------------------------------------------------------------------

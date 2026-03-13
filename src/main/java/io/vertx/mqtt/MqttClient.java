@@ -17,6 +17,8 @@
 package io.vertx.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.codegen.annotations.GenIgnore;
@@ -125,6 +127,20 @@ public interface MqttClient {
    * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
    */
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+  /**
+   * Sends the PUBLISH message to the remote MQTT server with MQTT 5.0 properties
+   *
+   * @param topic      topic on which the message is published
+   * @param payload    message payload
+   * @param qosLevel   QoS level
+   * @param isDup      if the message is a duplicate
+   * @param isRetain   if the message needs to be retained
+   * @param properties MQTT 5.0 properties (e.g. message expiry, content type, response topic, user properties)
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
+   */
+  @GenIgnore
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties);
 
   /**
    * Sets a handler which will be called each time the publishing of a message has been completed.
@@ -259,6 +275,19 @@ public interface MqttClient {
    */
   @GenIgnore
   Future<Integer> subscribe(Map<String, Integer> topics, MqttProperties properties);
+
+  /**
+   * Subscribes to a list of topics with MQTT 5.0 subscription options (No Local,
+   * Retain As Published, Retain Handling) and optional properties.
+   * Each {@link MqttTopicSubscription} carries the topic filter and a
+   * {@link MqttSubscriptionOption} that encodes QoS plus the v5 options.
+   *
+   * @param subscriptions list of topic subscriptions with options
+   * @param properties    MQTT properties (e.g. Subscription Identifier)
+   * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
+   */
+  @GenIgnore
+  Future<Integer> subscribe(List<MqttTopicSubscription> subscriptions, MqttProperties properties);
 
 
   /**

@@ -20,10 +20,13 @@ package io.vertx.mqtt;
  * Exception raised with a specific reason code
  */
 public class MqttException extends Throwable {
-
+  
+  private static final long serialVersionUID = -6330343007516479948L;
+ 
   public final static int MQTT_INVALID_TOPIC_NAME = 0;
   public final static int MQTT_INVALID_TOPIC_FILTER = 1;
   public final static int MQTT_INFLIGHT_QUEUE_FULL = 2;
+  public final static int MQTT_QOS_UNSUPPORTED = 3;
 
   private final int code;
 

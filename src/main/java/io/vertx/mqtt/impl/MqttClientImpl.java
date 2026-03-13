@@ -150,8 +150,14 @@ public class MqttClientImpl implements MqttClient {
   // storage of PUBLISH messages which was responded with PUBREC
   private HashMap<Integer, MqttMessage> qos2inbound = new HashMap<>();
 
-  // MQTT5 Topic alias
+  // MQTT5 Topic alias: topic → alias number (client-to-server direction)
   private HashMap<String, Integer> topicAlias = new HashMap<>();
+  // Maximum number of topic aliases the server accepts (from CONNACK TOPIC_ALIAS_MAXIMUM, 0 = disabled)
+  private int serverTopicAliasMaximum = 0;
+  // Maximum concurrent QoS1/2 in-flight messages the server accepts (from CONNACK RECEIVE_MAXIMUM)
+  private int serverReceiveMaximum = Integer.MAX_VALUE;
+  // Maximum QoS the server accepts (from CONNACK MAXIMUM_QOS: 0, 1 or 2; default 2)
+  private int serverMaxQos = 2;
 
   // counter for the message identifier
   private int messageIdCounter;
@@ -306,6 +312,10 @@ public class MqttClientImpl implements MqttClient {
               props.add(new IntegerProperty(MqttProperties.REQUEST_RESPONSE_INFORMATION, options.getRequestResponseInformation() ? 1 : 0 ));
             if (options.getRequestProblemInformation() != null)
               props.add(new IntegerProperty(MqttProperties.REQUEST_PROBLEM_INFORMATION, options.getRequestProblemInformation() ? 1 : 0 ));
+            if (options.getAuthenticationMethod() != null)
+              props.add(new MqttProperties.StringProperty(MqttProperties.AUTHENTICATION_METHOD, options.getAuthenticationMethod()));
+            if (options.getAuthenticationData() != null)
+              props.add(new BinaryProperty(MqttProperties.AUTHENTICATION_DATA, options.getAuthenticationData().getBytes()));
             if (userProperties != null && !userProperties.isEmpty()) {
               Collection<StringPair> values = userProperties.entrySet().stream().map(e -> new StringPair(e.getKey(), e.getValue())).collect(Collectors.toList());
               props.add(new UserProperties(values));
@@ -436,6 +446,11 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    return publish(topic, payload, qosLevel, isDup, isRetain, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties) {
 
     if (MqttQoS.FAILURE == qosLevel) {
       throw new IllegalArgumentException("QoS level must be one of AT_MOST_ONCE, AT_LEAST_ONCE or EXACTLY_ONCE");
@@ -444,6 +459,20 @@ public class MqttClientImpl implements MqttClient {
     io.netty.handler.codec.mqtt.MqttMessage publish;
     MqttPublishVariableHeader variableHeader;
     synchronized (this) {
+      // MQTT 5.0: reject if QoS exceeds server's advertised Maximum QoS
+      if (options.getVersion() == 5 && qosLevel.value() > serverMaxQos) {
+        String msg = String.format("Server does not support QoS %d (server maximum QoS is %d)", qosLevel.value(), serverMaxQos);
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_QOS_UNSUPPORTED, msg));
+      }
+
+      // MQTT 5.0: reject if server's Receive Maximum is already reached
+      if (options.getVersion() == 5 && qosLevel != AT_MOST_ONCE && countInflightQueue >= serverReceiveMaximum) {
+        String msg = String.format("Server Receive Maximum of %d in-flight messages reached", serverReceiveMaximum);
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_INFLIGHT_QUEUE_FULL, msg));
+      }
+
       if (countInflightQueue >= options.getMaxInflightQueue()) {
         String msg = String.format("Attempt to exceed the limit of %d inflight messages", options.getMaxInflightQueue());
         log.error(msg);
@@ -466,7 +495,35 @@ public class MqttClientImpl implements MqttClient {
         0
       );
       ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
-      variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
+      String wireTopicName = topic;
+      MqttProperties effectiveProperties;
+      if (options.getVersion() == 5) {
+        effectiveProperties = new MqttProperties();
+        // Copy caller-provided properties into the new instance
+        if (properties != null && properties != MqttProperties.NO_PROPERTIES) {
+          for (MqttProperties.MqttProperty<?> p : properties.listAll()) {
+            effectiveProperties.add(p);
+          }
+        }
+        // Automatic topic alias management (MQTT 5.0 spec §3.3.2.3.4)
+        if (serverTopicAliasMaximum > 0) {
+          Integer alias = topicAlias.get(topic);
+          if (alias != null) {
+            // Already mapped: send empty topic name + alias (bandwidth saving)
+            wireTopicName = "";
+            effectiveProperties.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS, alias));
+          } else if (topicAlias.size() < serverTopicAliasMaximum) {
+            // New topic: assign next alias, send full topic name + alias
+            int newAlias = topicAlias.size() + 1;
+            topicAlias.put(topic, newAlias);
+            effectiveProperties.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS, newAlias));
+          }
+          // else: exhausted all aliases, send full topic name without alias
+        }
+      } else {
+        effectiveProperties = MqttProperties.NO_PROPERTIES;
+      }
+      variableHeader = new MqttPublishVariableHeader(wireTopicName, nextMessageId(), effectiveProperties);
       publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
       switch (qosLevel) {
         case AT_LEAST_ONCE:
@@ -607,6 +664,40 @@ public class MqttClientImpl implements MqttClient {
 
     MqttSubscribePayload payload = new MqttSubscribePayload(subscriptions);
 
+    io.netty.handler.codec.mqtt.MqttMessage subscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+
+    return this.write(subscribe).map(variableHeader.messageId());
+  }
+
+  @Override
+  public Future<Integer> subscribe(List<MqttTopicSubscription> subscriptions, MqttProperties properties) {
+
+    List<String> invalidTopics = subscriptions.stream()
+      .map(MqttTopicSubscription::topicName)
+      .filter(t -> !isValidTopicFilter(t))
+      .collect(Collectors.toList());
+
+    if (!invalidTopics.isEmpty()) {
+      String msg = String.format("Invalid Topic Filters: %s", invalidTopics);
+      log.error(msg);
+      return ctx.failedFuture(new MqttException(MqttException.MQTT_INVALID_TOPIC_FILTER, msg));
+    }
+
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(
+      MqttMessageType.SUBSCRIBE,
+      false,
+      AT_LEAST_ONCE,
+      false,
+      0);
+
+    MqttMessageIdVariableHeader variableHeader;
+    if (options.getVersion() == 5) {
+      variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), properties == null ? MqttProperties.NO_PROPERTIES : properties);
+    } else {
+      variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
+    }
+
+    MqttSubscribePayload payload = new MqttSubscribePayload(subscriptions);
     io.netty.handler.codec.mqtt.MqttMessage subscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
     return this.write(subscribe).map(variableHeader.messageId());
@@ -1123,7 +1214,8 @@ public class MqttClientImpl implements MqttClient {
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
             publish.variableHeader().topicName(),
-            newBuf);
+            newBuf,
+            publish.variableHeader().properties());
           handlePublish(mqttPublishMessage);
           break;
 
@@ -1523,6 +1615,20 @@ public class MqttClientImpl implements MqttClient {
    * {@link MqttConnAckMessage} returned from the connect Future.
    */
   private void applyConnAckProperties(MqttConnAckMessage msg) {
+    // Receive Maximum: max concurrent QoS1/2 in-flight messages the server can handle
+    Integer receiveMaximum = msg.receiveMaximum();
+    synchronized (this) {
+      serverReceiveMaximum = (receiveMaximum != null && receiveMaximum > 0) ? receiveMaximum : Integer.MAX_VALUE;
+    }
+    log.debug("CONNACK serverReceiveMaximum=" + serverReceiveMaximum);
+
+    // Maximum QoS: highest QoS level the server accepts
+    Integer maximumQos = msg.maximumQos();
+    synchronized (this) {
+      serverMaxQos = (maximumQos != null) ? maximumQos : 2;
+    }
+    log.debug("CONNACK serverMaxQos=" + serverMaxQos);
+
     // Assigned Client Identifier: server assigned us an ID (we sent empty ClientID)
     String assignedClientId = msg.assignedClientIdentifier();
     if (assignedClientId != null) {
@@ -1553,6 +1659,14 @@ public class MqttClientImpl implements MqttClient {
       }
     }
 
+    // Topic Alias Maximum: store how many topic aliases the server accepts
+    Integer topicAliasMaximum = msg.topicAliasMaximum();
+    synchronized (this) {
+      serverTopicAliasMaximum = (topicAliasMaximum != null) ? topicAliasMaximum : 0;
+      topicAlias.clear();
+    }
+    log.debug("CONNACK topicAliasMaximum=" + serverTopicAliasMaximum);
+
     // Log informational properties for debug purposes
     if (log.isDebugEnabled()) {
       if (msg.sessionExpiryInterval() != null)
@@ -1565,8 +1679,6 @@ public class MqttClientImpl implements MqttClient {
         log.debug("CONNACK retainAvailable=" + msg.retainAvailable());
       if (msg.maximumPacketSize() != null)
         log.debug("CONNACK maximumPacketSize=" + msg.maximumPacketSize());
-      if (msg.topicAliasMaximum() != null)
-        log.debug("CONNACK topicAliasMaximum=" + msg.topicAliasMaximum());
       if (msg.reasonString() != null)
         log.debug("CONNACK reasonString=" + msg.reasonString());
       if (msg.responseInformation() != null)

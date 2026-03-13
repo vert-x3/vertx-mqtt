@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -252,6 +253,68 @@ public class Mqtt5ClientConnectTest {
       options.setReceiveMaximum(20);
       options.setMaximumPacketSize(32768l);
       options.setTopicAliasMaximum(3);
+
+      MqttClient.create(vertx, options)
+          .connect(server.actualPort(), "localhost");
+    });
+
+    serverLatch.awaitSuccess(5000);
+  }
+
+  /**
+   * setAuthenticationMethod must be encoded as AUTHENTICATION_METHOD in the CONNECT properties.
+   */
+  @Test
+  public void connectWithAuthenticationMethod(TestContext ctx) {
+    String expected = "SCRAM-SHA-256";
+    Async serverLatch = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      MqttProperties.MqttProperty<?> prop = endpoint.connectProperties().getProperty(MqttProperties.AUTHENTICATION_METHOD);
+      ctx.assertNotNull(prop);
+      ctx.assertEquals(expected, prop.value());
+      endpoint.accept(false);
+      serverLatch.complete();
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+      options.setAuthenticationMethod(expected);
+
+      MqttClient.create(vertx, options)
+          .connect(server.actualPort(), "localhost");
+    });
+
+    serverLatch.awaitSuccess(5000);
+  }
+
+  /**
+   * setAuthenticationMethod + setAuthenticationData must both appear in CONNECT properties.
+   */
+  @Test
+  public void connectWithAuthenticationMethodAndData(TestContext ctx) {
+    String expectedMethod = "SCRAM-SHA-256";
+    byte[] expectedData = new byte[]{0x01, 0x02, 0x03, 0x04};
+    Async serverLatch = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      MqttProperties props = endpoint.connectProperties();
+      MqttProperties.MqttProperty<?> methodProp = props.getProperty(MqttProperties.AUTHENTICATION_METHOD);
+      MqttProperties.MqttProperty<?> dataProp   = props.getProperty(MqttProperties.AUTHENTICATION_DATA);
+      ctx.assertNotNull(methodProp);
+      ctx.assertEquals(expectedMethod, methodProp.value());
+      ctx.assertNotNull(dataProp);
+      ctx.assertEquals(Buffer.buffer(expectedData), Buffer.buffer((byte[]) dataProp.value()));
+      endpoint.accept(false);
+      serverLatch.complete();
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+      options.setAuthenticationMethod(expectedMethod);
+      options.setAuthenticationData(Buffer.buffer(expectedData));
 
       MqttClient.create(vertx, options)
           .connect(server.actualPort(), "localhost");
