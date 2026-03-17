@@ -118,8 +118,8 @@ public class Mqtt5ClientTopicAliasTest {
           capturedAlias.set((Integer) aliasProp.value());
           firstReceived.complete();
         } else if (n == 2) {
-          // Second publish: empty topic name, same alias
-          ctx.assertTrue(msg.topicName().isEmpty());
+          // Second publish: alias resolved server-side, topic name must be non-empty
+          ctx.assertEquals(TOPIC, msg.topicName());
           MqttProperties.MqttProperty<?> aliasProp = msg.properties().getProperty(MqttProperties.TOPIC_ALIAS);
           ctx.assertNotNull(aliasProp);
           ctx.assertEquals(capturedAlias.get(), aliasProp.value());

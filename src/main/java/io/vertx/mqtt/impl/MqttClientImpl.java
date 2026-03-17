@@ -150,10 +150,12 @@ public class MqttClientImpl implements MqttClient {
   // storage of PUBLISH messages which was responded with PUBREC
   private HashMap<Integer, MqttMessage> qos2inbound = new HashMap<>();
 
-  // MQTT5 Topic alias: topic → alias number (client-to-server direction)
+  // MQTT5 Topic alias: topic → alias number (client-to-server direction, outgoing PUBLISH)
   private HashMap<String, Integer> topicAlias = new HashMap<>();
   // Maximum number of topic aliases the server accepts (from CONNACK TOPIC_ALIAS_MAXIMUM, 0 = disabled)
   private int serverTopicAliasMaximum = 0;
+  // MQTT5 Topic alias: alias → topic (server-to-client direction, incoming PUBLISH)
+  private HashMap<Integer, String> serverTopicAlias = new HashMap<>();
   // Maximum concurrent QoS1/2 in-flight messages the server accepts (from CONNACK RECEIVE_MAXIMUM)
   private int serverReceiveMaximum = Integer.MAX_VALUE;
   // Maximum QoS the server accepts (from CONNACK MAXIMUM_QOS: 0, 1 or 2; default 2)
@@ -1208,12 +1210,38 @@ public class MqttClientImpl implements MqttClient {
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
           Buffer newBuf = BufferInternal.safeBuffer(publish.payload());
 
+          // MQTT 5.0 §3.3.2.3.4 – resolve incoming topic alias (server→client direction)
+          String resolvedTopic = publish.variableHeader().topicName();
+          MqttProperties.MqttProperty<?> incomingAliasProp =
+            publish.variableHeader().properties().getProperty(MqttProperties.TOPIC_ALIAS);
+          if (incomingAliasProp != null) {
+            int alias = (Integer) incomingAliasProp.value();
+            int clientMax = options.getTopicAliasMaximum() != null ? options.getTopicAliasMaximum() : 0;
+            if (alias < 1 || alias > clientMax) {
+              // Alias out of range – protocol error
+              disconnect(MqttDisconnectReasonCode.TOPIC_ALIAS_INVALID, MqttProperties.NO_PROPERTIES);
+              return;
+            }
+            if (!resolvedTopic.isEmpty()) {
+              // New mapping or overwrite
+              synchronized (this) { serverTopicAlias.put(alias, resolvedTopic); }
+            } else {
+              // Alias-only: look up stored mapping
+              synchronized (this) { resolvedTopic = serverTopicAlias.get(alias); }
+              if (resolvedTopic == null) {
+                // Alias used before being defined – protocol error
+                disconnect(MqttDisconnectReasonCode.TOPIC_ALIAS_INVALID, MqttProperties.NO_PROPERTIES);
+                return;
+              }
+            }
+          }
+
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),
             publish.fixedHeader().qosLevel(),
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
-            publish.variableHeader().topicName(),
+            resolvedTopic,
             newBuf,
             publish.variableHeader().properties());
           handlePublish(mqttPublishMessage);
@@ -1664,6 +1692,7 @@ public class MqttClientImpl implements MqttClient {
     synchronized (this) {
       serverTopicAliasMaximum = (topicAliasMaximum != null) ? topicAliasMaximum : 0;
       topicAlias.clear();
+      serverTopicAlias.clear();
     }
     log.debug("CONNACK topicAliasMaximum=" + serverTopicAliasMaximum);
 
