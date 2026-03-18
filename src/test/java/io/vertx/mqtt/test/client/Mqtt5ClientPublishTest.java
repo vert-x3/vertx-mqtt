@@ -442,6 +442,74 @@ public class Mqtt5ClientPublishTest {
   }
 
   /**
+   * Full MQTT 5.0 request-response pattern using RESPONSE_TOPIC and CORRELATION_DATA.
+   *
+   * Flow:
+   *   1. Client subscribes to the response topic.
+   *   2. Client publishes a request on MQTT_TOPIC carrying RESPONSE_TOPIC and CORRELATION_DATA.
+   *   3. Server receives the request, extracts both properties, and publishes a response
+   *      on RESPONSE_TOPIC echoing back the same CORRELATION_DATA.
+   *   4. Client receives the response and verifies the CORRELATION_DATA matches the original.
+   */
+  @Test
+  public void correlationDataRoundTrip(TestContext ctx) {
+    Async responseReceived = ctx.async();
+    String responseTopic = "/reply/correlation-test";
+    byte[] correlationData = new byte[]{0x0A, 0x0B, 0x0C, 0x0D};
+
+    server.endpointHandler(endpoint -> {
+      endpoint.subscribeHandler(subscribe ->
+        endpoint.subscribeAcknowledge(subscribe.messageId(),
+          List.of(MqttSubAckReasonCode.GRANTED_QOS0),
+          MqttProperties.NO_PROPERTIES));
+
+      endpoint.publishHandler(msg -> {
+        // Extract response topic and correlation data from the incoming request
+        MqttProperties.MqttProperty<?> rtProp = msg.properties().getProperty(MqttProperties.RESPONSE_TOPIC);
+        MqttProperties.MqttProperty<?> cdProp = msg.properties().getProperty(MqttProperties.CORRELATION_DATA);
+        ctx.assertNotNull(rtProp);
+        ctx.assertNotNull(cdProp);
+
+        // Echo correlation data back in the response publish
+        MqttProperties responseProps = new MqttProperties();
+        responseProps.add(new MqttProperties.BinaryProperty(MqttProperties.CORRELATION_DATA,
+          (byte[]) cdProp.value()));
+        endpoint.publish((String) rtProp.value(), Buffer.buffer("response"),
+          MqttQoS.AT_MOST_ONCE, false, false, 0, responseProps);
+      });
+
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+
+      client.publishHandler(msg -> {
+        // Verify the echoed correlation data matches what we sent
+        MqttProperties.MqttProperty<?> cdProp = msg.properties().getProperty(MqttProperties.CORRELATION_DATA);
+        ctx.assertNotNull(cdProp);
+        ctx.assertEquals(Buffer.buffer(correlationData), Buffer.buffer((byte[]) cdProp.value()));
+        responseReceived.complete();
+      });
+
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          // Subscribe to the response topic first
+          client.subscribe(Map.of(responseTopic, 0))
+            .onComplete(ctx.asyncAssertSuccess(subAck -> {
+              // Then publish the request with RESPONSE_TOPIC + CORRELATION_DATA
+              MqttProperties props = new MqttProperties();
+              props.add(new MqttProperties.StringProperty(MqttProperties.RESPONSE_TOPIC, responseTopic));
+              props.add(new MqttProperties.BinaryProperty(MqttProperties.CORRELATION_DATA, correlationData));
+              client.publish(MQTT_TOPIC, Buffer.buffer("request"), MqttQoS.AT_MOST_ONCE, false, false, props);
+            }));
+        }));
+    });
+
+    responseReceived.awaitSuccess(5000);
+  }
+
+  /**
    * Client publishes with PAYLOAD_FORMAT_INDICATOR=1 (UTF-8); server verifies.
    */
   @Test
