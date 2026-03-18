@@ -156,6 +156,8 @@ public class MqttClientImpl implements MqttClient {
   private int serverTopicAliasMaximum = 0;
   // MQTT5 Topic alias: alias → topic (server-to-client direction, incoming PUBLISH)
   private HashMap<Integer, String> serverTopicAlias = new HashMap<>();
+  // Whether the server supports Subscription Identifiers (from CONNACK, default true per spec §3.2.2.3.12)
+  private boolean serverSubscriptionIdentifierAvailable = true;
   // Maximum concurrent QoS1/2 in-flight messages the server accepts (from CONNACK RECEIVE_MAXIMUM)
   private int serverReceiveMaximum = Integer.MAX_VALUE;
   // Maximum QoS the server accepts (from CONNACK MAXIMUM_QOS: 0, 1 or 2; default 2)
@@ -634,6 +636,21 @@ public class MqttClientImpl implements MqttClient {
   @Override
   public Future<Integer> subscribe(Map<String, Integer> topics, MqttProperties properties) {
 
+    // MQTT 5.0 §3.3.4: Subscription Identifier may only be used with MQTT 5.0 and only
+    // when the server has not explicitly disabled it (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0).
+    if (properties != null && properties.getProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER) != null) {
+      if (options.getVersion() != 5) {
+        String msg = "Subscription Identifier is only available in MQTT 5.0";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+      if (!serverSubscriptionIdentifierAvailable) {
+        String msg = "Server does not support Subscription Identifiers (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0)";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+    }
+
     Map<String, Integer> invalidTopics = topics.entrySet()
       .stream()
       .filter(e -> !isValidTopicFilter(e.getKey()))
@@ -673,6 +690,21 @@ public class MqttClientImpl implements MqttClient {
 
   @Override
   public Future<Integer> subscribe(List<MqttTopicSubscription> subscriptions, MqttProperties properties) {
+
+    // MQTT 5.0 §3.3.4: Subscription Identifier may only be used with MQTT 5.0 and only
+    // when the server has not explicitly disabled it (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0).
+    if (properties != null && properties.getProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER) != null) {
+      if (options.getVersion() != 5) {
+        String msg = "Subscription Identifier is only available in MQTT 5.0";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+      if (!serverSubscriptionIdentifierAvailable) {
+        String msg = "Server does not support Subscription Identifiers (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0)";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+    }
 
     List<String> invalidTopics = subscriptions.stream()
       .map(MqttTopicSubscription::topicName)
@@ -1689,12 +1721,16 @@ public class MqttClientImpl implements MqttClient {
 
     // Topic Alias Maximum: store how many topic aliases the server accepts
     Integer topicAliasMaximum = msg.topicAliasMaximum();
+    // Subscription Identifier Available: absent or 1 means available; 0 means NOT available
+    Boolean subIdAvailable = msg.subscriptionIdentifierAvailable();
     synchronized (this) {
       serverTopicAliasMaximum = (topicAliasMaximum != null) ? topicAliasMaximum : 0;
       topicAlias.clear();
       serverTopicAlias.clear();
+      serverSubscriptionIdentifierAvailable = subIdAvailable == null || subIdAvailable;
     }
     log.debug("CONNACK topicAliasMaximum=" + serverTopicAliasMaximum);
+    log.debug("CONNACK subscriptionIdentifierAvailable=" + serverSubscriptionIdentifierAvailable);
 
     // Log informational properties for debug purposes
     if (log.isDebugEnabled()) {

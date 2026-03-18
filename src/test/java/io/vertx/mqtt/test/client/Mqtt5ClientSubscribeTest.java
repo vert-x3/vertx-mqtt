@@ -27,6 +27,7 @@ import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.MqttException;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import org.junit.After;
 import org.junit.Before;
@@ -203,6 +204,75 @@ public class Mqtt5ClientSubscribeTest {
     });
 
     ackReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * When the server sends SUBSCRIPTION_IDENTIFIER_AVAILABLE=0 in CONNACK,
+   * any SUBSCRIBE with a SUBSCRIPTION_IDENTIFIER property must be rejected
+   * client-side with MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.
+   */
+  @Test
+  public void subscribeWithIdentifierRejectedWhenServerDisablesIt(TestContext ctx) {
+    Async rejected = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      // Server explicitly disables subscription identifiers
+      MqttProperties connAckProps = new MqttProperties();
+      connAckProps.add(new MqttProperties.IntegerProperty(
+        MqttProperties.SUBSCRIPTION_IDENTIFIER_AVAILABLE, 0));
+      endpoint.accept(false, connAckProps);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.IntegerProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER, SUBSCRIPTION_IDENTIFIER));
+
+          client.subscribe(Map.of(MQTT_TOPIC, 1), props)
+            .onComplete(ctx.asyncAssertFailure(err -> {
+              ctx.assertTrue(err instanceof MqttException, "Expected MqttException");
+              ctx.assertEquals(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
+                ((MqttException) err).code());
+              rejected.complete();
+            }));
+        }));
+    });
+
+    rejected.awaitSuccess(5000);
+  }
+
+  /**
+   * A SUBSCRIBE with a SUBSCRIPTION_IDENTIFIER on a non-MQTT-5 connection must
+   * be rejected client-side with MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.
+   */
+  @Test
+  public void subscribeWithIdentifierRejectedOnMqtt4(TestContext ctx) {
+    Async rejected = ctx.async();
+
+    server.endpointHandler(endpoint -> endpoint.accept(false));
+
+    startServer(ctx, () -> {
+      // Plain MQTT 4 client
+      MqttClientOptions opts = new MqttClientOptions();
+      MqttClient client = MqttClient.create(vertx, opts);
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.IntegerProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER, SUBSCRIPTION_IDENTIFIER));
+
+          client.subscribe(Map.of(MQTT_TOPIC, 1), props)
+            .onComplete(ctx.asyncAssertFailure(err -> {
+              ctx.assertTrue(err instanceof MqttException, "Expected MqttException");
+              ctx.assertEquals(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
+                ((MqttException) err).code());
+              rejected.complete();
+            }));
+        }));
+    });
+
+    rejected.awaitSuccess(5000);
   }
 
   // -----------------------------------------------------------------------

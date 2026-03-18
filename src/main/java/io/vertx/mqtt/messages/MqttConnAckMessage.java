@@ -127,6 +127,19 @@ public interface MqttConnAckMessage {
   Boolean retainAvailable();
 
   /**
+   * Whether the server supports Subscription Identifiers. (MQTT 5.0)
+   * <p>
+   * If the server sends {@code 0}, the client MUST NOT include a
+   * {@code SUBSCRIPTION_IDENTIFIER} property in any SUBSCRIBE packet.
+   * If absent, subscription identifiers are supported (default = 1).
+   *
+   * @return {@code false} if subscription identifiers are NOT supported;
+   *         {@code null} if absent (meaning they ARE supported)
+   */
+  @Nullable
+  Boolean subscriptionIdentifierAvailable();
+
+  /**
    * Maximum packet size the server is willing to accept, in bytes. (MQTT 5.0)
    *
    * @return the maximum packet size, or {@code null} if not present (meaning no limit)
