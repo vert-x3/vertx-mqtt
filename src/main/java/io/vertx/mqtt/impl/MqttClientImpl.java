@@ -84,6 +84,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -175,6 +176,9 @@ public class MqttClientImpl implements MqttClient {
 
   private NetClient client;
   private Status status = Status.CLOSED;
+
+  // SERVER_REFERENCE target set on receipt of a server-initiated DISCONNECT (redirect pending)
+  private String pendingRedirect = null;
 
   /**
    * Constructor
@@ -1163,11 +1167,14 @@ public class MqttClientImpl implements MqttClient {
    * Used for calling the close handler when the remote MQTT server closes the connection
    */
   private void handleClosed() {
+    String pendingRedirect;
     Promise<MqttConnAckMessage> connectPromise;
     Promise<Void> disconnectPromise;
     NetClient client;
     Deque<Ping> pings;
     synchronized (this) {
+      pendingRedirect = this.pendingRedirect;
+      this.pendingRedirect = null;
       client = this.client;
       connectPromise = this.connectPromise;
       disconnectPromise = this.disconnectPromise;
@@ -1184,6 +1191,20 @@ public class MqttClientImpl implements MqttClient {
     pings.forEach(ping -> {
       ping.cancel();
     });
+
+    // MQTT 5.0 server redirect: reconnect transparently to the referenced server
+    if (pendingRedirect != null) {
+      String[] target = pickServer(pendingRedirect);
+      if (target != null) {
+        int redirectPort = Integer.parseInt(target[1]);
+        String redirectHost = target[0];
+        log.info("DISCONNECT SERVER_REFERENCE redirect to " + redirectHost + ":" + redirectPort);
+        disconnectPromise.complete();
+        client.close();
+        this.connect(redirectPort, redirectHost);
+        return; // do NOT fire the user's closeHandler
+      }
+    }
 
     Handler<Void> handler = closeHandler();
     if (handler != null) {
@@ -1324,6 +1345,22 @@ public class MqttClientImpl implements MqttClient {
 
         case PINGRESP:
           handlePingresp();
+          break;
+
+        case DISCONNECT:
+          // MQTT 5.0: server-initiated DISCONNECT – check for SERVER_REFERENCE redirect
+          if (options.getVersion() == 5 && options.isAutoServerRedirect()
+              && mqttMessage.variableHeader() instanceof MqttReasonCodeAndPropertiesVariableHeader) {
+            MqttReasonCodeAndPropertiesVariableHeader disconnVarHeader =
+              (MqttReasonCodeAndPropertiesVariableHeader) mqttMessage.variableHeader();
+            MqttProperties.MqttProperty<?> serverRefProp =
+              disconnVarHeader.properties().getProperty(MqttProperties.SERVER_REFERENCE);
+            if (serverRefProp != null) {
+              synchronized (this) {
+                this.pendingRedirect = (String) serverRefProp.value();
+              }
+            }
+          }
           break;
 
         default:
@@ -1636,6 +1673,12 @@ public class MqttClientImpl implements MqttClient {
       connection.closeHandler(v -> handleClosed());
       connectPromise.complete(msg);
     } else {
+      // Check for MQTT 5.0 server redirect before resetting state
+      String serverRef = null;
+      if (options.getVersion() == 5 && options.isAutoServerRedirect()) {
+        serverRef = msg.serverReference();
+      }
+
       Promise<MqttConnAckMessage> connectPromise;
       Promise<Void> disconnectPromise;
       NetSocketInternal connection;
@@ -1652,6 +1695,24 @@ public class MqttClientImpl implements MqttClient {
         this.client = null;
       }
       connection.closeHandler(null);
+
+      if (serverRef != null) {
+        String[] target = pickServer(serverRef);
+        if (target != null) {
+          int redirectPort = Integer.parseInt(target[1]);
+          String redirectHost = target[0];
+          log.info("CONNACK SERVER_REFERENCE redirect to " + redirectHost + ":" + redirectPort);
+          disconnectPromise.complete();
+          client.close();
+          this.connect(redirectPort, redirectHost)
+            .onComplete(ar -> {
+              if (ar.succeeded()) connectPromise.complete(ar.result());
+              else connectPromise.fail(ar.cause());
+            });
+          return;
+        }
+      }
+
       MqttConnectionException exception = new MqttConnectionException(msg.code());
       log.error(String.format("Connection refused by the server - code: %s", msg.code()));
       connectPromise.fail(exception);
@@ -1773,6 +1834,35 @@ public class MqttClientImpl implements MqttClient {
    */
   private String generateRandomClientId() {
     return UUID.randomUUID().toString();
+  }
+
+  /**
+   * Parses a SERVER_REFERENCE string (comma-separated "host:port" or "host" entries)
+   * and returns {host, port} for a randomly chosen entry.
+   * IPv6 addresses enclosed in brackets are supported (e.g. "[::1]:1883").
+   *
+   * @return String array {host, portString}, or {@code null} if the string is blank/unparseable
+   */
+  private String[] pickServer(String serverReference) {
+    if (serverReference == null || serverReference.isBlank()) return null;
+    String[] entries = serverReference.split(",");
+    String entry = entries[ThreadLocalRandom.current().nextInt(entries.length)].trim();
+    if (entry.isEmpty()) return null;
+    // IPv6 bracket notation: "[::1]:1883" or just "[::1]"
+    if (entry.startsWith("[")) {
+      int bracketEnd = entry.indexOf(']');
+      if (bracketEnd < 0) return new String[]{entry, String.valueOf(MqttClientOptions.DEFAULT_PORT)};
+      String host = entry.substring(1, bracketEnd);
+      String rest = entry.substring(bracketEnd + 1);
+      int port = rest.startsWith(":") ? Integer.parseInt(rest.substring(1)) : MqttClientOptions.DEFAULT_PORT;
+      return new String[]{host, String.valueOf(port)};
+    }
+    // Regular "host:port" or "host"
+    int colonIdx = entry.lastIndexOf(':');
+    if (colonIdx > 0) {
+      return new String[]{entry.substring(0, colonIdx), entry.substring(colonIdx + 1)};
+    }
+    return new String[]{entry, String.valueOf(MqttClientOptions.DEFAULT_PORT)};
   }
 
   /**

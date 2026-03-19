@@ -47,6 +47,7 @@ public class MqttClientOptions extends NetClientOptions {
   public static final boolean DEFAULT_AUTO_ACK = true;
   public static final int DEFAULT_VERSION = 4;
   public static final Integer DEFAULT_TOPIC_ALIAS_MAXIMUM = 255;
+  public static final boolean DEFAULT_AUTO_SERVER_REDIRECT = true;
 
   private String clientId;
   private String username;
@@ -69,6 +70,7 @@ public class MqttClientOptions extends NetClientOptions {
   private Boolean requestProblemInformation = null;
   private String authenticationMethod = null;
   private Buffer authenticationData = null;
+  private boolean autoServerRedirect = DEFAULT_AUTO_SERVER_REDIRECT;
 
   /**
    * Default constructor
@@ -135,6 +137,7 @@ public class MqttClientOptions extends NetClientOptions {
     this.requestProblemInformation = other.requestProblemInformation;
     this.authenticationMethod = other.authenticationMethod;
     this.authenticationData = other.authenticationData;
+    this.autoServerRedirect = other.autoServerRedirect;
   }
 
   /**
@@ -582,6 +585,28 @@ public class MqttClientOptions extends NetClientOptions {
     this.authenticationData = authenticationData;
   }
 
+  /**
+   * @return whether the client will automatically reconnect to the server indicated
+   *         in the SERVER_REFERENCE property of a CONNACK or DISCONNECT packet (MQTT 5.0)
+   */
+  public boolean isAutoServerRedirect() {
+    return autoServerRedirect;
+  }
+
+  /**
+   * When {@code true} (default) and the broker replies with a CONNACK or DISCONNECT
+   * that includes a {@code SERVER_REFERENCE} property (MQTT 5.0 §3.2.2.3.18 / §3.14.2.3.4),
+   * the client will transparently reconnect to a server picked at random from the
+   * comma-separated list in that property instead of failing.
+   *
+   * @param autoServerRedirect {@code true} to enable automatic server redirection
+   * @return current options instance
+   */
+  public MqttClientOptions setAutoServerRedirect(boolean autoServerRedirect) {
+    this.autoServerRedirect = autoServerRedirect;
+    return this;
+  }
+
   @Override
   public MqttClientOptions setSsl(boolean ssl) {
     super.setSsl(ssl);
@@ -663,6 +688,7 @@ public class MqttClientOptions extends NetClientOptions {
       ", requestProblemInformation=" + requestProblemInformation +
       ", authenticationMethod=" + authenticationMethod +
       ", authenticationData=" + (authenticationData != null ? "[" + authenticationData.length() + " bytes]" : "null") +
+      ", autoServerRedirect=" + autoServerRedirect +
       '}';
   }
 }

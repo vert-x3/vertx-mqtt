@@ -137,6 +137,11 @@ public class MqttClientOptionsConverter {
             obj.setAuthenticationData(io.vertx.core.buffer.Buffer.fromJson((String)member.getValue()));
           }
           break;
+        case "autoServerRedirect":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAutoServerRedirect((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -199,5 +204,6 @@ public class MqttClientOptionsConverter {
     if (obj.getAuthenticationData() != null) {
       json.put("authenticationData", obj.getAuthenticationData().toJson());
     }
+    json.put("autoServerRedirect", obj.isAutoServerRedirect());
   }
 }
