@@ -324,6 +324,80 @@ public class Mqtt5ClientConnectTest {
   }
 
   // -----------------------------------------------------------------------
+  // CONNACK properties received by the client
+  // -----------------------------------------------------------------------
+
+  /**
+   * Client sets REQUEST_RESPONSE_INFORMATION=1 in CONNECT.
+   * Server replies with RESPONSE_INFORMATION in CONNACK.
+   * The connect Future result (MqttConnAckMessage) must expose the value
+   * via responseInformation().
+   */
+  @Test
+  public void connackResponseInformation(TestContext ctx) {
+    String expected = "responses/client-id-1";
+    Async done = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      // Verify the client actually asked for response information
+      MqttProperties.MqttProperty<?> reqProp =
+        endpoint.connectProperties().getProperty(MqttProperties.REQUEST_RESPONSE_INFORMATION);
+      ctx.assertNotNull(reqProp);
+      ctx.assertEquals(1, reqProp.value());
+
+      // Include RESPONSE_INFORMATION in CONNACK
+      MqttProperties connAckProps = new MqttProperties();
+      connAckProps.add(new MqttProperties.StringProperty(MqttProperties.RESPONSE_INFORMATION, expected));
+      endpoint.accept(false, connAckProps);
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+      options.setRequestResponseInformation(true);
+
+      MqttClient.create(vertx, options)
+        .connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          ctx.assertEquals(expected, ack.responseInformation());
+          done.complete();
+        }));
+    });
+
+    done.awaitSuccess(5000);
+  }
+
+  /**
+   * When the client does NOT request response information (REQUEST_RESPONSE_INFORMATION absent
+   * or 0), the server MUST NOT include RESPONSE_INFORMATION in CONNACK.
+   * Verify responseInformation() returns null.
+   */
+  @Test
+  public void connackResponseInformationAbsentWhenNotRequested(TestContext ctx) {
+    Async done = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      // Send CONNACK with no RESPONSE_INFORMATION (server respects the spec)
+      endpoint.accept(false);
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+      // requestResponseInformation is not set (defaults to null / false)
+
+      MqttClient.create(vertx, options)
+        .connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          ctx.assertNull(ack.responseInformation());
+          done.complete();
+        }));
+    });
+
+    done.awaitSuccess(5000);
+  }
+
+  // -----------------------------------------------------------------------
 
   private void startServer(TestContext ctx, Runnable afterStart) {
     Async latch = ctx.async();
