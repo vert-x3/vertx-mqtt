@@ -59,8 +59,7 @@ public class Mqtt5ClientFlowControlTest {
 
   @After
   public void after(TestContext ctx) {
-    server.close().onComplete(ctx.asyncAssertSuccess(v ->
-      vertx.close().onComplete(ctx.asyncAssertSuccess())));
+    server.close().onComplete(ctx.asyncAssertSuccess(v -> vertx.close().onComplete(ctx.asyncAssertSuccess())));
   }
 
   // -----------------------------------------------------------------------
@@ -91,22 +90,22 @@ public class Mqtt5ClientFlowControlTest {
       MqttClient client = MqttClient.create(vertx, opts);
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack -> {
-          // First two publishes should succeed
-          Future<Integer> f1 = client.publish(TOPIC, Buffer.buffer("msg1"), MqttQoS.AT_LEAST_ONCE, false, false);
-          Future<Integer> f2 = client.publish(TOPIC, Buffer.buffer("msg2"), MqttQoS.AT_LEAST_ONCE, false, false);
+          .onComplete(ctx.asyncAssertSuccess(ack -> {
+            // First two publishes should succeed
+            Future<Integer> f1 = client.publish(TOPIC, Buffer.buffer("msg1"), MqttQoS.AT_LEAST_ONCE, false, false);
+            Future<Integer> f2 = client.publish(TOPIC, Buffer.buffer("msg2"), MqttQoS.AT_LEAST_ONCE, false, false);
 
-          Future.all(f1, f2).onComplete(ctx.asyncAssertSuccess(v -> {
-            // Third publish must fail: server Receive Maximum exceeded
-            client.publish(TOPIC, Buffer.buffer("msg3"), MqttQoS.AT_LEAST_ONCE, false, false)
-              .onComplete(ctx.asyncAssertFailure(err -> {
-                ctx.assertTrue(err instanceof MqttException);
-                ctx.assertEquals(MqttException.MQTT_INFLIGHT_QUEUE_FULL,
-                  ((MqttException) err).code());
-                thirdFailed.complete();
-              }));
+            Future.all(f1, f2).onComplete(ctx.asyncAssertSuccess(v -> {
+              // Third publish must fail: server Receive Maximum exceeded
+              client.publish(TOPIC, Buffer.buffer("msg3"), MqttQoS.AT_LEAST_ONCE, false, false)
+                  .onComplete(ctx.asyncAssertFailure(err -> {
+                    ctx.assertTrue(err instanceof MqttException);
+                    ctx.assertEquals(MqttException.MQTT_INFLIGHT_QUEUE_FULL,
+                        ((MqttException) err).code());
+                    thirdFailed.complete();
+                  }));
+            }));
           }));
-        }));
     });
 
     thirdFailed.awaitSuccess(5000);
@@ -132,20 +131,20 @@ public class Mqtt5ClientFlowControlTest {
       MqttClient client = MqttClient.create(vertx, opts);
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack -> {
-          // Saturate server receive window with 2 QoS 1 messages
-          Future<Integer> f1 = client.publish(TOPIC, Buffer.buffer("q1-1"), MqttQoS.AT_LEAST_ONCE, false, false);
-          Future<Integer> f2 = client.publish(TOPIC, Buffer.buffer("q1-2"), MqttQoS.AT_LEAST_ONCE, false, false);
+          .onComplete(ctx.asyncAssertSuccess(ack -> {
+            // Saturate server receive window with 2 QoS 1 messages
+            Future<Integer> f1 = client.publish(TOPIC, Buffer.buffer("q1-1"), MqttQoS.AT_LEAST_ONCE, false, false);
+            Future<Integer> f2 = client.publish(TOPIC, Buffer.buffer("q1-2"), MqttQoS.AT_LEAST_ONCE, false, false);
 
-          Future.all(f1, f2).onComplete(ctx.asyncAssertSuccess(v -> {
-            // QoS 0 publishes must still succeed regardless of receive maximum
-            List<Future<?>> qos0 = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-              qos0.add(client.publish(TOPIC, Buffer.buffer("q0-" + i), MqttQoS.AT_MOST_ONCE, false, false));
-            }
-            Future.all(qos0).onComplete(ctx.asyncAssertSuccess(v2 -> allSent.complete()));
+            Future.all(f1, f2).onComplete(ctx.asyncAssertSuccess(v -> {
+              // QoS 0 publishes must still succeed regardless of receive maximum
+              List<Future<?>> qos0 = new ArrayList<>();
+              for (int i = 0; i < 3; i++) {
+                qos0.add(client.publish(TOPIC, Buffer.buffer("q0-" + i), MqttQoS.AT_MOST_ONCE, false, false));
+              }
+              Future.all(qos0).onComplete(ctx.asyncAssertSuccess(v2 -> allSent.complete()));
+            }));
           }));
-        }));
     });
 
     allSent.awaitSuccess(5000);
@@ -171,14 +170,14 @@ public class Mqtt5ClientFlowControlTest {
       MqttClient client = MqttClient.create(vertx, v5Options());
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack -> {
-          client.publish(TOPIC, Buffer.buffer("qos2-rejected"), MqttQoS.EXACTLY_ONCE, false, false)
-            .onComplete(ctx.asyncAssertFailure(err -> {
-              ctx.assertTrue(err instanceof MqttException);
-              ctx.assertEquals(MqttException.MQTT_INFLIGHT_QUEUE_FULL, ((MqttException) err).code());
-              failedLatch.complete();
-            }));
-        }));
+          .onComplete(ctx.asyncAssertSuccess(ack -> {
+            client.publish(TOPIC, Buffer.buffer("qos2-rejected"), MqttQoS.EXACTLY_ONCE, false, false)
+                .onComplete(ctx.asyncAssertFailure(err -> {
+                  ctx.assertTrue(err instanceof MqttException);
+                  ctx.assertEquals(MqttException.MQTT_QOS_UNSUPPORTED, ((MqttException) err).code());
+                  failedLatch.complete();
+                }));
+          }));
     });
 
     failedLatch.awaitSuccess(5000);
@@ -194,8 +193,7 @@ public class Mqtt5ClientFlowControlTest {
 
     server.endpointHandler(endpoint -> {
       // When client publishes QoS1, server must send PUBACK
-      endpoint.publishHandler(msg ->
-        endpoint.publishAcknowledge(msg.messageId(), MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES));
+      endpoint.publishHandler(msg -> endpoint.publishAcknowledge(msg.messageId(), MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES));
       endpoint.accept(false, buildConnAckPropsWithMaxQos(1));
     });
 
@@ -203,11 +201,11 @@ public class Mqtt5ClientFlowControlTest {
       MqttClient client = MqttClient.create(vertx, v5Options());
 
       client.connect(server.actualPort(), "localhost")
-        .onComplete(ctx.asyncAssertSuccess(ack -> {
-          Future<Integer> f0 = client.publish(TOPIC, Buffer.buffer("qos0"), MqttQoS.AT_MOST_ONCE,  false, false);
-          Future<Integer> f1 = client.publish(TOPIC, Buffer.buffer("qos1"), MqttQoS.AT_LEAST_ONCE, false, false);
-          Future.all(f0, f1).onComplete(ctx.asyncAssertSuccess(v -> bothSent.complete()));
-        }));
+          .onComplete(ctx.asyncAssertSuccess(ack -> {
+            Future<Integer> f0 = client.publish(TOPIC, Buffer.buffer("qos0"), MqttQoS.AT_MOST_ONCE, false, false);
+            Future<Integer> f1 = client.publish(TOPIC, Buffer.buffer("qos1"), MqttQoS.AT_LEAST_ONCE, false, false);
+            Future.all(f0, f1).onComplete(ctx.asyncAssertSuccess(v -> bothSent.complete()));
+          }));
     });
 
     bothSent.awaitSuccess(5000);
