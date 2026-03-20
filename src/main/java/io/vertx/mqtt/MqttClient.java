@@ -29,6 +29,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.impl.MqttClientImpl;
 import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
+import io.vertx.mqtt.messages.MqttDisconnectMessage;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.MqttPubCompMessage;
+import io.vertx.mqtt.messages.MqttPubRecMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
 import io.vertx.mqtt.messages.MqttUnsubAckMessage;
@@ -157,6 +161,45 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient publishCompletionHandler(Handler<Integer> publishCompletionHandler);
+
+  /**
+   * Sets a handler which will be called each time a PUBACK is received from the server.
+   * <p>
+   * MQTT 5.0: the handler receives the full typed message including reason code and properties.
+   * This handler fires alongside the existing {@link #publishCompletionHandler(Handler)}.
+   *
+   * @param handler handler called with the PUBACK message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient publishAckMessageHandler(Handler<MqttPubAckMessage> handler);
+
+  /**
+   * Sets a handler which will be called each time a PUBREC is received from the server.
+   * <p>
+   * MQTT 5.0: the handler receives the full typed message including reason code and properties,
+   * before the client sends PUBREL.
+   *
+   * @param handler handler called with the PUBREC message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient publishRecMessageHandler(Handler<MqttPubRecMessage> handler);
+
+  /**
+   * Sets a handler which will be called each time a PUBCOMP is received from the server.
+   * <p>
+   * MQTT 5.0: the handler receives the full typed message including reason code and properties.
+   * This handler fires alongside the existing {@link #publishCompletionHandler(Handler)}.
+   *
+   * @param handler handler called with the PUBCOMP message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient publishCompMessageHandler(Handler<MqttPubCompMessage> handler);
 
   /**
    * Sets a handler which will be called when the client does not receive a PUBACK or
@@ -371,6 +414,20 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient exceptionHandler(Handler<Throwable> handler);
+
+  /**
+   * Sets a handler that will be called when the server sends a DISCONNECT packet.
+   * <p>
+   * This fires before {@link #closeHandler(Handler)} and only for server-initiated
+   * disconnects (not when the client calls {@link #disconnect()}).
+   * The handler receives the reason code and properties from the server's DISCONNECT packet.
+   *
+   * @param handler handler to call with the disconnect message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient disconnectMessageHandler(Handler<MqttDisconnectMessage> handler);
 
   /**
    * Set a handler that will be called when the connection with server is closed

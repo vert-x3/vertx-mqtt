@@ -25,6 +25,8 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.Vertx;
+import java.util.List;
+import java.util.Map;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -395,6 +397,39 @@ public class Mqtt5ClientConnectTest {
     });
 
     done.awaitSuccess(5000);
+  }
+
+  /**
+   * User Properties set on MqttClientOptions must arrive on the server
+   * in the CONNECT packet's USER_PROPERTY list.
+   */
+  @Test
+  public void connectWithUserProperties(TestContext ctx) {
+    Async serverLatch = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      MqttProperties.MqttProperty<?> prop = endpoint.connectProperties().getProperty(MqttProperties.USER_PROPERTY);
+      ctx.assertNotNull(prop, "USER_PROPERTY must be present in CONNECT");
+      ctx.assertTrue(prop instanceof MqttProperties.UserProperties,
+        "USER_PROPERTY must be an instance of UserProperties");
+      List<MqttProperties.StringPair> pairs = ((MqttProperties.UserProperties) prop).value();
+      ctx.assertNotNull(pairs, "USER_PROPERTY value must not be null");
+      ctx.assertFalse(pairs.isEmpty(), "USER_PROPERTY must have at least one pair");
+      boolean found = pairs.stream().anyMatch(p -> "k1".equals(p.key) && "v1".equals(p.value));
+      ctx.assertTrue(found, "USER_PROPERTY must contain k1=v1");
+      endpoint.accept(false);
+      serverLatch.complete();
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+
+      MqttClient.create(vertx, options)
+          .connect(server.actualPort(), "localhost", null, Map.of("k1", "v1"));
+    });
+
+    serverLatch.awaitSuccess(5000);
   }
 
   // -----------------------------------------------------------------------

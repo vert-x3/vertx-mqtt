@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.vertx.mqtt.MqttException;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import java.util.List;
 import java.util.Map;
@@ -577,6 +578,106 @@ public class Mqtt5ClientPublishTest {
     });
 
     clientReceived.awaitSuccess(5000);
+  }
+
+  /**
+   * When the server sends MAXIMUM_PACKET_SIZE=50 in CONNACK, a publish with a
+   * 100-byte payload must be rejected client-side with MQTT_PACKET_TOO_LARGE.
+   */
+  @Test
+  public void publishExceedsMaximumPacketSize(TestContext ctx) {
+    Async rejected = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      MqttProperties connAckProps = new MqttProperties();
+      connAckProps.add(new MqttProperties.IntegerProperty(MqttProperties.MAXIMUM_PACKET_SIZE, 50));
+      endpoint.accept(false, connAckProps);
+
+      // If client erroneously sends the packet, fail the test
+      endpoint.publishHandler(msg -> ctx.fail("Client must NOT have sent the oversized packet"));
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          Buffer bigPayload = Buffer.buffer(new byte[100]);
+          client.publish("/test/topic", bigPayload, MqttQoS.AT_MOST_ONCE, false, false)
+            .onComplete(ctx.asyncAssertFailure(err -> {
+              ctx.assertTrue(err instanceof MqttException, "Expected MqttException");
+              ctx.assertEquals(MqttException.MQTT_PACKET_TOO_LARGE, ((MqttException) err).code());
+              rejected.complete();
+            }));
+        }));
+    });
+
+    rejected.awaitSuccess(5000);
+  }
+
+  // -----------------------------------------------------------------------
+  // PUBACK / PUBCOMP reason codes exposed to handler
+  // -----------------------------------------------------------------------
+
+  /**
+   * Server sends PUBACK with NOT_AUTHORIZED.
+   * Client's publishAckMessageHandler must fire with that reason code.
+   * publishCompletionHandler must NOT fire (packet was not acknowledged successfully).
+   */
+  @Test
+  public void pubAckReasonCodeExposedToHandler(TestContext ctx) {
+    Async done = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.publishHandler(msg ->
+        endpoint.publishAcknowledge(msg.messageId(),
+          MqttPubAckReasonCode.NOT_AUTHORIZED, MqttProperties.NO_PROPERTIES));
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.publishAckMessageHandler(ack -> {
+        ctx.assertEquals(MqttPubAckReasonCode.NOT_AUTHORIZED, ack.code());
+        done.complete();
+      });
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(connAck ->
+          client.publish(MQTT_TOPIC, Buffer.buffer("hello"), MqttQoS.AT_LEAST_ONCE, false, false)));
+    });
+
+    done.awaitSuccess(5000);
+  }
+
+  /**
+   * Server sends PUBCOMP with PACKET_IDENTIFIER_NOT_FOUND (error code).
+   * Client's publishCompMessageHandler must fire with that reason code.
+   */
+  @Test
+  public void pubCompReasonCodeExposedToHandler(TestContext ctx) {
+    Async done = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.publishHandler(msg ->
+        endpoint.publishReceived(msg.messageId(),
+          MqttPubRecReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES));
+      endpoint.publishReleaseHandler(msgId ->
+        endpoint.publishComplete(msgId,
+          MqttPubCompReasonCode.PACKET_IDENTIFIER_NOT_FOUND, MqttProperties.NO_PROPERTIES));
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.publishCompMessageHandler(comp -> {
+        ctx.assertEquals(MqttPubCompReasonCode.PACKET_IDENTIFIER_NOT_FOUND, comp.code());
+        done.complete();
+      });
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(connAck ->
+          client.publish(MQTT_TOPIC, Buffer.buffer("hello"), MqttQoS.EXACTLY_ONCE, false, false)));
+    });
+
+    done.awaitSuccess(5000);
   }
 
   // -----------------------------------------------------------------------

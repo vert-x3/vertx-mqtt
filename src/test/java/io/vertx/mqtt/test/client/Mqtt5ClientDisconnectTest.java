@@ -133,6 +133,71 @@ public class Mqtt5ClientDisconnectTest {
     reconnected.awaitSuccess(8000);
   }
 
+  /**
+   * Server sends DISCONNECT with SESSION_TAKEN_OVER — the client's disconnectMessageHandler
+   * must fire with the correct reason code.
+   */
+  @Test
+  public void serverDisconnectMessageHandlerReceivesReasonCode(TestContext ctx) {
+    Async async = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      // send server-initiated DISCONNECT after a short delay
+      vertx.setTimer(100, t ->
+        endpoint.disconnect(MqttDisconnectReasonCode.SESSION_TAKEN_OVER, MqttProperties.NO_PROPERTIES));
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+
+      MqttClient client = MqttClient.create(vertx, options);
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          client.disconnectMessageHandler(msg -> {
+            ctx.assertEquals(MqttDisconnectReasonCode.SESSION_TAKEN_OVER, msg.code());
+            async.complete();
+          });
+        }));
+    });
+
+    async.awaitSuccess(5000);
+  }
+
+  /**
+   * After a server-initiated DISCONNECT the closeHandler must also fire.
+   */
+  @Test
+  public void serverDisconnectAlsoFiresCloseHandler(TestContext ctx) {
+    Async disconnectHandlerFired = ctx.async();
+    Async closeHandlerFired = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      vertx.setTimer(100, t ->
+        endpoint.disconnect(MqttDisconnectReasonCode.SERVER_BUSY, MqttProperties.NO_PROPERTIES));
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions options = new MqttClientOptions();
+      options.setVersion(MqttVersion.MQTT_5.protocolLevel());
+
+      MqttClient client = MqttClient.create(vertx, options);
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          client.disconnectMessageHandler(msg -> {
+            ctx.assertEquals(MqttDisconnectReasonCode.SERVER_BUSY, msg.code());
+            disconnectHandlerFired.complete();
+          });
+          client.closeHandler(v -> closeHandlerFired.complete());
+        }));
+    });
+
+    disconnectHandlerFired.awaitSuccess(5000);
+    closeHandlerFired.awaitSuccess(5000);
+  }
+
   // -----------------------------------------------------------------------
 
   private void startServer(TestContext ctx, Runnable afterStart) {

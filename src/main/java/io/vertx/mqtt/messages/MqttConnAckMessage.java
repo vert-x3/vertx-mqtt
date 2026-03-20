@@ -140,6 +140,32 @@ public interface MqttConnAckMessage {
   Boolean subscriptionIdentifierAvailable();
 
   /**
+   * Whether the server supports Wildcard Subscriptions. (MQTT 5.0 §3.2.2.3.11)
+   * <p>
+   * If the server sends {@code 0}, the client MUST NOT send SUBSCRIBE packets
+   * with wildcard topic filters.
+   * If absent, wildcard subscriptions are supported (default = 1).
+   *
+   * @return {@code false} if wildcard subscriptions are NOT supported;
+   *         {@code null} if absent (meaning they ARE supported)
+   */
+  @Nullable
+  Boolean wildcardSubscriptionAvailable();
+
+  /**
+   * Whether the server supports Shared Subscriptions. (MQTT 5.0 §3.2.2.3.14)
+   * <p>
+   * If the server sends {@code 0}, the client MUST NOT send SUBSCRIBE packets
+   * with shared topic filters ({@code $share/...}).
+   * If absent, shared subscriptions are supported (default = 1).
+   *
+   * @return {@code false} if shared subscriptions are NOT supported;
+   *         {@code null} if absent (meaning they ARE supported)
+   */
+  @Nullable
+  Boolean sharedSubscriptionAvailable();
+
+  /**
    * Maximum packet size the server is willing to accept, in bytes. (MQTT 5.0)
    *
    * @return the maximum packet size, or {@code null} if not present (meaning no limit)

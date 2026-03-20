@@ -114,6 +114,18 @@ public class MqttConnAckMessageImpl implements MqttConnAckMessage {
   }
 
   @Override
+  public Boolean wildcardSubscriptionAvailable() {
+    Integer v = intProp(MqttPropertyType.WILDCARD_SUBSCRIPTION_AVAILABLE);
+    return v != null ? v != 0 : null;
+  }
+
+  @Override
+  public Boolean sharedSubscriptionAvailable() {
+    Integer v = intProp(MqttPropertyType.SHARED_SUBSCRIPTION_AVAILABLE);
+    return v != null ? v != 0 : null;
+  }
+
+  @Override
   public Long maximumPacketSize() {
     MqttProperties.MqttProperty prop = properties.getProperty(MqttPropertyType.MAXIMUM_PACKET_SIZE.value());
     if (prop instanceof MqttProperties.IntegerProperty) {

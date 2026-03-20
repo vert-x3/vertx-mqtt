@@ -458,7 +458,8 @@ public class MqttServerConnection {
    */
   void handleAuth(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
     synchronized (this.so) {
-      if (this.checkConnected()) {
+      // AUTH is valid both before CONNACK (enhanced auth initial exchange) and after (re-auth)
+      if (this.endpoint != null) {
         this.endpoint.handleAuth(reasonCode, properties);
       }
     }

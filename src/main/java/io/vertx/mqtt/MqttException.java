@@ -28,6 +28,9 @@ public class MqttException extends Throwable {
   public final static int MQTT_INFLIGHT_QUEUE_FULL = 2;
   public final static int MQTT_QOS_UNSUPPORTED = 3;
   public final static int MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED = 4;
+  public final static int MQTT_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED = 5;
+  public final static int MQTT_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED = 6;
+  public final static int MQTT_PACKET_TOO_LARGE = 7;
 
   private final int code;
 

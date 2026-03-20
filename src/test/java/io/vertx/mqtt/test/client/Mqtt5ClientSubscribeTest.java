@@ -275,6 +275,107 @@ public class Mqtt5ClientSubscribeTest {
     rejected.awaitSuccess(5000);
   }
 
+  /**
+   * When the server sends WILDCARD_SUBSCRIPTION_AVAILABLE=0 in CONNACK,
+   * any SUBSCRIBE with a wildcard topic filter must be rejected client-side
+   * with MQTT_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.
+   */
+  @Test
+  public void subscribeWithWildcardRejectedWhenServerDisablesIt(TestContext ctx) {
+    Async rejected = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      MqttProperties connAckProps = new MqttProperties();
+      connAckProps.add(new MqttProperties.IntegerProperty(
+        MqttProperties.WILDCARD_SUBSCRIPTION_AVAILABLE, 0));
+      endpoint.accept(false, connAckProps);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          ctx.assertFalse(ack.wildcardSubscriptionAvailable(),
+            "wildcardSubscriptionAvailable() must return false");
+
+          client.subscribe(Map.of("/wildcard/+/topic", 1))
+            .onComplete(ctx.asyncAssertFailure(err -> {
+              ctx.assertTrue(err instanceof MqttException, "Expected MqttException");
+              ctx.assertEquals(MqttException.MQTT_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED,
+                ((MqttException) err).code());
+              rejected.complete();
+            }));
+        }));
+    });
+
+    rejected.awaitSuccess(5000);
+  }
+
+  /**
+   * When the server sends SHARED_SUBSCRIPTION_AVAILABLE=0 in CONNACK,
+   * any SUBSCRIBE with a $share/... topic filter must be rejected client-side
+   * with MQTT_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.
+   */
+  @Test
+  public void subscribeWithSharedRejectedWhenServerDisablesIt(TestContext ctx) {
+    Async rejected = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      MqttProperties connAckProps = new MqttProperties();
+      connAckProps.add(new MqttProperties.IntegerProperty(
+        MqttProperties.SHARED_SUBSCRIPTION_AVAILABLE, 0));
+      endpoint.accept(false, connAckProps);
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          ctx.assertFalse(ack.sharedSubscriptionAvailable(),
+            "sharedSubscriptionAvailable() must return false");
+
+          client.subscribe(Map.of("$share/group/topic", 1))
+            .onComplete(ctx.asyncAssertFailure(err -> {
+              ctx.assertTrue(err instanceof MqttException, "Expected MqttException");
+              ctx.assertEquals(MqttException.MQTT_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED,
+                ((MqttException) err).code());
+              rejected.complete();
+            }));
+        }));
+    });
+
+    rejected.awaitSuccess(5000);
+  }
+
+  /**
+   * When the server omits WILDCARD_SUBSCRIPTION_AVAILABLE in CONNACK (default = supported),
+   * wildcardSubscriptionAvailable() must return null and wildcard subscriptions must succeed.
+   */
+  @Test
+  public void wildcardSubscriptionAvailableNullWhenAbsent(TestContext ctx) {
+    Async done = ctx.async();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.subscribeHandler(sub ->
+        endpoint.subscribeAcknowledge(sub.messageId(),
+          List.of(MqttSubAckReasonCode.GRANTED_QOS0), MqttProperties.NO_PROPERTIES));
+      endpoint.accept(false); // no WILDCARD_SUBSCRIPTION_AVAILABLE property
+    });
+
+    startServer(ctx, () -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.connect(server.actualPort(), "localhost")
+        .onComplete(ctx.asyncAssertSuccess(ack -> {
+          ctx.assertNull(ack.wildcardSubscriptionAvailable(),
+            "wildcardSubscriptionAvailable() must be null when absent");
+          client.subscribe(Map.of("/wildcard/#", 0))
+            .onComplete(ctx.asyncAssertSuccess(id -> done.complete()));
+        }));
+    });
+
+    done.awaitSuccess(5000);
+  }
+
   // -----------------------------------------------------------------------
 
   private MqttClientOptions v5Options() {
