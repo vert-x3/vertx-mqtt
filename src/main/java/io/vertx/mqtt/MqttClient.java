@@ -16,8 +16,10 @@
 
 package io.vertx.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -28,6 +30,7 @@ import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 
 import java.util.List;
 import java.util.Map;
@@ -96,6 +99,27 @@ public interface MqttClient {
    * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
    */
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+  /**
+   * Sends the PUBLISH message to the remote MQTT server
+   *
+   * @param id       the message ID
+   * @param topic    topic on which the message is published
+   * @param payload  message payload
+   * @param qosLevel QoS level
+   * @param isDup    if the message is a duplicate
+   * @param isRetain if the message needs to be retained
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
+   */
+  Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+  /**
+   * Sends the PUBREL message to the remote MQTT server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @return a reference to this, so the API can be used fluently
+   */
+  Future<Void> publishRelease(int publishMessageId);
 
   /**
    * Sets a handler which will be called each time the publishing of a message has been completed.
