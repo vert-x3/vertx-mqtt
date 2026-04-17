@@ -96,6 +96,7 @@ public class MqttServerWillTest {
     });
     server.listen().onComplete(context.asyncAssertSuccess(v -> {
       client = MqttClient.create(vertx, new MqttClientOptions()
+        .setWillTopic("willTopic")
         .setWillFlag(true)
         .setWillQoS(2)
         .setWillMessageBytes(Buffer.buffer("the-message"))
