@@ -731,7 +731,7 @@ public class MqttClientImpl implements MqttClient {
   }
 
   public synchronized boolean isPaused() {
-    return connOption.isAutoRead();
+    return !connOption.isAutoRead();
   }
 
   @Override
