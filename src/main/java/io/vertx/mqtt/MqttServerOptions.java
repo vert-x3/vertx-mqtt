@@ -331,6 +331,13 @@ public class MqttServerOptions extends NetServerOptions {
   /**
    * @return  timeout on CONNECT before closing connection
    */
+  public int getTimeoutOnConnect() {
+    return this.timeoutOnConnect;
+  }
+
+  /**
+   * @return  timeout on CONNECT before closing connection
+   */
   public int timeoutOnConnect() {
     return this.timeoutOnConnect;
   }

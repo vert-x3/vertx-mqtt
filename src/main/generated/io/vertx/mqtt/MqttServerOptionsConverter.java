@@ -79,6 +79,7 @@ public class MqttServerOptionsConverter {
     json.put("maxMessageSize", obj.getMaxMessageSize());
     json.put("autoClientId", obj.isAutoClientId());
     json.put("maxClientIdLength", obj.getMaxClientIdLength());
+    json.put("timeoutOnConnect", obj.getTimeoutOnConnect());
     json.put("useWebSocket", obj.isUseWebSocket());
     json.put("webSocketMaxFrameSize", obj.getWebSocketMaxFrameSize());
     json.put("perFrameWebSocketCompressionSupported", obj.isPerFrameWebSocketCompressionSupported());
