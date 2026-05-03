@@ -192,14 +192,16 @@ public class MqttServerImpl implements MqttServer {
       pipeline.addAfter("httpServerCodec", "aggregator", new HttpObjectAggregator(maxFrameSize));
 
       List<WebSocketServerExtensionHandshaker> extensionHandshakers = createExtensionHandshakers();
+      String webSocketHandlerBase = "aggregator";
 
       if (!extensionHandshakers.isEmpty()) {
         WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
           extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[0]));
-        pipeline.addAfter("aggregator", "webSocketExtensionHandler", extensionHandler);
+        pipeline.addAfter(webSocketHandlerBase, "webSocketExtensionHandler", extensionHandler);
+        webSocketHandlerBase = "webSocketExtensionHandler";
       }
 
-      pipeline.addAfter("webSocketExtensionHandler", "webSocketHandler",
+      pipeline.addAfter(webSocketHandlerBase, "webSocketHandler",
         new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST, !extensionHandshakers.isEmpty(), maxFrameSize, 10000L));
 
       pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());

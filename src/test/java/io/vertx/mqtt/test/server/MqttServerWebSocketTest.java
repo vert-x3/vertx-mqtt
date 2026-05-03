@@ -181,4 +181,30 @@ public class MqttServerWebSocketTest {
 
 
   }
+
+  @Test
+  public void testWebSocketConnectWithCompressionDisabled(TestContext context) {
+    MqttServerOptions options = new MqttServerOptions()
+      .setHost(MQTT_SERVER_HOST)
+      .setPort(MQTT_SERVER_PORT)
+      .setUseWebSocket(true)
+      .setPerFrameWebSocketCompressionSupported(false)
+      .setPerMessageWebSocketCompressionSupported(false);
+    MqttServer server = MqttServer.create(this.vertx, options);
+    Async done = context.async();
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      done.complete();
+    });
+    Async listen = context.async();
+    server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
+    listen.awaitSuccess(15_000);
+    MemoryPersistence persistence = new MemoryPersistence();
+    try (MqttClient client = new MqttClient(String.format("ws://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "compression-disabled", persistence)) {
+      client.connect();
+      client.disconnect();
+    } catch (MqttException e) {
+      context.fail(e);
+    }
+  }
 }
