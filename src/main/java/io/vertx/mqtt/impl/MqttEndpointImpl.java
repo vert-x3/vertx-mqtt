@@ -579,6 +579,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
     if (messageId > MAX_MESSAGE_ID || messageId < 0) {
       throw new IllegalArgumentException("messageId must be non-negative integer not larger than " + MAX_MESSAGE_ID);
     }
+    if ((qosLevel == MqttQoS.AT_LEAST_ONCE || qosLevel == MqttQoS.EXACTLY_ONCE) && messageId == 0) {
+      throw new IllegalArgumentException("messageId must be > 0 for QoS 1 or 2");
+    }
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qosLevel, isRetain, 0);
