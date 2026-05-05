@@ -70,6 +70,11 @@ public class MqttClientOptionsConverter {
             obj.setPassword((String)member.getValue());
           }
           break;
+        case "recvByteBufAllocatorSize":
+          if (member.getValue() instanceof Number) {
+            obj.setRecvByteBufAllocatorSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "username":
           if (member.getValue() instanceof String) {
             obj.setUsername((String)member.getValue());
@@ -123,6 +128,7 @@ public class MqttClientOptionsConverter {
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
+    json.put("recvByteBufAllocatorSize", obj.getRecvByteBufAllocatorSize());
     if (obj.getUsername() != null) {
       json.put("username", obj.getUsername());
     }

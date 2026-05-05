@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleState;
@@ -248,6 +249,9 @@ public class MqttClientImpl implements MqttClient {
           synchronized (MqttClientImpl.this) {
             this.connection = soi;
             this.connOption = soi.channelHandlerContext().channel().config();
+            if (options.getRecvByteBufAllocatorSize() != -1) {
+              this.connOption.setRecvByteBufAllocator(new FixedRecvByteBufAllocator(options.getRecvByteBufAllocatorSize()));
+            }
           }
 
           soi.messageHandler(msg -> this.handleMessage(soi.channelHandlerContext(), msg));
