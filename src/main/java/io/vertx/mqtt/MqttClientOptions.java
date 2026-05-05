@@ -44,6 +44,7 @@ public class MqttClientOptions extends NetClientOptions {
   public static final int DEFAULT_MAX_MESSAGE_SIZE = -1;
   public static final int DEFAULT_ACK_TIMEOUT = -1;
   public static final boolean DEFAULT_AUTO_ACK = true;
+  public static final int DEFAULT_RECV_BYTE_BUF_ALLOCATOR_SIZE = -1;
 
   private String clientId;
   private String username;
@@ -61,6 +62,7 @@ public class MqttClientOptions extends NetClientOptions {
   private int maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
   private int ackTimeout = DEFAULT_ACK_TIMEOUT;
   private boolean autoAck = DEFAULT_AUTO_ACK;
+  private int recvByteBufAllocatorSize = DEFAULT_RECV_BYTE_BUF_ALLOCATOR_SIZE;
 
   /**
    * Default constructor
@@ -82,6 +84,7 @@ public class MqttClientOptions extends NetClientOptions {
     this.maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
     this.ackTimeout = DEFAULT_ACK_TIMEOUT;
     this.autoAck = DEFAULT_AUTO_ACK;
+    this.recvByteBufAllocatorSize = DEFAULT_RECV_BYTE_BUF_ALLOCATOR_SIZE;
   }
 
   /**
@@ -121,6 +124,7 @@ public class MqttClientOptions extends NetClientOptions {
     this.maxMessageSize = other.maxMessageSize;
     this.ackTimeout = other.ackTimeout;
     this.autoAck = other.autoAck;
+    this.recvByteBufAllocatorSize = other.recvByteBufAllocatorSize;
   }
 
   /**
@@ -407,6 +411,25 @@ public class MqttClientOptions extends NetClientOptions {
    */
   public void setAutoAck(boolean autoAck) {
     this.autoAck = autoAck;
+  }
+
+  /**
+   * @return the size for the FixedRecvByteBufAllocator, or -1 if not set
+   */
+  public int getRecvByteBufAllocatorSize() {
+    return recvByteBufAllocatorSize;
+  }
+
+  /**
+   * Set the size for the FixedRecvByteBufAllocator used on the channel.
+   * Use -1 (default) to leave the allocator unchanged.
+   *
+   * @param recvByteBufAllocatorSize the fixed buffer size in bytes, or -1 to disable
+   * @return current options instance
+   */
+  public MqttClientOptions setRecvByteBufAllocatorSize(int recvByteBufAllocatorSize) {
+    this.recvByteBufAllocatorSize = recvByteBufAllocatorSize;
+    return this;
   }
 
   /**
