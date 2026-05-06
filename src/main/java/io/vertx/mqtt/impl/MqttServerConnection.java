@@ -229,15 +229,15 @@ public class MqttServerConnection {
     if (msg.variableHeader().isWillFlag()) {
       // [MQTT-3.1.2-9] if Will Flag is 1, Will Topic MUST be present in the Payload
       String willTopic = msg.payload().willTopic();
-      willInvariantViolated = willTopic == null || willTopic.isEmpty();
+      willInvariantViolated = willTopic == null
+        || willTopic.isEmpty()
+        || msg.payload().willMessageInBytes() == null;
     } else {
-      // [MQTT-3.1.2-11] if Will Flag is 0, Will QoS and Will Retain MUST be 0,
-      // and Will Topic / Will Message MUST NOT be present in the Payload
-      String willTopic = msg.payload().willTopic();
+      // [MQTT-3.1.2-11] if Will Flag is 0, Will QoS and Will Retain MUST be 0.
+      // (Will Topic / Will Message absence is already enforced by the wire format:
+      // the Netty decoder only reads them from the payload when Will Flag is 1.)
       willInvariantViolated = msg.variableHeader().willQos() != 0
-        || msg.variableHeader().isWillRetain()
-        || (willTopic != null && !willTopic.isEmpty())
-        || msg.payload().willMessageInBytes() != null;
+        || msg.variableHeader().isWillRetain();
     }
     if (willInvariantViolated) {
       endpoint = new MqttEndpointImpl(so, null, null, null, false,
