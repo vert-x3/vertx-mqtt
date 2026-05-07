@@ -17,8 +17,11 @@
 package io.vertx.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -26,8 +29,19 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.impl.MqttClientImpl;
 import io.vertx.mqtt.messages.MqttConnAckMessage;
+import io.vertx.mqtt.messages.MqttDisconnectMessage;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.MqttPubCompMessage;
+import io.vertx.mqtt.messages.MqttPubRecMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.vertx.mqtt.messages.MqttUnsubAckMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
 
 import java.util.List;
 import java.util.Map;
@@ -91,6 +105,17 @@ public interface MqttClient {
    * Like {@link #connect(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<MqttConnAckMessage> connect(int port, String host, String serverName);
+  
+  /**
+   * Connects to an MQTT server calling connectHandler after connection
+   *
+   * @param port  port of the MQTT server
+   * @param host  hostname/ip address of the MQTT server
+   * @param serverName  the SNI server name
+   * @param userProperties Connect User Properties
+   * @return a future notified when the connect call ends
+   */
+  Future<MqttConnAckMessage> connect(int port, String host, String serverName, Map<String, String> userProperties);
 
   /**
    * Disconnects from the MQTT server
@@ -107,6 +132,16 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient disconnect(Handler<AsyncResult<Void>> disconnectHandler);
+
+  /**
+   * Disconnects from the MQTT server
+   *
+   * @param code reason code for the disconnect
+   * @param properties MQTT properties
+   * @return a {@code Future} of the asynchronous result
+   */
+  @GenIgnore
+  Future<Void> disconnect(MqttDisconnectReasonCode code, MqttProperties properties);
 
   /**
    * Sends the PUBLISH message to the remote MQTT server
@@ -135,6 +170,20 @@ public interface MqttClient {
   MqttClient publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, Handler<AsyncResult<Integer>> publishSentHandler);
 
   /**
+   * Sends the PUBLISH message to the remote MQTT server with MQTT 5.0 properties
+   *
+   * @param topic      topic on which the message is published
+   * @param payload    message payload
+   * @param qosLevel   QoS level
+   * @param isDup      if the message is a duplicate
+   * @param isRetain   if the message needs to be retained
+   * @param properties MQTT 5.0 properties (e.g. message expiry, content type, response topic, user properties)
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
+   */
+  @GenIgnore
+  Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties);
+
+  /**
    * Sets a handler which will be called each time the publishing of a message has been completed.
    * <p>
    * For a message that has been published using
@@ -149,6 +198,45 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient publishCompletionHandler(Handler<Integer> publishCompletionHandler);
+
+  /**
+   * Sets a handler which will be called each time a PUBACK is received from the server.
+   * <p>
+   * MQTT 5.0: the handler receives the full typed message including reason code and properties.
+   * This handler fires alongside the existing {@link #publishCompletionHandler(Handler)}.
+   *
+   * @param handler handler called with the PUBACK message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient publishAckMessageHandler(Handler<MqttPubAckMessage> handler);
+
+  /**
+   * Sets a handler which will be called each time a PUBREC is received from the server.
+   * <p>
+   * MQTT 5.0: the handler receives the full typed message including reason code and properties,
+   * before the client sends PUBREL.
+   *
+   * @param handler handler called with the PUBREC message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient publishRecMessageHandler(Handler<MqttPubRecMessage> handler);
+
+  /**
+   * Sets a handler which will be called each time a PUBCOMP is received from the server.
+   * <p>
+   * MQTT 5.0: the handler receives the full typed message including reason code and properties.
+   * This handler fires alongside the existing {@link #publishCompletionHandler(Handler)}.
+   *
+   * @param handler handler called with the PUBCOMP message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient publishCompMessageHandler(Handler<MqttPubCompMessage> handler);
 
   /**
    * Sets a handler which will be called when the client does not receive a PUBACK or
@@ -168,6 +256,50 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient publishCompletionExpirationHandler(Handler<Integer> publishCompletionExpirationHandler);
+
+  /**
+   * Sends PUBACK packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBACK packet sent
+   */
+  @GenIgnore
+  Future<Void> publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties properties);
+
+  /**
+   * Sends PUBREC packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBREC packet sent
+   */
+  @GenIgnore
+  Future<Void> publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties);
+
+  /**
+   * Sends PUBREL packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBREL packet sent
+   */
+  @GenIgnore
+  Future<Void> publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties);
+
+  /**
+   * Sends PUBCOMP packet to server
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @param reasonCode       reason code
+   * @param properties       MQTT properties
+   * @return a {@code Future} completed after PUBCOMP packet sent
+   */
+  @GenIgnore
+  Future<Void> publishComplete(int publishMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties);
 
   /**
    * Sets a handler which will be called when the client receives a PUBACK/PUBREC/PUBCOMP with an unknown
@@ -225,6 +357,29 @@ public interface MqttClient {
    */
   Future<Integer> subscribe(Map<String, Integer> topics);
 
+  /**
+   * Subscribes to the topics with related QoS levels
+   *
+   * @param topics topics and related QoS levels to subscribe to
+   * @param properties MQTT properties
+   * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
+   */
+  @GenIgnore
+  Future<Integer> subscribe(Map<String, Integer> topics, MqttProperties properties);
+
+  /**
+   * Subscribes to a list of topics with MQTT 5.0 subscription options (No Local,
+   * Retain As Published, Retain Handling) and optional properties.
+   * Each {@link MqttTopicSubscription} carries the topic filter and a
+   * {@link MqttSubscriptionOption} that encodes QoS plus the v5 options.
+   *
+   * @param subscriptions list of topic subscriptions with options
+   * @param properties    MQTT properties (e.g. Subscription Identifier)
+   * @return a {@code Future} completed after SUBSCRIBE packet sent with packetid
+   */
+  @GenIgnore
+  Future<Integer> subscribe(List<MqttTopicSubscription> subscriptions, MqttProperties properties);
+
 
   /**
    * Subscribes to the topic and adds a handler which will be called after the request is sent
@@ -247,6 +402,15 @@ public interface MqttClient {
   MqttClient unsubscribeCompletionHandler(Handler<Integer> unsubscribeCompletionHandler);
 
   /**
+   * Sets handler which will be called after UNSUBACK packet receiving
+   *
+   * @param unsubscribeCompletionMessageHandler handler to call with the unsubscribe message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  MqttClient unsubscribeCompletionMessageHandler(Handler<MqttUnsubAckMessage> unsubscribeCompletionMessageHandler);
+
+  /**
    * Unsubscribe from receiving messages on given topic
    *
    * @param topic Topic you want to unsubscribe from
@@ -261,6 +425,16 @@ public interface MqttClient {
    * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
    */
   Future<Integer> unsubscribe(List<String> topics);
+
+  /**
+   * Unsubscribe from receiving messages on given list of topic
+   *
+   * @param topics list of topics you want to unsubscribe from
+   * @param properties MQTT properties
+   * @return a {@code Future} completed after UNSUBSCRIBE packet sent with packetid
+   */
+  @GenIgnore
+  Future<Integer> unsubscribe(List<String> topics, MqttProperties properties);
 
   /**
    * Unsubscribe from receiving messages on given topics
@@ -302,6 +476,20 @@ public interface MqttClient {
    */
   @Fluent
   MqttClient exceptionHandler(Handler<Throwable> handler);
+
+  /**
+   * Sets a handler that will be called when the server sends a DISCONNECT packet.
+   * <p>
+   * This fires before {@link #closeHandler(Handler)} and only for server-initiated
+   * disconnects (not when the client calls {@link #disconnect()}).
+   * The handler receives the reason code and properties from the server's DISCONNECT packet.
+   *
+   * @param handler handler to call with the disconnect message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient disconnectMessageHandler(Handler<MqttDisconnectMessage> handler);
 
   /**
    * Set a handler that will be called when the connection with server is closed
