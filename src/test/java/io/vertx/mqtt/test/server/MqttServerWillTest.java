@@ -139,7 +139,7 @@ public class MqttServerWillTest {
       so only Will QoS and Will Retain need explicit validation.)
   */
   @Test
-  public void testWillParamsAbsentIfWillFlagFalse1(TestContext context) {
+  public void testWillParamsAbsentIfWillFlagFalseWithRetain(TestContext context) {
     server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
     server.endpointHandler(endpoint -> context.fail("endpoint should not be reached for malformed CONNECT"));
     Async async = context.async();
@@ -160,7 +160,7 @@ public class MqttServerWillTest {
   }
 
   @Test
-  public void testWillParamsAbsentIfWillFlagFalse2(TestContext context) {
+  public void testWillParamsAbsentIfWillFlagFalseWithQoS(TestContext context) {
     server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
     server.endpointHandler(endpoint -> context.fail("endpoint should not be reached for malformed CONNECT"));
     Async async = context.async();
