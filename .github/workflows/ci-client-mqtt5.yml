@@ -1,0 +1,26 @@
+name: CI client_mqtt5_master
+
+on:
+  push:
+    branches:
+      - client_mqtt5_master
+  pull_request:
+    branches:
+      - client_mqtt5_master
+
+jobs:
+  CI:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+      - name: Run tests
+        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B

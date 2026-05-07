@@ -26,6 +26,7 @@ import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -548,8 +549,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdAndPropertiesVariableHeader variableHeader =
-      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
+    MqttPubReplyMessageVariableHeader variableHeader =
+      new MqttPubReplyMessageVariableHeader(publishMessageId, reasonCode.value(), properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -910,7 +911,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   private Future<Void> write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
-      if (mqttMessage.fixedHeader().messageType() != MqttMessageType.CONNACK) {
+      MqttMessageType type = mqttMessage.fixedHeader().messageType();
+      // CONNACK and AUTH may be sent before the connection is fully accepted
+      if (type != MqttMessageType.CONNACK && type != MqttMessageType.AUTH) {
         this.checkConnected();
       }
       return this.conn.writeMessage(mqttMessage);
@@ -935,6 +938,15 @@ public class MqttEndpointImpl implements MqttEndpoint {
     if (!this.isConnected) {
       throw new IllegalStateException("Connection not accepted yet");
     }
+  }
+
+  /**
+   * Used for calling the auth handler when an AUTH packet is received from the remote MQTT client
+   */
+  void handleAuth(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
+    // Stub: a full server-side AUTH handler requires the authentication-exchange API
+    // (introduced upstream in commit 892e923). For now, AUTH packets received before
+    // CONNACK are accepted by MqttServerConnection but not surfaced to user code.
   }
 
   /**

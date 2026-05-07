@@ -17,6 +17,7 @@
 package io.vertx.mqtt.messages.impl;
 
 import io.vertx.mqtt.messages.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
 
 import java.util.List;
 
@@ -27,6 +28,7 @@ public class MqttSubAckMessageImpl implements MqttSubAckMessage {
 
   private final int messageId;
   private final List<Integer> grantedQoSLevels;
+  private final MqttProperties properties;
 
   /**
    * Constructor
@@ -35,8 +37,20 @@ public class MqttSubAckMessageImpl implements MqttSubAckMessage {
    * @param grantedQoSLevels  list of granted QoS levels
    */
   public MqttSubAckMessageImpl(int messageId, List<Integer> grantedQoSLevels) {
+    this(messageId, grantedQoSLevels, MqttProperties.NO_PROPERTIES);
+  }
+
+  /**
+   * Constructor
+   *
+   * @param messageId message identifier
+   * @param grantedQoSLevels  list of granted QoS levels
+   * @param properties MQTT properties
+   */
+  public MqttSubAckMessageImpl(int messageId, List<Integer> grantedQoSLevels, MqttProperties properties) {
     this.messageId = messageId;
     this.grantedQoSLevels = grantedQoSLevels;
+    this.properties = properties;
   }
 
   public int messageId() {
@@ -45,5 +59,9 @@ public class MqttSubAckMessageImpl implements MqttSubAckMessage {
 
   public List<Integer> grantedQoSLevels() {
     return grantedQoSLevels;
+  }
+
+  public MqttProperties properties() {
+    return properties;
   }
 }
