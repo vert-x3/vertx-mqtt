@@ -96,12 +96,87 @@ public class MqttServerWillTest {
     });
     server.listen(context.asyncAssertSuccess(v -> {
       client = MqttClient.create(vertx, new MqttClientOptions()
+        .setWillTopic("willTopic")
         .setWillFlag(true)
         .setWillQoS(2)
         .setWillMessageBytes(Buffer.buffer("the-message"))
       );
       client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, context.asyncAssertSuccess(ack -> {
       }));
+    }));
+  }
+
+  /**
+   * Test that the server rejects a CONNECT with Will Flag set but no Will Topic
+   * (violation of [MQTT-3.1.2-9]). The server replies with CONNACK reason
+   * code 0x82 (Protocol Error) and closes the connection.
+   */
+  @Test
+  public void testWillMalformed(TestContext context) {
+    server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
+    server.endpointHandler(endpoint -> context.fail("endpoint should not be reached for malformed CONNECT"));
+    Async async = context.async();
+    server.listen(context.asyncAssertSuccess(v -> {
+      client = MqttClient.create(vertx, new MqttClientOptions()
+        .setWillFlag(true)
+        .setWillQoS(2)
+        .setWillMessageBytes(Buffer.buffer("the-message"))
+      );
+      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, ar -> {
+        if (ar.succeeded()) {
+          context.fail("connection should be rejected");
+        } else {
+          context.assertTrue(ar.cause().getMessage().contains("CONNECTION_REFUSED_PROTOCOL_ERROR"));
+        }
+        async.complete();
+      });
+    }));
+  }
+
+  /*
+      [MQTT-3.1.2-11] if Will Flag is 0, Will QoS and Will Retain MUST be 0.
+      (Will Topic / Will Message absence is enforced by the wire format itself,
+      so only Will QoS and Will Retain need explicit validation.)
+  */
+  @Test
+  public void testWillParamsAbsentIfWillFlagFalseWithRetain(TestContext context) {
+    server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
+    server.endpointHandler(endpoint -> context.fail("endpoint should not be reached for malformed CONNECT"));
+    Async async = context.async();
+    server.listen(context.asyncAssertSuccess(v -> {
+      client = MqttClient.create(vertx, new MqttClientOptions()
+        .setWillFlag(false)
+        .setWillRetain(true)
+      );
+      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, ar -> {
+        if (ar.succeeded()) {
+          context.fail("connection should be rejected");
+        } else {
+          context.assertTrue(ar.cause().getMessage().contains("CONNECTION_REFUSED_PROTOCOL_ERROR"));
+        }
+        async.complete();
+      });
+    }));
+  }
+
+  @Test
+  public void testWillParamsAbsentIfWillFlagFalseWithQoS(TestContext context) {
+    server = MqttServer.create(this.vertx, new MqttServerOptions().setHost(MQTT_SERVER_HOST).setPort(MQTT_SERVER_PORT));
+    server.endpointHandler(endpoint -> context.fail("endpoint should not be reached for malformed CONNECT"));
+    Async async = context.async();
+    server.listen(context.asyncAssertSuccess(v -> {
+      client = MqttClient.create(vertx, new MqttClientOptions()
+        .setWillFlag(false)
+        .setWillQoS(1)
+      );
+      client.connect(MQTT_SERVER_PORT, MQTT_SERVER_HOST, ar -> {
+        if (ar.succeeded()) {
+          context.fail("connection should be rejected");
+        } else {
+          context.assertTrue(ar.cause().getMessage().contains("CONNECTION_REFUSED_PROTOCOL_ERROR"));
+        }
+        async.complete();
+      });
     }));
   }
 

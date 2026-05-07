@@ -228,6 +228,29 @@ public class MqttServerConnection {
       return;
     }
 
+    // Validate Will fields per MQTT spec section 3.1.2.5
+    boolean willInvariantViolated;
+    if (msg.variableHeader().isWillFlag()) {
+      // [MQTT-3.1.2-9] if Will Flag is 1, Will Topic MUST be present in the Payload
+      String willTopic = msg.payload().willTopic();
+      willInvariantViolated = willTopic == null
+        || willTopic.isEmpty()
+        || msg.payload().willMessageInBytes() == null;
+    } else {
+      // [MQTT-3.1.2-11] if Will Flag is 0, Will QoS and Will Retain MUST be 0.
+      // (Will Topic / Will Message absence is already enforced by the wire format:
+      // the Netty decoder only reads them from the payload when Will Flag is 1.)
+      willInvariantViolated = msg.variableHeader().willQos() != 0
+        || msg.variableHeader().isWillRetain();
+    }
+    if (willInvariantViolated) {
+      endpoint = new MqttEndpointImpl(so, null, null, null, false,
+        msg.variableHeader().version(), null, 0,
+        MqttProperties.NO_PROPERTIES, httpHeaders, httpRequestUri);
+      endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR);
+      return;
+    }
+
     // retrieve will information from CONNECT message
     MqttWill will =
       new MqttWill(msg.variableHeader().isWillFlag(),
