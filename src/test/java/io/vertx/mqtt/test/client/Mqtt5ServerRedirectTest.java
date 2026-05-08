@@ -19,7 +19,7 @@ package io.vertx.mqtt.test.client;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
-import io.vertx.core.Future;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -60,10 +60,9 @@ public class Mqtt5ServerRedirectTest {
 
   @After
   public void after(TestContext ctx) {
-    server1.close()
-      .compose(v -> server2.close())
-      .compose(v -> vertx.close())
-      .onComplete(ctx.asyncAssertSuccess());
+    server1.close(ctx.asyncAssertSuccess(v1 ->
+      server2.close(ctx.asyncAssertSuccess(v2 ->
+        vertx.close(ctx.asyncAssertSuccess())))));
   }
 
   // -------------------------------------------------------------------------
@@ -180,7 +179,7 @@ public class Mqtt5ServerRedirectTest {
     server3.endpointHandler(ep -> { ep.accept(false); done.complete(); });
 
     // Start server2 and server3 in parallel, then server1
-    Future.all(server2.listen(0), server3.listen(0))
+    CompositeFuture.all(server2.listen(0), server3.listen(0))
       .onComplete(ctx.asyncAssertSuccess(v -> {
         server1.endpointHandler(ep -> {
           MqttProperties props = new MqttProperties();
