@@ -53,6 +53,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
@@ -168,6 +169,18 @@ public class MqttClientImpl implements MqttClient {
       return countInflightQueue;
     }
   }
+
+  
+  @Override
+  public SocketAddress localAddress() {
+    return connection.localAddress();
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    return connection.remoteAddress();
+  }
+
 
   @Override
   public Future<MqttConnAckMessage> connect(int port, String host) {
