@@ -1,12 +1,12 @@
-name: CI client_mqtt5_master
+name: CI client_mqtt5_vertx4
 
 on:
   push:
     branches:
-      - client_mqtt5_master
+      - client_mqtt5_vertx4
   pull_request:
     branches:
-      - client_mqtt5_master
+      - client_mqtt5_vertx4
 
 jobs:
   CI:
