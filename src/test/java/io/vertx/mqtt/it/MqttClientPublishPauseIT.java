@@ -28,8 +28,6 @@ import io.vertx.mqtt.MqttClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertTrue;
-
 /**
  * MQTT client testing on publishing messages
  */
