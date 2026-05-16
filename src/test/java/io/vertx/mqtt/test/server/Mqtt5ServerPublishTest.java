@@ -55,7 +55,7 @@ public class Mqtt5ServerPublishTest extends MqttServerBaseTest {
   private String message;
   private MqttProperties properties;
 
-  private AtomicInteger nextMessageId = new AtomicInteger(0);
+  private AtomicInteger nextMessageId = new AtomicInteger(1);
 
   private AtomicReference<org.eclipse.paho.mqttv5.common.packet.MqttProperties> lastMessageProperties = new AtomicReference<>(null);
 
