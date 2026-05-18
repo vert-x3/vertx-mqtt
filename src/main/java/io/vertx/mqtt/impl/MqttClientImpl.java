@@ -360,6 +360,14 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    return publish(-1, topic, payload, qosLevel, isDup, isRetain);
+  }
+
+  /**
+   * See {@link MqttClient#publish(int, String, Buffer, MqttQoS, boolean, boolean)} for more details
+   */
+  @Override
+  public Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
 
     if (MqttQoS.FAILURE == qosLevel) {
       throw new IllegalArgumentException("QoS level must be one of AT_MOST_ONCE, AT_LEAST_ONCE or EXACTLY_ONCE");
@@ -382,6 +390,25 @@ public class MqttClientImpl implements MqttClient {
         return ctx.failedFuture(exception);
       }
 
+      if (id < 0) {
+        id = nextMessageId();
+      } else {
+        switch (qosLevel) {
+          case AT_LEAST_ONCE:
+            if (qos1outbound.containsKey(id)) {
+              MqttException exception = new MqttException(MqttException.MQTT_INVALID_MESSAGE_ID, "");
+              return ctx.failedFuture(exception);
+            }
+            break;
+          case EXACTLY_ONCE:
+            if (qos2outbound.containsKey(id)) {
+              MqttException exception = new MqttException(MqttException.MQTT_INVALID_MESSAGE_ID, "");
+              return ctx.failedFuture(exception);
+            }
+            break;
+        }
+      }
+
       MqttFixedHeader fixedHeader = new MqttFixedHeader(
         MqttMessageType.PUBLISH,
         isDup,
@@ -390,7 +417,7 @@ public class MqttClientImpl implements MqttClient {
         0
       );
       ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
-      variableHeader = new MqttPublishVariableHeader(topic, nextMessageId());
+      variableHeader = new MqttPublishVariableHeader(topic, id);
       publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
       switch (qosLevel) {
         case AT_LEAST_ONCE:
@@ -750,7 +777,7 @@ public class MqttClientImpl implements MqttClient {
    *
    * @param publishMessageId  identifier of the PUBLISH message to acknowledge
    */
-  private void publishRelease(int publishMessageId) {
+  public Future<Void> publishRelease(int publishMessageId) {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
@@ -761,9 +788,12 @@ public class MqttClientImpl implements MqttClient {
     io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
     synchronized (this) {
+      // todo: should check duplicates
       qos2outbound.put(publishMessageId, new ExpiringPacket(this::handlePubcompTimeout, publishMessageId));
     }
-    this.write(pubrel);
+    Future<Void> write = this.write(pubrel);
+
+    return write;
   }
 
   private void initChannel(NetSocketInternal sock) {

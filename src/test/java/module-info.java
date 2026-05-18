@@ -30,4 +30,6 @@ open module io.vertx.tests.mqtt {
   requires org.eclipse.paho.client.mqttv3;
   requires org.eclipse.paho.mqttv5.client;
   requires testcontainers;
+  requires testcontainers.junit.jupiter;
+  requires hamcrest.core;
 }

@@ -98,6 +98,27 @@ public interface MqttClient {
   Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
 
   /**
+   * Sends the PUBLISH message to the remote MQTT server
+   *
+   * @param id       the message ID
+   * @param topic    topic on which the message is published
+   * @param payload  message payload
+   * @param qosLevel QoS level
+   * @param isDup    if the message is a duplicate
+   * @param isRetain if the message needs to be retained
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
+   */
+  Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain);
+
+  /**
+   * Sends the PUBREL message to the remote MQTT server. This can be used when a PUBREL message expires
+   *
+   * @param publishMessageId identifier of the PUBLISH message to acknowledge
+   * @return a reference to this, so the API can be used fluently
+   */
+  Future<Void> publishRelease(int publishMessageId);
+
+  /**
    * Sets a handler which will be called each time the publishing of a message has been completed.
    * <p>
    * For a message that has been published using
