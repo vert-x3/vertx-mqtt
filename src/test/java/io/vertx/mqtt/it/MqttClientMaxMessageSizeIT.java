@@ -28,7 +28,6 @@ import io.vertx.mqtt.MqttClientOptions;
 import org.junit.Test;
 
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
-import static org.junit.Assert.assertTrue;
 
 /**
  * MQTT client testing about the maximum message size
