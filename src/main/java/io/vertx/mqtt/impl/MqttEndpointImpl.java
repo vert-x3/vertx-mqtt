@@ -59,6 +59,7 @@ import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 import io.vertx.mqtt.messages.codes.MqttSubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttUnsubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
+import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 import javax.net.ssl.SSLSession;
 import java.util.Collections;
@@ -699,13 +700,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
    */
   void handlePublish(io.vertx.mqtt.messages.MqttPublishMessage msg) {
 
-    synchronized (this.conn) {
-      if (this.publishHandler != null) {
-        this.publishHandler.handle(msg);
-      }
-
-      if (this.isPublishAutoAck) {
-
+    ((MqttPublishMessageImpl) msg).setAckCallback(() -> {
+      synchronized (this.conn) {
         switch (msg.qosLevel()) {
 
           case AT_LEAST_ONCE:
@@ -717,6 +713,18 @@ public class MqttEndpointImpl implements MqttEndpoint {
             break;
         }
       }
+    });
+
+    boolean ack;
+    synchronized (this.conn) {
+      if (this.publishHandler != null) {
+        this.publishHandler.handle(msg);
+      }
+      ack = isPublishAutoAck;
+    }
+
+    if (ack) {
+      msg.ack();
     }
   }
 
