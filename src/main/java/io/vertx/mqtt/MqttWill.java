@@ -22,8 +22,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import static io.netty.handler.codec.mqtt.MqttProperties.MqttPropertyType.*;
 /**
