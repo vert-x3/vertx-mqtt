@@ -28,10 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertEquals;
-
 /**
  * MQTT server keep alive tests using a Vert.x MQTT server to accommodate testing.
  */
