@@ -406,8 +406,9 @@ public class MqttClientOptions extends NetClientOptions {
    * (default is true)
    * @param autoAck
    */
-  public void setAutoAck(boolean autoAck) {
+  public MqttClientOptions setAutoAck(boolean autoAck) {
     this.autoAck = autoAck;
+    return this;
   }
 
   /**
