@@ -2,6 +2,7 @@ package io.vertx.mqtt.test.server;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
