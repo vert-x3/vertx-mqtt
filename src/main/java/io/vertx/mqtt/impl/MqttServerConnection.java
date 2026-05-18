@@ -46,12 +46,14 @@ import io.vertx.mqtt.MqttWill;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubscribeMessage;
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -75,6 +77,10 @@ public class MqttServerConnection {
   private final MqttServerOptions options;
   private MultiMap httpHeaders;
   private String httpRequestUri;
+
+  // MQTT 5.0 §3.3.2.3.4 – topic alias (client-to-server direction)
+  // alias → topic mapping for incoming PUBLISH messages from the client
+  private final HashMap<Integer, String> clientTopicAlias = new HashMap<>();
 
   public MqttServerConnection(NetSocketInternal so,
                               Handler<MqttEndpoint> endpointHandler,
@@ -149,12 +155,40 @@ public class MqttServerConnection {
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
           ByteBuf newBuf = VertxHandler.safeBuffer(publish.payload());
 
+          // MQTT 5.0 §3.3.2.3.4 – resolve incoming topic alias (client-to-server direction)
+          String resolvedTopic = publish.variableHeader().topicName();
+          MqttProperties.MqttProperty<?> aliasProp =
+            publish.variableHeader().properties().getProperty(MqttProperties.MqttPropertyType.TOPIC_ALIAS.value());
+          if (aliasProp != null) {
+            int alias = (Integer) aliasProp.value();
+            if (alias < 1) {
+              // Alias 0 is never permitted per spec §3.3.2.3.4
+              log.warn("MQTT protocol error: TOPIC_ALIAS 0 is not permitted, closing connection");
+              so.close();
+              return;
+            }
+            if (!resolvedTopic.isEmpty()) {
+              // New or overwritten mapping
+              clientTopicAlias.put(alias, resolvedTopic);
+            } else {
+              // Alias-only packet: resolve to stored topic
+              resolvedTopic = clientTopicAlias.get(alias);
+              if (resolvedTopic == null) {
+                // Alias used before being defined → protocol error
+                log.warn("MQTT protocol error: TOPIC_ALIAS " + alias +
+                  " used before being defined, closing connection");
+                so.close();
+                return;
+              }
+            }
+          }
+
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),
             publish.fixedHeader().qosLevel(),
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
-            publish.variableHeader().topicName(),
+            resolvedTopic,
             newBuf,
             publish.variableHeader().properties());
           this.handlePublish(mqttPublishMessage);
@@ -443,6 +477,18 @@ public class MqttServerConnection {
     synchronized (this.so) {
       if (this.checkConnected()) {
         this.endpoint.handlePubcomp(pubcompMessageId, code, properties);
+      }
+    }
+  }
+
+  /**
+   * Used internally for handling the auth from the remote MQTT client
+   */
+  void handleAuth(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
+    synchronized (this.so) {
+      // AUTH is valid both before CONNACK (enhanced auth initial exchange) and after (re-auth)
+      if (this.endpoint != null) {
+        this.endpoint.handleAuth(reasonCode, properties);
       }
     }
   }

@@ -20,10 +20,17 @@ package io.vertx.mqtt;
  * Exception raised with a specific reason code
  */
 public class MqttException extends Throwable {
-
+  
+  private static final long serialVersionUID = -6330343007516479948L;
+ 
   public final static int MQTT_INVALID_TOPIC_NAME = 0;
   public final static int MQTT_INVALID_TOPIC_FILTER = 1;
   public final static int MQTT_INFLIGHT_QUEUE_FULL = 2;
+  public final static int MQTT_QOS_UNSUPPORTED = 3;
+  public final static int MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED = 4;
+  public final static int MQTT_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED = 5;
+  public final static int MQTT_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED = 6;
+  public final static int MQTT_PACKET_TOO_LARGE = 7;
 
   private final int code;
 
