@@ -142,6 +142,26 @@ public class MqttServerConnectionTest extends MqttServerBaseTest {
   }
 
   @Test
+  public void acceptedUsernameWithoutPassword(TestContext context) {
+
+    this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
+
+    try {
+      MemoryPersistence persistence = new MemoryPersistence();
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setUserName(MQTT_USERNAME);
+      MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT), "12345", persistence);
+      client.connect(options);
+
+      context.assertNotNull(endpoint.auth());
+      context.assertEquals(MQTT_USERNAME, endpoint.auth().getUsername());
+      context.assertNull(endpoint.auth().getPassword());
+    } catch (MqttException e) {
+      context.fail(e);
+    }
+  }
+
+  @Test
   public void refusedNotAuthorized(TestContext context) {
 
     this.expectedReturnCode = MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
