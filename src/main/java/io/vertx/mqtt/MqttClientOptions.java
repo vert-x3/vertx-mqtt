@@ -490,10 +490,12 @@ public class MqttClientOptions extends NetClientOptions {
    * If true, the ack (PUBACK/PUBCOMP) will be sent by vertx-mqtt before {@link MqttClient#publishHandler()} execution.
    * (default is true)
    * 
-   * @param autoAck
+   * @param autoAck if the ack (PUBACK/PUBCOMP) will be sent automatically by vertx-mqtt
+   * @return current options instance
    */
-  public void setAutoAck(boolean autoAck) {
+  public MqttClientOptions setAutoAck(boolean autoAck) {
     this.autoAck = autoAck;
+    return this;
   }
 
   /**
@@ -620,8 +622,8 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   public void setMaximumPacketSize(Long maximumPacketSize) {
-    if (sessionExpireInterval != null &&
-        (sessionExpireInterval < 0L || sessionExpireInterval > 0xFFFFFFFFL)) {
+    if (maximumPacketSize != null &&
+        (maximumPacketSize < 0L || maximumPacketSize > 0xFFFFFFFFL)) {
       throw new IllegalArgumentException("Invalid Maximum Packet Size");
     }
     this.maximumPacketSize = maximumPacketSize;
@@ -632,8 +634,8 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   public void setTopicAliasMaximum(Integer topicAliasMaximum) {
-    if (receiveMaximum != null &&
-        (receiveMaximum < 0L || receiveMaximum > 0xFFFFL)) {
+    if (topicAliasMaximum != null &&
+        (topicAliasMaximum < 0L || topicAliasMaximum > 0xFFFFL)) {
       throw new IllegalArgumentException("Invalid Topic Alias Maximum");
     }
     this.topicAliasMaximum = topicAliasMaximum;
