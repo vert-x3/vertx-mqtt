@@ -473,6 +473,33 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
+   * See {@link MqttClient#authenticationExchange(MqttAuthenticateReasonCode, MqttProperties)} for more details
+   */
+  @Override
+  public Future<Void> authenticationExchange(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
+
+    if (options.getVersion() != 5) {
+      return Future.failedFuture(new IllegalStateException("AUTH packet requires MQTT 5.0"));
+    }
+
+    synchronized (this) {
+      if (this.status != Status.CONNECTED) {
+        return Future.failedFuture(new IllegalStateException("Client not connected"));
+      }
+    }
+
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(
+      MqttMessageType.AUTH, false, AT_MOST_ONCE, false, 0);
+    MqttReasonCodeAndPropertiesVariableHeader variableHeader =
+      new MqttReasonCodeAndPropertiesVariableHeader(
+        reasonCode == null ? MqttAuthenticateReasonCode.SUCCESS.value() : reasonCode.value(),
+        properties == null ? MqttProperties.NO_PROPERTIES : properties);
+    io.netty.handler.codec.mqtt.MqttMessage auth =
+      MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    return this.write(auth);
+  }
+
+  /**
    * See {@link MqttClient#publish(String, Buffer, MqttQoS, boolean, boolean)} for more details
    */
   @Override
@@ -945,24 +972,6 @@ public class MqttClientImpl implements MqttClient {
     return ctx.succeededFuture(variableHeader.messageId());
   }
 
-  private synchronized Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler() {
-    return this.authenticationExchangeHandler;
-  }
-
-  @Override
-  public MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler) {
-    this.authenticationExchangeHandler = authenticationExchangeHandler;
-    return this;
-  }
-
-  @Override
-  public Future<Void> authenticationExchange(MqttAuthenticationExchangeMessage message) {
-    io.netty.handler.codec.mqtt.MqttMessage auth = MqttMessageBuilders.auth()
-      .reasonCode(message.reasonCode().value()).properties(message.properties()).build();
-    this.write(auth);
-    return ctx.succeededFuture();
-  }
-
   /**
    * See {@link MqttClient#pingResponseHandler(Handler)} for more details
    */
@@ -1013,6 +1022,16 @@ public class MqttClientImpl implements MqttClient {
 
   private synchronized Handler<MqttDisconnectMessage> disconnectMessageHandler() {
     return this.disconnectMessageHandler;
+  }
+
+  @Override
+  public synchronized MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> handler) {
+    this.authenticationExchangeHandler = handler;
+    return this;
+  }
+
+  private synchronized Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler() {
+    return this.authenticationExchangeHandler;
   }
 
   private class Ping {
@@ -1660,8 +1679,8 @@ public class MqttClientImpl implements MqttClient {
         log.debug("PUBLISH expiration timer fired but QoS 1 message has already been PUBACKed by server");
         return;
       }
+      countInflightQueue--;
     }
-    countInflightQueue--;
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
       handler.handle(expiredMessage.packetId);
@@ -1710,8 +1729,8 @@ public class MqttClientImpl implements MqttClient {
         log.debug("PUBCOMP expiration timer fired but QoS 2 message has already been PUBCOMPed by server");
         return;
       }
+      countInflightQueue--;
     }
-    countInflightQueue--;
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
       handler.handle(expiredMessage.packetId);
@@ -1756,8 +1775,8 @@ public class MqttClientImpl implements MqttClient {
         log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
         return;
       }
+      countInflightQueue--;
     }
-    countInflightQueue--;
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
       handler.handle(expiredMessage.packetId);

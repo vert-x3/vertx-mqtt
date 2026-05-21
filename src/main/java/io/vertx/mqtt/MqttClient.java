@@ -17,6 +17,7 @@
 package io.vertx.mqtt;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.vertx.codegen.annotations.Fluent;
@@ -36,7 +37,7 @@ import io.vertx.mqtt.messages.MqttPubRecMessage;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
 import io.vertx.mqtt.messages.MqttUnsubAckMessage;
-import io.netty.handler.codec.mqtt.MqttProperties;
+import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
 import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
@@ -399,23 +400,6 @@ public interface MqttClient {
   Future<Integer> unsubscribe(List<String> topics, MqttProperties properties);
 
   /**
-   * Sets handler which will be called after AUTH packet receiving
-   *
-   * @param authenticationExchangeHandler handler to call
-   * @return current MQTT client instance
-   */
-  @Fluent
-  MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler);
-
-  /**
-   * It is used for Enhanced Authentication and is able to carry an authentication method and authentication data.
-   *
-   * @param message authentication exchange message
-   * @return a {@code Future} completed after AUTH packet sent
-   */
-  Future<Void> authenticationExchange(MqttAuthenticationExchangeMessage message);
-
-  /**
    * Sets handler which will be called after PINGRESP packet receiving
    *
    * @param pingResponseHandler handler to call
@@ -449,6 +433,35 @@ public interface MqttClient {
   @Fluent
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   MqttClient disconnectMessageHandler(Handler<MqttDisconnectMessage> handler);
+
+  /**
+   * Sets a handler that will be called when the server sends an AUTH packet
+   * (MQTT 5.0 Enhanced Authentication, see §3.15).
+   * <p>
+   * The handler receives the reason code, the authentication method, the
+   * authentication data and the full set of MQTT properties from the server's
+   * AUTH packet. The user can then reply with {@link #authenticationExchange}.
+   *
+   * @param handler handler to call with the AUTH message
+   * @return current MQTT client instance
+   */
+  @Fluent
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> handler);
+
+  /**
+   * Send an AUTH packet to the server.
+   * <p>
+   * Used to continue an Enhanced Authentication exchange started in CONNECT,
+   * or to request re-authentication on an already-established session.
+   * Available only when the client is configured for MQTT 5.0.
+   *
+   * @param reasonCode authenticate reason code
+   * @param properties MQTT properties (typically AUTHENTICATION_METHOD and AUTHENTICATION_DATA)
+   * @return a {@code Future} completed when the packet has been written
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> authenticationExchange(MqttAuthenticateReasonCode reasonCode, MqttProperties properties);
 
   /**
    * Set a handler that will be called when the connection with server is closed
