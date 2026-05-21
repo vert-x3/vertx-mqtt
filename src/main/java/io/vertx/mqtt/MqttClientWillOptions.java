@@ -147,6 +147,9 @@ public class MqttClientWillOptions {
    * @return this options instance
    */
   public MqttClientWillOptions setQos(int qos) {
+    if (qos < 0 || qos > 2) {
+      throw new IllegalArgumentException("QoS must be 0, 1, or 2");
+    }
     this.qos = qos;
     return this;
   }
