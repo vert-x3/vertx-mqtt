@@ -105,7 +105,8 @@ public interface MqttEndpoint {
   String clientIdentifier();
 
   /**
-   * @return the Authentication information as provided by the remote MQTT client
+   * @return the Authentication information as provided by the remote MQTT client,
+   *         or {@code null} when neither username nor password information is available
    */
   @CacheReturn
   MqttAuth auth();
