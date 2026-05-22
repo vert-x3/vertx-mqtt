@@ -209,6 +209,68 @@ public class Mqtt5ClientAuthTest {
   // -------------------------------------------------------------------------
 
   /**
+   * MQTT 5.0 §4.12.1 Enhanced Authentication: the AUTH exchange happens between
+   * CONNECT and CONNACK, while the client is still in CONNECTING state. The
+   * client must be able to call authenticationExchange() from inside its
+   * authenticationExchangeHandler to respond to the server's AUTH challenge —
+   * the returned Future must succeed (not fail with "Client not connected").
+   */
+  @Test
+  public void authenticationExchangeAllowedDuringConnect(TestContext ctx) {
+    Async done = ctx.async();
+
+    final String method = "SCRAM-SHA-1";
+    final byte[] challenge = "server-challenge".getBytes();
+
+    server.endpointHandler(ep -> {
+      // Do NOT accept yet: send AUTH first so the client is still CONNECTING
+      // when its authenticationExchangeHandler fires.
+      vertx.runOnContext(v -> {
+        try {
+          Field connField = ep.getClass().getDeclaredField("conn");
+          connField.setAccessible(true);
+          NetSocketInternal conn = (NetSocketInternal) connField.get(ep);
+
+          MqttProperties props = new MqttProperties();
+          props.add(new MqttProperties.StringProperty(
+            MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), method));
+          props.add(new MqttProperties.BinaryProperty(
+            MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(), challenge));
+
+          MqttFixedHeader fixedHeader = new MqttFixedHeader(
+            MqttMessageType.AUTH, false, MqttQoS.AT_MOST_ONCE, false, 0);
+          MqttReasonCodeAndPropertiesVariableHeader varHeader =
+            new MqttReasonCodeAndPropertiesVariableHeader(
+              MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION.value(), props);
+          MqttMessage auth = MqttMessageFactory.newMessage(fixedHeader, varHeader, null);
+          conn.writeMessage(auth);
+        } catch (Exception e) {
+          ctx.fail(e);
+        }
+      });
+    });
+
+    server.listen(0).onComplete(ctx.asyncAssertSuccess(s -> {
+      MqttClient client = MqttClient.create(vertx, v5Options());
+      client.authenticationExchangeHandler(msg -> {
+        MqttProperties resp = new MqttProperties();
+        resp.add(new MqttProperties.StringProperty(
+          MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), method));
+        resp.add(new MqttProperties.BinaryProperty(
+          MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(), "client-response".getBytes()));
+        // This call must succeed even though the client is still CONNECTING.
+        client.authenticationExchange(MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION, resp)
+          .onComplete(ctx.asyncAssertSuccess(v -> done.complete()));
+      });
+      client.connect(server.actualPort(), "localhost");
+    }));
+
+    done.awaitSuccess(5000);
+  }
+
+  // -------------------------------------------------------------------------
+
+  /**
    * authenticationExchange() must fail fast when the client is configured for
    * a protocol version other than MQTT 5.0 — AUTH is a v5-only packet.
    */

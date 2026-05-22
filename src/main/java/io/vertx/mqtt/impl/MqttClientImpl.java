@@ -483,7 +483,7 @@ public class MqttClientImpl implements MqttClient {
     }
 
     synchronized (this) {
-      if (this.status != Status.CONNECTED) {
+      if (this.status != Status.CONNECTED && this.status != Status.CONNECTING) {
         return Future.failedFuture(new IllegalStateException("Client not connected"));
       }
     }
