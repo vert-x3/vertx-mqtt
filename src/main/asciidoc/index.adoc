@@ -749,52 +749,133 @@ The client can also actively send a DISCONNECT with reason code and properties v
 
 MQTT 5.0 §4.12 introduces an _Enhanced Authentication_ flow built on a new AUTH control packet, designed to support
 multi-round challenge/response schemes (e.g. SCRAM, Kerberos, mutual proofs) that cannot fit in the single CONNECT
-exchange used by 3.1.1.
+exchange used by 3.1.1. The client side fully supports this flow, both during the initial connection (§4.12.1) and
+for re-authentication on an already established connection (§4.12.2).
 
-==== What is supported today
+==== Configuring the CONNECT
 
-The client can advertise an authentication method and provide the first chunk of authentication data inside the CONNECT
-packet, which is the initial step of any enhanced authentication exchange:
+The first chunk of authentication data, plus the name of the mechanism, are placed on the CONNECT packet via
+{@link io.vertx.mqtt.MqttClientOptions}:
+
+* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationMethod(java.lang.String)} — UTF-8 name of the mechanism
+  (MQTT 5.0 §3.1.2.11.9). When set, the broker is expected to drive the rest of the exchange with AUTH packets and
+  must fail the connection with `Bad authentication method` if it does not support it.
+* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationData(io.vertx.core.buffer.Buffer)} — opaque binary
+  payload required by the chosen mechanism (MQTT 5.0 §3.1.2.11.10).
+
+The values the broker returns in the CONNACK can be inspected on the resulting
+{@link io.vertx.mqtt.messages.MqttConnAckMessage} via `authenticationMethod()` and `authenticationData()` — for
+mechanisms such as SCRAM, the final server signature (`v=...`) is typically delivered there.
+
+==== Handling AUTH packets from the broker
+
+Register a handler to be notified when the broker sends an AUTH packet — both during the initial handshake (before
+CONNACK, while the client is still in `CONNECTING` state) and during re-authentication on a live connection:
 
 [source,java]
 ----
+client.authenticationExchangeHandler(msg -> {
+  // msg.reasonCode()           — CONTINUE_AUTHENTICATION / SUCCESS / RE_AUTHENTICATE
+  // msg.authenticationMethod() — echoed by the broker, must match the negotiated method
+  // msg.authenticationData()   — opaque payload for the mechanism (e.g. SCRAM server-first-message)
+});
+----
+
+See {@link io.vertx.mqtt.MqttClient#authenticationExchangeHandler(io.vertx.core.Handler)} and
+{@link io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage}.
+
+==== Sending AUTH packets
+
+The client replies to (or initiates) an AUTH exchange through
+{@link io.vertx.mqtt.MqttClient#authenticationExchange(io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode, io.netty.handler.codec.mqtt.MqttProperties)}.
+It is valid in two phases:
+
+* *Initial enhanced authentication* (MQTT 5.0 §4.12.1) — call it from inside the
+  `authenticationExchangeHandler` while `client.connect(...)` is still in flight. Reply with
+  `CONTINUE_AUTHENTICATION` (0x18) until the broker terminates the exchange with a CONNACK. The returned `Future`
+  succeeds as soon as the AUTH frame is on the wire; the overall outcome is the one delivered by `client.connect(...)`.
+* *Re-authentication* (MQTT 5.0 §4.12.2) — once the connection is established, call it with `RE_AUTHENTICATE` (0x19)
+  to restart the authentication exchange without tearing down the underlying TCP connection.
+
+The reason code is supplied via {@link io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode} (`SUCCESS`,
+`CONTINUE_AUTHENTICATION`, `RE_AUTHENTICATE`); the `MqttProperties` parameter must include the
+`AUTHENTICATION_METHOD` (echoed unchanged for the whole exchange) and, when required by the mechanism, the
+`AUTHENTICATION_DATA` payload.
+
+==== Example: SCRAM-SHA-256
+
+The following snippet shows how to drive a full SCRAM-SHA-256 handshake (RFC 5802) against an MQTT 5.0 broker that
+advertises `SCRAM-SHA-256` (for example EMQX with the `scram` authenticator). The crypto primitives come from the
+JDK — no extra dependency is required.
+
+Step 1 — generate the client nonce, build `client-first-message` and place it on the CONNECT:
+
+[source,java]
+----
+String clientNonce = randomBase64(24);                       // securely random, RFC 5802 §5.1
+String clientFirstMessageBare = "n=" + username + ",r=" + clientNonce;
+String clientFirstMessage = "n,," + clientFirstMessageBare;  // "n,," is the GS2 header
+
 MqttClientOptions options = new MqttClientOptions();
 options.setVersion(io.netty.handler.codec.mqtt.MqttVersion.MQTT_5.protocolLevel());
 options.setAuthenticationMethod("SCRAM-SHA-256");
-options.setAuthenticationData(io.vertx.core.buffer.Buffer.buffer(clientFirstMessage));
+options.setAuthenticationData(Buffer.buffer(clientFirstMessage.getBytes(StandardCharsets.UTF_8)));
 MqttClient client = MqttClient.create(vertx, options);
 ----
 
-Setters available on {@link io.vertx.mqtt.MqttClientOptions}:
+Step 2 — when the broker replies with `server-first-message`, compute the client proof and send
+`client-final-message` back through an AUTH packet:
 
-* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationMethod(java.lang.String)} — UTF-8 name of the
-  authentication mechanism (MQTT 5.0 §3.1.2.11.9). When set, the broker is expected to use the AUTH packet
-  for the subsequent rounds and to fail the connection with `Bad authentication method` if it does not support it.
-* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationData(io.vertx.core.buffer.Buffer)} — opaque binary
-  payload required by the chosen method (MQTT 5.0 §3.1.2.11.10).
+[source,java]
+----
+client.authenticationExchangeHandler(msg -> {
+  // server-first-message: r=<server-nonce>,s=<base64-salt>,i=<iterations>
+  String serverFirst = new String(msg.authenticationData().getBytes(), StandardCharsets.UTF_8);
+  Map<String,String> f = parseScram(serverFirst);
+  String serverNonce = f.get("r");
+  byte[] salt        = Base64.getDecoder().decode(f.get("s"));
+  int iterations     = Integer.parseInt(f.get("i"));
 
-The values returned by the broker in the CONNACK can be inspected on the resulting
-{@link io.vertx.mqtt.messages.MqttConnAckMessage} via `authenticationMethod()` and `authenticationData()`.
+  // RFC 5802 §5.1: server MUST extend the client nonce — fail closed otherwise.
+  if (!serverNonce.startsWith(clientNonce)) throw new SecurityException("bad nonce");
 
-==== What is not yet supported
+  String clientFinalNoProof = "c=biws,r=" + serverNonce;     // biws = base64("n,,")
+  String authMessage = clientFirstMessageBare + "," + serverFirst + "," + clientFinalNoProof;
 
-The full AUTH-exchange API (the additional control-packet round trips that follow the CONNECT) is **not yet ported to
-the Vert.x 4 branch**:
+  byte[] saltedPwd    = pbkdf2(password, salt, iterations);          // PBKDF2-HMAC-SHA-256
+  byte[] clientKey    = hmacSha256(saltedPwd, "Client Key".getBytes());
+  byte[] storedKey    = sha256(clientKey);
+  byte[] clientSig    = hmacSha256(storedKey, authMessage.getBytes());
+  byte[] clientProof  = xor(clientKey, clientSig);
 
-* `MqttClient` does not expose a method to send an AUTH packet, nor a handler to be notified when the broker sends one.
-* On the server side, {@link io.vertx.mqtt.impl.MqttEndpointImpl} accepts incoming AUTH packets at the wire level
-  (so a broker can be probed without dropping the TCP connection) but {@code handleAuth} is a stub that does not surface
-  the AUTH packet to user code, and there is no API to reply with a server-originated AUTH.
+  String clientFinal = clientFinalNoProof
+      + ",p=" + Base64.getEncoder().encodeToString(clientProof);
 
-In practice this means that on this branch only *single-step* enhanced authentication works — i.e. mechanisms where the
-data sent on CONNECT is sufficient and the broker can answer with a successful CONNACK without further AUTH round trips.
-Multi-step mechanisms and post-connect re-authentication require porting upstream commit `892e923`, which introduces
-the public {@code MqttAuthenticationExchangeMessage} API (`MqttClient#authenticationExchangeHandler` / a `sendAuth`
-counterpart and the matching `MqttEndpoint` hooks).
+  MqttProperties props = new MqttProperties();
+  props.add(new MqttProperties.StringProperty(
+      MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), "SCRAM-SHA-256"));
+  props.add(new MqttProperties.BinaryProperty(
+      MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(),
+      clientFinal.getBytes(StandardCharsets.UTF_8)));
 
-The transitive types ({@link io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage} and
-{@link io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode}) are already present in this branch so that the
-public API surface does not change when that port lands.
+  client.authenticationExchange(MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION, props);
+});
+
+client.connect(1883, "broker.example.com").onSuccess(connack -> {
+  // authenticated; connack.authenticationData() may carry the SCRAM server-final-message (v=...)
+});
+----
+
+A complete, runnable version including the SCRAM helper methods (`pbkdf2`, `hmacSha256`, `sha256`, `xor`, nonce
+generation and SASL-name escaping) is available in {@link examples.VertxMqttClientAUTHExamples}.
+
+==== Server-side AUTH
+
+On the server side AUTH packets are accepted at the wire level (so a broker can be probed without dropping the TCP
+connection) but {@link io.vertx.mqtt.impl.MqttEndpointImpl} does not currently surface them to user code:
+{@code handleAuth} is a stub. Implementing an enhanced-authentication endpoint therefore requires extending the
+endpoint API; the client-side types are already in place so a future server port will not change this section's API
+surface.
 
 === Automatic server redirect
 
