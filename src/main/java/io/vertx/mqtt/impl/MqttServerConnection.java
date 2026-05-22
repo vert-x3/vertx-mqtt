@@ -257,18 +257,14 @@ public class MqttServerConnection {
         msg.payload().willProperties());
 
     // retrieve authorization information from CONNECT message
-    boolean hasUserName = msg.variableHeader().hasUserName();
+    boolean hasUsername = msg.variableHeader().hasUserName();
     boolean hasPassword = msg.variableHeader().hasPassword();
-    boolean isMqtt5 = msg.variableHeader().version() == MqttVersion.MQTT_5.protocolLevel();
     MqttAuth auth = null;
-    if (hasUserName || (isMqtt5 && hasPassword)) {
-      String username = hasUserName ? msg.payload().userName() : null;
-      String password = null;
-      if (hasPassword) {
-        byte[] passwordInBytes = msg.payload().passwordInBytes();
-        password = new String(passwordInBytes, CharsetUtil.UTF_8);
-      }
-      auth = new MqttAuth(username, password);
+    if (hasUsername ||
+      (hasPassword && msg.variableHeader().version() == MqttVersion.MQTT_5.protocolLevel())) {
+      auth = new MqttAuth(
+        hasUsername ? msg.payload().userName() : null,
+        hasPassword ? new String(msg.payload().passwordInBytes(), CharsetUtil.UTF_8) : null);
     }
 
     // check if remote MQTT client didn't specify a client-id
