@@ -517,6 +517,10 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    return publish(id, topic, payload, qosLevel, isDup, isRetain, MqttProperties.NO_PROPERTIES);
+  }
+
+  public Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties) {
 
     if (MqttQoS.FAILURE == qosLevel) {
       throw new IllegalArgumentException("QoS level must be one of AT_MOST_ONCE, AT_LEAST_ONCE or EXACTLY_ONCE");

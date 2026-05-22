@@ -312,7 +312,7 @@ In the example, we send message to topic with name "temperature".
 === Handling server auth request/Sending AUTH packet to server(Only in MQTT version 5)
 
 After a connection is established between client and server, the client can send an auth request to server using
-the {@link io.vertx.mqtt.MqttClient#authenticationExchange(io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage)}
+the {@link io.vertx.mqtt.MqttClient#authenticationExchange(io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode,io.netty.handler.codec.mqtt.MqttProperties)}
 for authentication. The Server may return an AUTH packet. The {@link io.vertx.mqtt.MqttClient} interface allows to
 specify a handler for the incoming auth packet using
 the {@link io.vertx.mqtt.MqttClient#authenticationExchangeHandler(io.vertx.core.Handler)} method.
