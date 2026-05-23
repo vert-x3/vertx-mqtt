@@ -16,17 +16,10 @@
 
 package io.vertx.mqtt.test.client;
 
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageFactory;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -40,7 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -163,27 +155,13 @@ public class Mqtt5ClientAuthTest {
       ep.accept(false);
       // After CONNACK is flushed, push an AUTH packet on the same channel.
       vertx.runOnContext(v -> {
-        try {
-          Field connField = ep.getClass().getDeclaredField("conn");
-          connField.setAccessible(true);
-          NetSocketInternal conn = (NetSocketInternal) connField.get(ep);
-
-          MqttProperties props = new MqttProperties();
-          props.add(new MqttProperties.StringProperty(
-            MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), expectedMethod));
-          props.add(new MqttProperties.BinaryProperty(
-            MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(), expectedChallenge));
-
-          MqttFixedHeader fixedHeader = new MqttFixedHeader(
-            MqttMessageType.AUTH, false, MqttQoS.AT_MOST_ONCE, false, 0);
-          MqttReasonCodeAndPropertiesVariableHeader varHeader =
-            new MqttReasonCodeAndPropertiesVariableHeader(
-              MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION.value(), props);
-          MqttMessage auth = MqttMessageFactory.newMessage(fixedHeader, varHeader, null);
-          conn.writeMessage(auth);
-        } catch (Exception e) {
-          ctx.fail(e);
-        }
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.StringProperty(
+          MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), expectedMethod));
+        props.add(new MqttProperties.BinaryProperty(
+          MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(), expectedChallenge));
+        ep.authenticationExchange(
+          MqttAuthenticationExchangeMessage.create(MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION, props));
       });
     });
 
@@ -226,27 +204,13 @@ public class Mqtt5ClientAuthTest {
       // Do NOT accept yet: send AUTH first so the client is still CONNECTING
       // when its authenticationExchangeHandler fires.
       vertx.runOnContext(v -> {
-        try {
-          Field connField = ep.getClass().getDeclaredField("conn");
-          connField.setAccessible(true);
-          NetSocketInternal conn = (NetSocketInternal) connField.get(ep);
-
-          MqttProperties props = new MqttProperties();
-          props.add(new MqttProperties.StringProperty(
-            MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), method));
-          props.add(new MqttProperties.BinaryProperty(
-            MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(), challenge));
-
-          MqttFixedHeader fixedHeader = new MqttFixedHeader(
-            MqttMessageType.AUTH, false, MqttQoS.AT_MOST_ONCE, false, 0);
-          MqttReasonCodeAndPropertiesVariableHeader varHeader =
-            new MqttReasonCodeAndPropertiesVariableHeader(
-              MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION.value(), props);
-          MqttMessage auth = MqttMessageFactory.newMessage(fixedHeader, varHeader, null);
-          conn.writeMessage(auth);
-        } catch (Exception e) {
-          ctx.fail(e);
-        }
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.StringProperty(
+          MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), method));
+        props.add(new MqttProperties.BinaryProperty(
+          MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(), challenge));
+        ep.authenticationExchange(
+          MqttAuthenticationExchangeMessage.create(MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION, props));
       });
     });
 
