@@ -149,4 +149,3 @@ public class MqttServerWithProxyConnectionTest extends MqttServerBaseTest {
 
   }
 }
-

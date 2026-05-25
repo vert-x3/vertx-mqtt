@@ -53,4 +53,3 @@ public class Mqtt5ProbeCallback implements MqttCallback {
     return disconnectResponse;
   }
 }
-
