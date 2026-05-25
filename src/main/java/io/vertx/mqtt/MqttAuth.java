@@ -31,8 +31,8 @@ public class MqttAuth {
   /**
    * Constructor
    *
-   * @param username MQTT client username
-   * @param password MQTT client password
+   * @param username MQTT client username, or {@code null} when not provided
+   * @param password MQTT client password, or {@code null} when not provided
    */
   public MqttAuth(String username, String password) {
     this.username = username;
@@ -50,14 +50,14 @@ public class MqttAuth {
   }
 
   /**
-   * @return the username provided by the remote MQTT client
+   * @return the username provided by the remote MQTT client, or {@code null} when not provided
    */
   public String getUsername() {
     return this.username;
   }
 
   /**
-   * @return the password provided by the remote MQTT client
+   * @return the password provided by the remote MQTT client, or {@code null} when not provided
    */
   public String getPassword() {
     return this.password;
