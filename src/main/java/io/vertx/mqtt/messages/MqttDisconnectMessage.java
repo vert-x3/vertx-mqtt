@@ -24,7 +24,7 @@ import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
 import io.vertx.mqtt.messages.impl.MqttDisconnectMessageImpl;
 
 /**
- * Represents an MQTT CONNACK message
+ * Represents an MQTT DISCONNECT message
  */
 @VertxGen
 public interface MqttDisconnectMessage {
@@ -32,7 +32,7 @@ public interface MqttDisconnectMessage {
   /**
    * Create a concrete instance of a Vert.x disconnect message
    *
-   * @param code  return code from the disconnect request
+   * @param code  reason code for the DISCONNECT message
    * @param properties MQTT properties of the disconnect message
    * @return
    */
@@ -42,7 +42,7 @@ public interface MqttDisconnectMessage {
   }
 
   /**
-   * @return  return code from the connection request
+   * @return  reason code from the DISCONNECT message
    */
   @CacheReturn
   MqttDisconnectReasonCode code();
