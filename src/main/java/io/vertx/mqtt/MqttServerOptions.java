@@ -134,7 +134,7 @@ public class MqttServerOptions extends NetServerOptions {
     this.perMessageWebSocketCompressionSupported = other.perMessageWebSocketCompressionSupported;
     this.webSocketCompressionLevel = other.webSocketCompressionLevel;
     this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
-    this.webSocketPreferredClientNoContext = other.webSocketAllowServerNoContext;
+    this.webSocketPreferredClientNoContext = other.webSocketPreferredClientNoContext;
   }
 
   @Override
