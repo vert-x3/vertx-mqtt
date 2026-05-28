@@ -45,6 +45,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.mqtt.MqttEndpoint;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.MqttServerOptions;
@@ -126,6 +127,11 @@ public class MqttServerImpl implements MqttServer {
   public synchronized MqttServer exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
+  }
+
+  @Override
+  public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
+    return server.updateSSLOptions(options, force);
   }
 
   @Override
