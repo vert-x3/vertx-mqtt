@@ -21,6 +21,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.mqtt.impl.MqttServerImpl;
 
 /**
@@ -100,6 +101,38 @@ public interface MqttServer {
    */
   @Fluent
   MqttServer exceptionHandler(Handler<Throwable> handler);
+
+  /**
+   * Update the server with new SSL {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
+   * <p>
+   * This is equivalent to calling {@link #updateSSLOptions(ServerSSLOptions, boolean)} with {@code force} set to
+   * {@code false}.
+   * <p>
+   * The boolean succeeded future result indicates whether the update occurred.
+   *
+   * @param options the new SSL options
+   * @return a future signaling the update success
+   */
+  default Future<Boolean> updateSSLOptions(ServerSSLOptions options) {
+    return updateSSLOptions(options, false);
+  }
+
+  /**
+   * Update the server with new SSL {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
+   * <p>
+   * The {@code options} object is compared using its {@code equals} method against the existing options to prevent
+   * an update when the objects are equal since loading options can be costly. When options are equal, setting
+   * {@code force} to {@code true} forces the update.
+   * <p>
+   * The boolean succeeded future result indicates whether the update occurred.
+   *
+   * @param options the new SSL options
+   * @param force force the update when options are equal
+   * @return a future signaling the update success
+   */
+  Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number

@@ -18,6 +18,7 @@ package io.vertx.mqtt.test.server;
 
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -90,6 +91,65 @@ public class MqttServerSslTest extends MqttServerBaseTest {
     } catch (Exception e1) {
       e1.printStackTrace();
       context.assertTrue(false);
+    }
+  }
+
+  @Test
+  public void updateSslOptionsUsesNewServerSslOptions(TestContext context) throws Exception {
+
+    ServerSSLOptions updatedOptions = new ServerSSLOptions()
+      .setKeyCertOptions(Cert.SERVER_PEM_OTHER_CA.get());
+
+    // Different SSL options update the server.
+    Async update = context.async();
+    this.mqttServer.updateSSLOptions(updatedOptions).onComplete(context.asyncAssertSuccess(updated -> {
+      context.assertTrue(updated);
+      update.complete();
+    }));
+    update.awaitSuccess(15000);
+
+    connectWithOtherCaTrustStore(context);
+
+    // Equal SSL options do not update the server.
+    Async sameOptions = context.async();
+    this.mqttServer.updateSSLOptions(updatedOptions).onComplete(context.asyncAssertSuccess(updated -> {
+      context.assertFalse(updated);
+      sameOptions.complete();
+    }));
+    sameOptions.awaitSuccess(15000);
+
+    // Equal SSL options update the server when forced.
+    Async forcedUpdate = context.async();
+    this.mqttServer.updateSSLOptions(updatedOptions, true).onComplete(context.asyncAssertSuccess(updated -> {
+      context.assertTrue(updated);
+      forcedUpdate.complete();
+    }));
+    forcedUpdate.awaitSuccess(15000);
+  }
+
+  private void connectWithOtherCaTrustStore(TestContext context) throws Exception {
+
+    MemoryPersistence persistence = new MemoryPersistence();
+    try (MqttClient client = new MqttClient(
+      String.format("ssl://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_TLS_PORT),
+      "update-ssl-options",
+      persistence)) {
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setSocketFactory(this.getSocketFactory("/tls/server-truststore-other-ca-fallback.jks", null));
+
+      boolean connected = false;
+      Throwable rejection = null;
+      try {
+        client.connect(options);
+        connected = client.isConnected();
+        rejection = this.rejection;
+      } finally {
+        if (client.isConnected()) {
+          client.disconnect();
+        }
+      }
+      context.assertTrue(connected);
+      context.assertNull(rejection);
     }
   }
 
