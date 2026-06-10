@@ -19,6 +19,8 @@ package io.vertx.mqtt.test.server;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -182,5 +184,77 @@ public class MqttServerWebSocketTest {
 
 
 
+  }
+
+  @Test
+  public void testWebSocketPathWithQueryString(TestContext context) {
+    MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions()
+      .setHost(MQTT_SERVER_HOST)
+      .setPort(0)
+      .setUseWebSocket(true));
+    Async done = context.async();
+    server.endpointHandler(endpoint -> {
+      context.assertEquals("/mqtt?auth=token", endpoint.httpRequestURI());
+      done.complete();
+      endpoint.accept(false);
+    });
+    Async listen = context.async();
+    server.listen(context.asyncAssertSuccess(s -> listen.complete()));
+    listen.awaitSuccess(15_000);
+    MemoryPersistence persistence = new MemoryPersistence();
+    String serverUri = String.format("ws://%s:%d/mqtt?auth=token", MQTT_SERVER_HOST, server.actualPort());
+    try (MqttClient client = new MqttClient(serverUri, "query-string", persistence)) {
+      client.connect();
+      client.disconnect();
+    } catch (MqttException e) {
+      context.fail(e);
+    }
+    done.awaitSuccess(15_000);
+  }
+
+  @Test
+  public void testInvalidWebSocketPathRejected(TestContext context) {
+    MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions()
+      .setHost(MQTT_SERVER_HOST)
+      .setPort(0)
+      .setUseWebSocket(true));
+    server.endpointHandler(endpoint ->
+      context.fail("Endpoint handler should not be called for invalid WebSocket path"));
+    Async listen = context.async();
+    server.listen(context.asyncAssertSuccess(s -> listen.complete()));
+    listen.awaitSuccess(15_000);
+
+    HttpClient client = this.vertx.createHttpClient();
+    try {
+      assertInvalidWebSocketPathRejected(context, client, server.actualPort(), "/mqttfoo?auth=token");
+      assertInvalidWebSocketPathRejected(context, client, server.actualPort(), "/mqtt/foo?auth=token");
+    } finally {
+      client.close();
+    }
+  }
+
+  private void assertInvalidWebSocketPathRejected(TestContext context, HttpClient client, int port, String requestUri) {
+    Async done = context.async();
+    client.request(HttpMethod.GET, port, MQTT_SERVER_HOST, requestUri)
+      .compose(request -> request
+        .setTimeout(5_000)
+        .putHeader("Connection", "Upgrade")
+        .putHeader("Upgrade", "websocket")
+        .putHeader("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+        .putHeader("Sec-WebSocket-Version", "13")
+        .putHeader("Sec-WebSocket-Protocol", "mqtt")
+        .send())
+      .onComplete(response -> {
+        try {
+          if (response.failed()) {
+            context.fail(response.cause());
+            return;
+          }
+          context.assertEquals(404, response.result().statusCode());
+        } finally {
+          done.complete();
+        }
+      });
+    done.awaitSuccess(15_000);
   }
 }
