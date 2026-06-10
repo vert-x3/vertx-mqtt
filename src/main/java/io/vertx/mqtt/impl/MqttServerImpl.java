@@ -18,14 +18,22 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
@@ -62,6 +70,7 @@ import static io.vertx.mqtt.MqttServerOptions.MQTT_SUBPROTOCOL_CSV_LIST;
 public class MqttServerImpl implements MqttServer {
 
   private static final Logger log = LoggerFactory.getLogger(MqttServerImpl.class);
+  private static final String MQTT_WEBSOCKET_PATH = "/mqtt";
 
   private final VertxInternal vertx;
   private final NetServer server;
@@ -194,6 +203,30 @@ public class MqttServerImpl implements MqttServer {
     }
   }
 
+  private static class WebSocketPathHandler extends ChannelInboundHandlerAdapter {
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (msg instanceof FullHttpRequest) {
+        FullHttpRequest request = (FullHttpRequest) msg;
+        if (!isWebSocketPath(request.uri())) {
+          FullHttpResponse response = new DefaultFullHttpResponse(
+            request.protocolVersion(), HttpResponseStatus.NOT_FOUND);
+          HttpUtil.setContentLength(response, 0);
+          ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+          ReferenceCountUtil.release(request);
+          return;
+        }
+        ctx.pipeline().remove(this);
+      }
+      ctx.fireChannelRead(msg);
+    }
+
+    private boolean isWebSocketPath(String uri) {
+      return MQTT_WEBSOCKET_PATH.equals(uri) || uri.startsWith(MQTT_WEBSOCKET_PATH + "?");
+    }
+  }
+
   private void initChannel(ChannelPipeline pipeline) {
 
     pipeline.addBefore("handler", "mqttEncoder", MqttEncoder.INSTANCE);
@@ -223,17 +256,30 @@ public class MqttServerImpl implements MqttServer {
 
       pipeline.addBefore("mqttEncoder", "httpServerCodec", new HttpServerCodec());
       pipeline.addAfter("httpServerCodec", "aggregator", new HttpObjectAggregator(maxFrameSize));
+      pipeline.addAfter("aggregator", "webSocketPathHandler", new WebSocketPathHandler());
 
       List<WebSocketServerExtensionHandshaker> extensionHandshakers = createExtensionHandshakers();
+      String webSocketHandlerBase = "webSocketPathHandler";
 
       if (!extensionHandshakers.isEmpty()) {
         WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
           extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[0]));
-        pipeline.addAfter("aggregator", "webSocketExtensionHandler", extensionHandler);
+        pipeline.addAfter(webSocketHandlerBase, "webSocketExtensionHandler", extensionHandler);
+        webSocketHandlerBase = "webSocketExtensionHandler";
       }
 
-      pipeline.addAfter("webSocketExtensionHandler", "webSocketHandler",
-        new WebSocketServerProtocolHandler("/mqtt", MQTT_SUBPROTOCOL_CSV_LIST, !extensionHandshakers.isEmpty(), maxFrameSize, 10000L));
+      // Netty's checkStartsWith(true) also accepts sub-paths; only /mqtt and /mqtt?... are valid here.
+      pipeline.addAfter(webSocketHandlerBase, "webSocketHandler",
+        new WebSocketServerProtocolHandler(WebSocketServerProtocolConfig.newBuilder()
+          .websocketPath(MQTT_WEBSOCKET_PATH)
+          .subprotocols(MQTT_SUBPROTOCOL_CSV_LIST)
+          .checkStartsWith(true)
+          .handshakeTimeoutMillis(10000L)
+          .maxFramePayloadLength(maxFrameSize)
+          .allowMaskMismatch(false)
+          .allowExtensions(!extensionHandshakers.isEmpty())
+          .dropPongFrames(true)
+          .build()));
 
       pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());
       pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new WebSocketFrameToByteBufDecoder());

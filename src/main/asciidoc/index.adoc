@@ -92,14 +92,15 @@ The MQTT server is started passing the Vert.x instance as usual and the above MQ
 
 If you want to support connections via WebSockets, you can enable this via {@link io.vertx.mqtt.MqttServerOptions},
 too. By passing `true` to {@link io.vertx.mqtt.MqttServerOptions#setUseWebSocket(boolean)}, it will listen for
-websocket connections on the path `/mqtt`.
+WebSocket connections on the path `/mqtt`. The request URI can include a query string, for example
+`/mqtt?client=web`, and the full HTTP request URI is available from {@link io.vertx.mqtt.MqttEndpoint#httpRequestURI()}.
 
 As with other setup configurations, the resulting endpoint connections and related disconnection are managed the same
 way as regular connections.
 
 [source,$lang]
 ----
-{@link examples.VertxMqttServerExamples#example11}
+{@link examples.VertxMqttServerExamples#example12}
 ----
 
 === Handling client subscription/unsubscription request
