@@ -19,8 +19,10 @@ package io.vertx.mqtt.test.server;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.net.NetClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -206,5 +208,95 @@ public class MqttServerWebSocketTest {
     } catch (MqttException e) {
       context.fail(e);
     }
+  }
+
+  @Test
+  public void testWebSocketPathWithQueryString(TestContext context) {
+    MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions()
+      .setHost(MQTT_SERVER_HOST)
+      .setPort(0)
+      .setUseWebSocket(true));
+    Async done = context.async();
+    server.endpointHandler(endpoint -> {
+      context.assertEquals("/mqtt?auth=token", endpoint.httpRequestURI());
+      done.complete();
+      endpoint.accept(false);
+    });
+    Async listen = context.async();
+    server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
+    listen.awaitSuccess(15_000);
+    MemoryPersistence persistence = new MemoryPersistence();
+    String serverUri = String.format("ws://%s:%d/mqtt?auth=token", MQTT_SERVER_HOST, server.actualPort());
+    try (MqttClient client = new MqttClient(serverUri, "query-string", persistence)) {
+      client.connect();
+      client.disconnect();
+    } catch (MqttException e) {
+      context.fail(e);
+    }
+    done.awaitSuccess(15_000);
+  }
+
+  @Test
+  public void testInvalidWebSocketPathRejected(TestContext context) {
+    MqttServer server = MqttServer.create(this.vertx, new MqttServerOptions()
+      .setHost(MQTT_SERVER_HOST)
+      .setPort(0)
+      .setUseWebSocket(true));
+    server.endpointHandler(endpoint ->
+      context.fail("Endpoint handler should not be called for invalid WebSocket path"));
+    Async listen = context.async();
+    server.listen().onComplete(context.asyncAssertSuccess(s -> listen.complete()));
+    listen.awaitSuccess(15_000);
+
+    NetClient client = this.vertx.createNetClient();
+    try {
+      assertInvalidWebSocketPathRejected(context, client, server.actualPort(), "/mqttfoo?auth=token");
+      assertInvalidWebSocketPathRejected(context, client, server.actualPort(), "/mqtt/foo?auth=token");
+    } finally {
+      client.close();
+    }
+  }
+
+  private void assertInvalidWebSocketPathRejected(TestContext context, NetClient client, int port, String requestUri) {
+    Async done = context.async();
+    client.connect(port, MQTT_SERVER_HOST).onComplete(ar -> {
+      if (ar.failed()) {
+        context.fail(ar.cause());
+        done.complete();
+        return;
+      }
+      Buffer response = Buffer.buffer();
+      ar.result().handler(buffer -> {
+        response.appendBuffer(buffer);
+        String responseText = response.toString();
+        if (responseText.contains("\r\n\r\n")) {
+          ar.result().handler(null);
+          try {
+            context.assertTrue(responseText.startsWith("HTTP/1.1 404"));
+          } finally {
+            ar.result().close();
+            done.complete();
+          }
+        }
+      });
+      ar.result().closeHandler(v -> {
+        String responseText = response.toString();
+        if (!responseText.contains("\r\n\r\n")) {
+          try {
+            context.assertTrue(responseText.startsWith("HTTP/1.1 404"));
+          } finally {
+            done.complete();
+          }
+        }
+      });
+      ar.result().write("GET " + requestUri + " HTTP/1.1\r\n" +
+        "Host: " + MQTT_SERVER_HOST + ":" + port + "\r\n" +
+        "Connection: Upgrade\r\n" +
+        "Upgrade: websocket\r\n" +
+        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
+        "Sec-WebSocket-Version: 13\r\n" +
+        "Sec-WebSocket-Protocol: mqtt\r\n\r\n");
+    });
+    done.awaitSuccess(15_000);
   }
 }
