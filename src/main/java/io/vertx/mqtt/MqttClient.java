@@ -92,7 +92,7 @@ public interface MqttClient {
    * @return a future notified when the connect call ends
    */
   Future<MqttConnAckMessage> connect(int port, String host, String serverName);
-  
+
   /**
    * Connects to an MQTT server calling connectHandler after connection
    *

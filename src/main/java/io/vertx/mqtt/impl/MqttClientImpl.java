@@ -32,7 +32,6 @@ import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.BinaryProperty;
 import io.netty.handler.codec.mqtt.MqttProperties.IntegerProperty;
@@ -234,7 +233,7 @@ public class MqttClientImpl implements MqttClient {
     if (this.options.getVersion() != 5 && userProperties != null) {
       throw new IllegalArgumentException("userProperties is available only with MQTTv5");
     }
-    
+
     ContextInternal ctx = vertx.getOrCreateContext();
     NetClient client = vertx.createNetClient(options);
     PromiseInternal<MqttConnAckMessage> connectPromise = ctx.promise();
@@ -356,7 +355,7 @@ public class MqttClientImpl implements MqttClient {
           io.vertx.mqtt.MqttClientWillOptions willOpts = options.getWillOptions();
 
           boolean willFlag = willOpts.getTopic() != null && willOpts.getMessageBytes() != null;
-          
+
           MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
             PROTOCOL_NAME,
             options.getVersion(),
@@ -1993,7 +1992,7 @@ public class MqttClientImpl implements MqttClient {
     if (serverKeepAlive != null && options.getKeepAliveInterval() != serverKeepAlive) {
       options.setKeepAliveInterval(serverKeepAlive);
       log.debug("Server assigned keep alive: " + serverKeepAlive + "s");
-      
+
       // Update the IdleStateHandler in the pipeline with the new keep-alive interval
       ChannelPipeline pipeline = connection.channelHandlerContext().pipeline();
       if (pipeline.get("idle") != null) {

@@ -127,11 +127,6 @@ public class MqttClientOptionsConverter {
             obj.setAutoServerRedirect((Boolean)member.getValue());
           }
           break;
-        case "maxMessageSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxMessageSize(((Number)member.getValue()).intValue());
-          }
-          break;
       }
     }
   }

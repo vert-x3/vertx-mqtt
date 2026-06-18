@@ -26,7 +26,6 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttServer;
-import io.vertx.mqtt.MqttServerOptions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

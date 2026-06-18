@@ -30,7 +30,6 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Integration tests for MQTT 5.0 SUBSCRIBE against a real Mosquitto 2.x broker.
