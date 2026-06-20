@@ -110,10 +110,12 @@ public class MqttServerNetworkIssueTest extends MqttServerBaseTest {
 
       async.await();
 
+      // the connection should be dropped within a 1 second window after the expected keep alive timeout
       long elapsed = ended - started;
-      // consider a range of 500 ms
-      context.assertTrue(elapsed > (timeout * 1000 - 500) && elapsed < (timeout * 1000 + 500),
-        elapsed + " > " + ((timeout * 1000 - 500)) + " && " + elapsed + " < " + (timeout * 1000 + 500) + " != true");
+      long expectedMin = timeout * 1000L;
+      long expectedMax = expectedMin + 1000L;
+      context.assertTrue(elapsed >= expectedMin && elapsed <= expectedMax,
+        String.format("elapsed %d ms is not in the expected range [%d, %d] ms", elapsed, expectedMin, expectedMax));
 
     } catch (MqttException e) {
       context.fail(e);
