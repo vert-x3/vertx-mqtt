@@ -933,7 +933,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   private Future<Void> write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
-      if (mqttMessage.fixedHeader().messageType() != MqttMessageType.CONNACK) {
+      MqttMessageType type = mqttMessage.fixedHeader().messageType();
+      // CONNACK and AUTH may be sent before the connection is fully accepted
+      if (type != MqttMessageType.CONNACK && type != MqttMessageType.AUTH) {
         this.checkConnected();
       }
       return this.conn.writeMessage(mqttMessage);

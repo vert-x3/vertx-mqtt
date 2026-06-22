@@ -17,19 +17,9 @@ public class MqttClientOptionsConverter {
             obj.setCleanSession((Boolean)member.getValue());
           }
           break;
-        case "willFlag":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWillFlag((Boolean)member.getValue());
-          }
-          break;
-        case "willRetain":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWillRetain((Boolean)member.getValue());
-          }
-          break;
-        case "willQoS":
-          if (member.getValue() instanceof Number) {
-            obj.setWillQoS(((Number)member.getValue()).intValue());
+        case "willOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setWillOptions(new io.vertx.mqtt.MqttClientWillOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "keepAliveInterval":
@@ -50,16 +40,6 @@ public class MqttClientOptionsConverter {
         case "clientId":
           if (member.getValue() instanceof String) {
             obj.setClientId((String)member.getValue());
-          }
-          break;
-        case "willTopic":
-          if (member.getValue() instanceof String) {
-            obj.setWillTopic((String)member.getValue());
-          }
-          break;
-        case "willMessageBytes":
-          if (member.getValue() instanceof String) {
-            obj.setWillMessageBytes(io.vertx.core.buffer.Buffer.fromJson((String)member.getValue()));
           }
           break;
         case "ackTimeout":
@@ -97,6 +77,56 @@ public class MqttClientOptionsConverter {
             obj.setMaxMessageSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "version":
+          if (member.getValue() instanceof Number) {
+            obj.setVersion(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "sessionExpireInterval":
+          if (member.getValue() instanceof Number) {
+            obj.setSessionExpireInterval(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "receiveMaximum":
+          if (member.getValue() instanceof Number) {
+            obj.setReceiveMaximum(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maximumPacketSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaximumPacketSize(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "topicAliasMaximum":
+          if (member.getValue() instanceof Number) {
+            obj.setTopicAliasMaximum(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "requestResponseInformation":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRequestResponseInformation((Boolean)member.getValue());
+          }
+          break;
+        case "requestProblemInformation":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRequestProblemInformation((Boolean)member.getValue());
+          }
+          break;
+        case "authenticationMethod":
+          if (member.getValue() instanceof String) {
+            obj.setAuthenticationMethod((String)member.getValue());
+          }
+          break;
+        case "authenticationData":
+          if (member.getValue() instanceof String) {
+            obj.setAuthenticationData(io.vertx.core.buffer.Buffer.fromJson((String)member.getValue()));
+          }
+          break;
+        case "autoServerRedirect":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAutoServerRedirect((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -107,9 +137,9 @@ public class MqttClientOptionsConverter {
 
    static void toJson(MqttClientOptions obj, java.util.Map<String, Object> json) {
     json.put("cleanSession", obj.isCleanSession());
-    json.put("willFlag", obj.isWillFlag());
-    json.put("willRetain", obj.isWillRetain());
-    json.put("willQoS", obj.getWillQoS());
+    if (obj.getWillOptions() != null) {
+      json.put("willOptions", obj.getWillOptions().toJson());
+    }
     json.put("keepAliveInterval", obj.getKeepAliveInterval());
     if (obj.getUsername() != null) {
       json.put("username", obj.getUsername());
@@ -120,12 +150,6 @@ public class MqttClientOptionsConverter {
     if (obj.getClientId() != null) {
       json.put("clientId", obj.getClientId());
     }
-    if (obj.getWillTopic() != null) {
-      json.put("willTopic", obj.getWillTopic());
-    }
-    if (obj.getWillMessageBytes() != null) {
-      json.put("willMessageBytes", obj.getWillMessageBytes().toJson());
-    }
     json.put("ackTimeout", obj.getAckTimeout());
     json.put("maxInflightQueue", obj.getMaxInflightQueue());
     json.put("autoKeepAlive", obj.isAutoKeepAlive());
@@ -133,5 +157,31 @@ public class MqttClientOptionsConverter {
     json.put("autoAck", obj.isAutoAck());
     json.put("recvByteBufAllocatorSize", obj.getRecvByteBufAllocatorSize());
     json.put("maxMessageSize", obj.getMaxMessageSize());
+    json.put("version", obj.getVersion());
+    if (obj.getSessionExpireInterval() != null) {
+      json.put("sessionExpireInterval", obj.getSessionExpireInterval());
+    }
+    if (obj.getReceiveMaximum() != null) {
+      json.put("receiveMaximum", obj.getReceiveMaximum());
+    }
+    if (obj.getMaximumPacketSize() != null) {
+      json.put("maximumPacketSize", obj.getMaximumPacketSize());
+    }
+    if (obj.getTopicAliasMaximum() != null) {
+      json.put("topicAliasMaximum", obj.getTopicAliasMaximum());
+    }
+    if (obj.getRequestResponseInformation() != null) {
+      json.put("requestResponseInformation", obj.getRequestResponseInformation());
+    }
+    if (obj.getRequestProblemInformation() != null) {
+      json.put("requestProblemInformation", obj.getRequestProblemInformation());
+    }
+    if (obj.getAuthenticationMethod() != null) {
+      json.put("authenticationMethod", obj.getAuthenticationMethod());
+    }
+    if (obj.getAuthenticationData() != null) {
+      json.put("authenticationData", obj.getAuthenticationData().toJson());
+    }
+    json.put("autoServerRedirect", obj.isAutoServerRedirect());
   }
 }
