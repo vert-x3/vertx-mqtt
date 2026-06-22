@@ -526,8 +526,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public MqttEndpointImpl publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties) {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdAndPropertiesVariableHeader variableHeader =
-      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
+    MqttPubReplyMessageVariableHeader variableHeader =
+      new MqttPubReplyMessageVariableHeader(publishMessageId, reasonCode.value(), properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -544,8 +544,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   public MqttEndpointImpl publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties) {
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-    MqttMessageIdAndPropertiesVariableHeader variableHeader =
-      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
+    MqttPubReplyMessageVariableHeader variableHeader =
+      new MqttPubReplyMessageVariableHeader(publishMessageId, reasonCode.value(), properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -563,8 +563,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
-    MqttMessageIdAndPropertiesVariableHeader variableHeader =
-      new MqttMessageIdAndPropertiesVariableHeader(publishMessageId, properties);
+    MqttPubReplyMessageVariableHeader variableHeader =
+      new MqttPubReplyMessageVariableHeader(publishMessageId, reasonCode.value(), properties);
 
     io.netty.handler.codec.mqtt.MqttMessage pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
@@ -933,7 +933,9 @@ public class MqttEndpointImpl implements MqttEndpoint {
 
   private Future<Void> write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
     synchronized (this.conn) {
-      if (mqttMessage.fixedHeader().messageType() != MqttMessageType.CONNACK) {
+      MqttMessageType type = mqttMessage.fixedHeader().messageType();
+      // CONNACK and AUTH may be sent before the connection is fully accepted
+      if (type != MqttMessageType.CONNACK && type != MqttMessageType.AUTH) {
         this.checkConnected();
       }
       return this.conn.writeMessage(mqttMessage);

@@ -32,8 +32,12 @@ import io.netty.handler.codec.mqtt.MqttMessageFactory;
 import io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttProperties.BinaryProperty;
+import io.netty.handler.codec.mqtt.MqttProperties.IntegerProperty;
+import io.netty.handler.codec.mqtt.MqttProperties.StringPair;
+import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribePayload;
@@ -63,16 +67,29 @@ import io.vertx.mqtt.messages.MqttPublishMessage;
 import io.vertx.mqtt.messages.MqttSubAckMessage;
 import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
+import io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRelReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubCompReasonCode;
+import io.vertx.mqtt.messages.MqttDisconnectMessage;
+import io.vertx.mqtt.messages.MqttPubAckMessage;
+import io.vertx.mqtt.messages.MqttPubRecMessage;
+import io.vertx.mqtt.messages.MqttPubCompMessage;
+import io.vertx.mqtt.messages.MqttUnsubAckMessage;
 import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -95,7 +112,6 @@ public class MqttClientImpl implements MqttClient {
   private static final int MAX_TOPIC_LEN = 65535;
   private static final int MIN_TOPIC_LEN = 1;
   private static final String PROTOCOL_NAME = "MQTT";
-  private static final int PROTOCOL_VERSION = 4;
 
   private final VertxInternal vertx;
   private final MqttClientOptions options;
@@ -110,12 +126,18 @@ public class MqttClientImpl implements MqttClient {
   private Handler<Integer> publishCompletionPhantomHandler;
   // handler to call when a unsubscribe request is completed
   private Handler<Integer> unsubscribeCompletionHandler;
+  // handler to call when a UNSUBACK is received
+  private Handler<MqttUnsubAckMessage> unsubscribeCompletionMessageHandler;
   // handler to call when a publish message comes in
   private Handler<MqttPublishMessage> publishHandler;
   // handler to call when a subscribe request is completed
   private Handler<MqttSubAckMessage> subscribeCompletionHandler;
   // handler to call when an auth message comes in
   private Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler;
+  // MQTT 5.0 typed handlers for incoming PUBACK/PUBREC/PUBCOMP with reason codes
+  private Handler<MqttPubAckMessage> publishAckMessageHandler;
+  private Handler<MqttPubRecMessage> publishRecMessageHandler;
+  private Handler<MqttPubCompMessage> publishCompMessageHandler;
 
   // handler to call when a connection request is completed
   private Promise<MqttConnAckMessage> connectPromise;
@@ -127,6 +149,10 @@ public class MqttClientImpl implements MqttClient {
   private Handler<Throwable> exceptionHandler;
   //handler to call when the remote MQTT server closes the connection
   private Handler<Void> closeHandler;
+  // handler to call when a server-initiated DISCONNECT is received (fires before closeHandler)
+  private Handler<MqttDisconnectMessage> disconnectMessageHandler;
+  // pending server-initiated DISCONNECT message (built in handleMessage, fired in handleClosed)
+  private MqttDisconnectMessage pendingDisconnectMessage = null;
 
   // storage of PUBLISH QoS=1 messages which was not responded with PUBACK
   private HashMap<Integer, ExpiringPacket> qos1outbound = new HashMap<>();
@@ -137,6 +163,25 @@ public class MqttClientImpl implements MqttClient {
 
   // storage of PUBLISH messages which was responded with PUBREC
   private HashMap<Integer, MqttMessage> qos2inbound = new HashMap<>();
+
+  // MQTT5 Topic alias: topic → alias number (client-to-server direction, outgoing PUBLISH)
+  private HashMap<String, Integer> topicAlias = new HashMap<>();
+  // Maximum number of topic aliases the server accepts (from CONNACK TOPIC_ALIAS_MAXIMUM, 0 = disabled)
+  private int serverTopicAliasMaximum = 0;
+  // MQTT5 Topic alias: alias → topic (server-to-client direction, incoming PUBLISH)
+  private HashMap<Integer, String> serverTopicAlias = new HashMap<>();
+  // Whether the server supports Subscription Identifiers (from CONNACK, default true per spec §3.2.2.3.12)
+  private boolean serverSubscriptionIdentifierAvailable = true;
+  // Whether the server supports Wildcard Subscriptions (from CONNACK, default true per spec §3.2.2.3.11)
+  private boolean serverWildcardSubscriptionAvailable = true;
+  // Whether the server supports Shared Subscriptions (from CONNACK, default true per spec §3.2.2.3.14)
+  private boolean serverSharedSubscriptionAvailable = true;
+  // Maximum concurrent QoS1/2 in-flight messages the server accepts (from CONNACK RECEIVE_MAXIMUM)
+  private int serverReceiveMaximum = Integer.MAX_VALUE;
+  // Maximum QoS the server accepts (from CONNACK MAXIMUM_QOS: 0, 1 or 2; default 2)
+  private int serverMaxQos = 2;
+  // Maximum packet size the server accepts (from CONNACK MAXIMUM_PACKET_SIZE; default = unlimited)
+  private long serverMaximumPacketSize = Long.MAX_VALUE;
 
   // counter for the message identifier
   private int messageIdCounter;
@@ -150,6 +195,9 @@ public class MqttClientImpl implements MqttClient {
 
   private NetClient client;
   private Status status = Status.CLOSED;
+
+  // SERVER_REFERENCE target set on receipt of a server-initiated DISCONNECT (redirect pending)
+  private String pendingRedirect = null;
 
   /**
    * Constructor
@@ -171,17 +219,20 @@ public class MqttClientImpl implements MqttClient {
 
   @Override
   public Future<MqttConnAckMessage> connect(int port, String host) {
-
-    return this.doConnect(port, host, null);
+    return this.connect(port, host, null, null);
   }
 
   @Override
   public Future<MqttConnAckMessage> connect(int port, String host, String serverName) {
-
-    return this.doConnect(port, host, serverName);
+    return this.connect(port, host, serverName, null);
   }
 
-  private Future<MqttConnAckMessage> doConnect(int port, String host, String serverName) {
+  @Override
+  public Future<MqttConnAckMessage> connect(int port, String host, String serverName, Map<String,String> userProperties) {
+
+    if (this.options.getVersion() != 5 && userProperties != null) {
+      throw new IllegalArgumentException("userProperties is available only with MQTTv5");
+    }
 
     ContextInternal ctx = vertx.getOrCreateContext();
     NetClient client = vertx.createNetClient(options);
@@ -275,22 +326,74 @@ public class MqttClientImpl implements MqttClient {
             false,
             0);
 
+          MqttProperties props = MqttProperties.NO_PROPERTIES;
+
+          if (options.getVersion() == 5) {
+            props = new MqttProperties();
+            if (options.getSessionExpireInterval() != null)
+              props.add(new IntegerProperty(MqttProperties.SESSION_EXPIRY_INTERVAL, (int) options.getSessionExpireInterval().longValue()));
+            if (options.getReceiveMaximum() != null)
+              props.add(new IntegerProperty(MqttProperties.RECEIVE_MAXIMUM, options.getReceiveMaximum()));
+            if (options.getMaximumPacketSize() != null)
+              props.add(new IntegerProperty(MqttProperties.MAXIMUM_PACKET_SIZE, (int) options.getMaximumPacketSize().longValue()));
+            if (options.getTopicAliasMaximum() != null)
+              props.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS_MAXIMUM, options.getTopicAliasMaximum()));
+            if (options.getRequestResponseInformation() != null)
+              props.add(new IntegerProperty(MqttProperties.REQUEST_RESPONSE_INFORMATION, options.getRequestResponseInformation() ? 1 : 0 ));
+            if (options.getRequestProblemInformation() != null)
+              props.add(new IntegerProperty(MqttProperties.REQUEST_PROBLEM_INFORMATION, options.getRequestProblemInformation() ? 1 : 0 ));
+            if (options.getAuthenticationMethod() != null)
+              props.add(new MqttProperties.StringProperty(MqttProperties.AUTHENTICATION_METHOD, options.getAuthenticationMethod()));
+            if (options.getAuthenticationData() != null)
+              props.add(new BinaryProperty(MqttProperties.AUTHENTICATION_DATA, options.getAuthenticationData().getBytes()));
+            if (userProperties != null && !userProperties.isEmpty()) {
+              Collection<StringPair> values = userProperties.entrySet().stream().map(e -> new StringPair(e.getKey(), e.getValue())).collect(Collectors.toList());
+              props.add(new UserProperties(values));
+            }
+          }
+
+          io.vertx.mqtt.MqttClientWillOptions willOpts = options.getWillOptions();
+
+          boolean willFlag = willOpts.getTopic() != null && willOpts.getMessageBytes() != null;
+
           MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
             PROTOCOL_NAME,
-            PROTOCOL_VERSION,
+            options.getVersion(),
             options.hasUsername(),
             options.hasPassword(),
-            options.isWillRetain(),
-            options.getWillQoS(),
-            options.isWillFlag(),
+            willOpts.isRetain(),
+            willOpts.getQos(),
+            willFlag,
             options.isCleanSession(),
-            options.getKeepAliveInterval()
-          );
+            options.getKeepAliveInterval(),
+            props);
+
+          MqttProperties willProperties = MqttProperties.NO_PROPERTIES;
+          if (options.getVersion() == 5 && willFlag) {
+            willProperties = new MqttProperties();
+            if (willOpts.getWillDelayInterval() != null)
+              willProperties.add(new IntegerProperty(MqttProperties.WILL_DELAY_INTERVAL, (int) willOpts.getWillDelayInterval().longValue()));
+            if (willOpts.getPayloadFormatIndicator() != null)
+              willProperties.add(new IntegerProperty(MqttProperties.PAYLOAD_FORMAT_INDICATOR, willOpts.getPayloadFormatIndicator()));
+            if (willOpts.getContentType() != null)
+              willProperties.add(new MqttProperties.StringProperty(MqttProperties.CONTENT_TYPE, willOpts.getContentType()));
+            if (willOpts.getResponseTopic() != null)
+              willProperties.add(new MqttProperties.StringProperty(MqttProperties.RESPONSE_TOPIC, willOpts.getResponseTopic()));
+            if (willOpts.getCorrelationData() != null)
+              willProperties.add(new BinaryProperty(MqttProperties.CORRELATION_DATA, willOpts.getCorrelationData().getBytes()));
+            if (willOpts.getUserProperties() != null && !willOpts.getUserProperties().isEmpty()) {
+              Collection<StringPair> pairs = willOpts.getUserProperties().entrySet().stream()
+                  .map(e -> new StringPair(e.getKey(), e.getValue()))
+                  .collect(Collectors.toList());
+              willProperties.add(new UserProperties(pairs));
+            }
+          }
 
           MqttConnectPayload payload = new MqttConnectPayload(
             options.getClientId() == null ? "" : options.getClientId(),
-            options.getWillTopic(),
-            options.getWillMessageBytes() != null ? options.getWillMessageBytes().getBytes() : null,
+            willProperties,
+            willOpts.getTopic(),
+            willOpts.getMessageBytes() != null ? willOpts.getMessageBytes().getBytes() : null,
             options.hasUsername() ? options.getUsername() : null,
             options.hasPassword() ? options.getPassword().getBytes() : null
           );
@@ -298,6 +401,7 @@ public class MqttClientImpl implements MqttClient {
           io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
 
           this.write(connect);
+
         }
 
       });
@@ -311,6 +415,11 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public Future<Void> disconnect() {
+    return disconnect(null, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Void> disconnect(MqttDisconnectReasonCode code, MqttProperties properties) {
 
     NetSocketInternal connection;
     Status status;
@@ -346,7 +455,14 @@ public class MqttClientImpl implements MqttClient {
           false,
           0
         );
-        io.netty.handler.codec.mqtt.MqttMessage disconnect = MqttMessageFactory.newMessage(fixedHeader, null, null);
+
+        MqttReasonCodeAndPropertiesVariableHeader variableHeader = null;
+        if (options.getVersion() == 5) {
+          variableHeader = new MqttReasonCodeAndPropertiesVariableHeader(
+              code == null ? MqttDisconnectReasonCode.NORMAL.value() : code.value(),
+              properties == null ? MqttProperties.NO_PROPERTIES : properties);
+        }
+        io.netty.handler.codec.mqtt.MqttMessage  disconnect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
         connection.writeMessage(disconnect);
       }
       connection.close();
@@ -356,11 +472,43 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
+   * See {@link MqttClient#authenticationExchange(MqttAuthenticateReasonCode, MqttProperties)} for more details
+   */
+  @Override
+  public Future<Void> authenticationExchange(MqttAuthenticateReasonCode reasonCode, MqttProperties properties) {
+
+    if (options.getVersion() != 5) {
+      return Future.failedFuture(new IllegalStateException("AUTH packet requires MQTT 5.0"));
+    }
+
+    synchronized (this) {
+      if (this.status != Status.CONNECTED && this.status != Status.CONNECTING) {
+        return Future.failedFuture(new IllegalStateException("Client not connected"));
+      }
+    }
+
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(
+      MqttMessageType.AUTH, false, AT_MOST_ONCE, false, 0);
+    MqttReasonCodeAndPropertiesVariableHeader variableHeader =
+      new MqttReasonCodeAndPropertiesVariableHeader(
+        reasonCode == null ? MqttAuthenticateReasonCode.SUCCESS.value() : reasonCode.value(),
+        properties == null ? MqttProperties.NO_PROPERTIES : properties);
+    io.netty.handler.codec.mqtt.MqttMessage auth =
+      MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    return this.write(auth);
+  }
+
+  /**
    * See {@link MqttClient#publish(String, Buffer, MqttQoS, boolean, boolean)} for more details
    */
   @Override
   public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
-    return publish(-1, topic, payload, qosLevel, isDup, isRetain);
+    return publish(topic, payload, qosLevel, isDup, isRetain, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Integer> publish(String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties) {
+    return publish(-1, topic, payload, qosLevel, isDup, isRetain, properties);
   }
 
   /**
@@ -368,6 +516,10 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain) {
+    return publish(id, topic, payload, qosLevel, isDup, isRetain, MqttProperties.NO_PROPERTIES);
+  }
+
+  public Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties) {
 
     if (MqttQoS.FAILURE == qosLevel) {
       throw new IllegalArgumentException("QoS level must be one of AT_MOST_ONCE, AT_LEAST_ONCE or EXACTLY_ONCE");
@@ -376,6 +528,20 @@ public class MqttClientImpl implements MqttClient {
     io.netty.handler.codec.mqtt.MqttMessage publish;
     MqttPublishVariableHeader variableHeader;
     synchronized (this) {
+      // MQTT 5.0: reject if QoS exceeds server's advertised Maximum QoS
+      if (options.getVersion() == 5 && qosLevel.value() > serverMaxQos) {
+        String msg = String.format("Server does not support QoS %d (server maximum QoS is %d)", qosLevel.value(), serverMaxQos);
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_QOS_UNSUPPORTED, msg));
+      }
+
+      // MQTT 5.0: reject if server's Receive Maximum is already reached
+      if (options.getVersion() == 5 && qosLevel != AT_MOST_ONCE && countInflightQueue >= serverReceiveMaximum) {
+        String msg = String.format("Server Receive Maximum of %d in-flight messages reached", serverReceiveMaximum);
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_INFLIGHT_QUEUE_FULL, msg));
+      }
+
       if (countInflightQueue >= options.getMaxInflightQueue()) {
         String msg = String.format("Attempt to exceed the limit of %d inflight messages", options.getMaxInflightQueue());
         log.error(msg);
@@ -388,6 +554,23 @@ public class MqttClientImpl implements MqttClient {
         log.error(msg);
         MqttException exception = new MqttException(MqttException.MQTT_INVALID_TOPIC_NAME, msg);
         return ctx.failedFuture(exception);
+      }
+
+      // MQTT 5.0 §3.2.2.3.6: client MUST NOT send a packet exceeding server's Maximum Packet Size
+      if (options.getVersion() == 5 && serverMaximumPacketSize != Long.MAX_VALUE) {
+        byte[] topicBytes = topic.getBytes(StandardCharsets.UTF_8);
+        long estimatedSize = 5L // fixed header (1) + max remaining-length VBI (4)
+          + 2 + topicBytes.length       // topic name: 2-byte length prefix + UTF-8 bytes
+          + (qosLevel != AT_MOST_ONCE ? 2 : 0)  // packet identifier (QoS 1/2 only)
+          + estimatePropertiesEncodedSize(properties) // MQTT5 properties
+          + (payload != null ? payload.length() : 0);
+        if (estimatedSize > serverMaximumPacketSize) {
+          String msg = String.format(
+            "Packet size estimate %d exceeds server Maximum Packet Size of %d",
+            estimatedSize, serverMaximumPacketSize);
+          log.error(msg);
+          return ctx.failedFuture(new MqttException(MqttException.MQTT_PACKET_TOO_LARGE, msg));
+        }
       }
 
       if (id < 0) {
@@ -417,7 +600,35 @@ public class MqttClientImpl implements MqttClient {
         0
       );
       ByteBuf buf = Unpooled.copiedBuffer(payload.getBytes());
-      variableHeader = new MqttPublishVariableHeader(topic, id);
+      String wireTopicName = topic;
+      MqttProperties effectiveProperties;
+      if (options.getVersion() == 5) {
+        effectiveProperties = new MqttProperties();
+        // Copy caller-provided properties into the new instance
+        if (properties != null && properties != MqttProperties.NO_PROPERTIES) {
+          for (MqttProperties.MqttProperty<?> p : properties.listAll()) {
+            effectiveProperties.add(p);
+          }
+        }
+        // Automatic topic alias management (MQTT 5.0 spec §3.3.2.3.4)
+        if (serverTopicAliasMaximum > 0) {
+          Integer alias = topicAlias.get(topic);
+          if (alias != null) {
+            // Already mapped: send empty topic name + alias (bandwidth saving)
+            wireTopicName = "";
+            effectiveProperties.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS, alias));
+          } else if (topicAlias.size() < serverTopicAliasMaximum) {
+            // New topic: assign next alias, send full topic name + alias
+            int newAlias = topicAlias.size() + 1;
+            topicAlias.put(topic, newAlias);
+            effectiveProperties.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS, newAlias));
+          }
+          // else: exhausted all aliases, send full topic name without alias
+        }
+      } else {
+        effectiveProperties = MqttProperties.NO_PROPERTIES;
+      }
+      variableHeader = new MqttPublishVariableHeader(wireTopicName, id, effectiveProperties);
       publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
       switch (qosLevel) {
         case AT_LEAST_ONCE:
@@ -480,6 +691,45 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MqttClient publishAckMessageHandler(Handler<MqttPubAckMessage> handler) {
+    this.publishAckMessageHandler = handler;
+    return this;
+  }
+
+  private synchronized Handler<MqttPubAckMessage> publishAckMessageHandler() {
+    return this.publishAckMessageHandler;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MqttClient publishRecMessageHandler(Handler<MqttPubRecMessage> handler) {
+    this.publishRecMessageHandler = handler;
+    return this;
+  }
+
+  private synchronized Handler<MqttPubRecMessage> publishRecMessageHandler() {
+    return this.publishRecMessageHandler;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MqttClient publishCompMessageHandler(Handler<MqttPubCompMessage> handler) {
+    this.publishCompMessageHandler = handler;
+    return this;
+  }
+
+  private synchronized Handler<MqttPubCompMessage> publishCompMessageHandler() {
+    return this.publishCompMessageHandler;
+  }
+
+  /**
    * See {@link MqttClient#publishHandler(Handler)} for more details
    */
   @Override
@@ -520,6 +770,40 @@ public class MqttClientImpl implements MqttClient {
    */
   @Override
   public Future<Integer> subscribe(Map<String, Integer> topics) {
+    return subscribe(topics, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Integer> subscribe(Map<String, Integer> topics, MqttProperties properties) {
+
+    // MQTT 5.0 §3.3.4: Subscription Identifier may only be used with MQTT 5.0 and only
+    // when the server has not explicitly disabled it (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0).
+    if (properties != null && properties.getProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER) != null) {
+      if (options.getVersion() != 5) {
+        String msg = "Subscription Identifier is only available in MQTT 5.0";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+      if (!serverSubscriptionIdentifierAvailable) {
+        String msg = "Server does not support Subscription Identifiers (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0)";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+    }
+
+    // MQTT 5.0 §3.2.2.3.11: Wildcard Subscriptions not supported when server sent WILDCARD_SUBSCRIPTION_AVAILABLE=0
+    if (!serverWildcardSubscriptionAvailable && topics.keySet().stream().anyMatch(t -> t.contains("+") || t.contains("#"))) {
+      String msg = "Server does not support Wildcard Subscriptions (CONNACK WILDCARD_SUBSCRIPTION_AVAILABLE=0)";
+      log.error(msg);
+      return ctx.failedFuture(new MqttException(MqttException.MQTT_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED, msg));
+    }
+
+    // MQTT 5.0 §3.2.2.3.14: Shared Subscriptions not supported when server sent SHARED_SUBSCRIPTION_AVAILABLE=0
+    if (!serverSharedSubscriptionAvailable && topics.keySet().stream().anyMatch(t -> t.startsWith("$share/"))) {
+      String msg = "Server does not support Shared Subscriptions (CONNACK SHARED_SUBSCRIPTION_AVAILABLE=0)";
+      log.error(msg);
+      return ctx.failedFuture(new MqttException(MqttException.MQTT_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED, msg));
+    }
 
     Map<String, Integer> invalidTopics = topics.entrySet()
       .stream()
@@ -540,7 +824,12 @@ public class MqttClientImpl implements MqttClient {
       false,
       0);
 
-    MqttMessageIdVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), MqttProperties.NO_PROPERTIES);
+    MqttMessageIdVariableHeader variableHeader;
+    if (options.getVersion() == 5) {
+      variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), properties == null ? MqttProperties.NO_PROPERTIES : properties);
+    } else {
+      variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
+    }
     List<MqttTopicSubscription> subscriptions = topics.entrySet()
       .stream()
       .map(e -> new MqttTopicSubscription(e.getKey(), valueOf(e.getValue())))
@@ -553,6 +842,69 @@ public class MqttClientImpl implements MqttClient {
     return this.write(subscribe).map(variableHeader.messageId());
   }
 
+  @Override
+  public Future<Integer> subscribe(List<MqttTopicSubscription> subscriptions, MqttProperties properties) {
+
+    // MQTT 5.0 §3.3.4: Subscription Identifier may only be used with MQTT 5.0 and only
+    // when the server has not explicitly disabled it (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0).
+    if (properties != null && properties.getProperty(MqttProperties.SUBSCRIPTION_IDENTIFIER) != null) {
+      if (options.getVersion() != 5) {
+        String msg = "Subscription Identifier is only available in MQTT 5.0";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+      if (!serverSubscriptionIdentifierAvailable) {
+        String msg = "Server does not support Subscription Identifiers (CONNACK SUBSCRIPTION_IDENTIFIER_AVAILABLE=0)";
+        log.error(msg);
+        return ctx.failedFuture(new MqttException(MqttException.MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED, msg));
+      }
+    }
+
+    // MQTT 5.0 §3.2.2.3.11: Wildcard Subscriptions not supported when server sent WILDCARD_SUBSCRIPTION_AVAILABLE=0
+    if (!serverWildcardSubscriptionAvailable && subscriptions.stream().map(MqttTopicSubscription::topicName).anyMatch(t -> t.contains("+") || t.contains("#"))) {
+      String msg = "Server does not support Wildcard Subscriptions (CONNACK WILDCARD_SUBSCRIPTION_AVAILABLE=0)";
+      log.error(msg);
+      return ctx.failedFuture(new MqttException(MqttException.MQTT_WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED, msg));
+    }
+
+    // MQTT 5.0 §3.2.2.3.14: Shared Subscriptions not supported when server sent SHARED_SUBSCRIPTION_AVAILABLE=0
+    if (!serverSharedSubscriptionAvailable && subscriptions.stream().map(MqttTopicSubscription::topicName).anyMatch(t -> t.startsWith("$share/"))) {
+      String msg = "Server does not support Shared Subscriptions (CONNACK SHARED_SUBSCRIPTION_AVAILABLE=0)";
+      log.error(msg);
+      return ctx.failedFuture(new MqttException(MqttException.MQTT_SHARED_SUBSCRIPTIONS_NOT_SUPPORTED, msg));
+    }
+
+    List<String> invalidTopics = subscriptions.stream()
+      .map(MqttTopicSubscription::topicName)
+      .filter(t -> !isValidTopicFilter(t))
+      .collect(Collectors.toList());
+
+    if (!invalidTopics.isEmpty()) {
+      String msg = String.format("Invalid Topic Filters: %s", invalidTopics);
+      log.error(msg);
+      return ctx.failedFuture(new MqttException(MqttException.MQTT_INVALID_TOPIC_FILTER, msg));
+    }
+
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(
+      MqttMessageType.SUBSCRIBE,
+      false,
+      AT_LEAST_ONCE,
+      false,
+      0);
+
+    MqttMessageIdVariableHeader variableHeader;
+    if (options.getVersion() == 5) {
+      variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), properties == null ? MqttProperties.NO_PROPERTIES : properties);
+    } else {
+      variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
+    }
+
+    MqttSubscribePayload payload = new MqttSubscribePayload(subscriptions);
+    io.netty.handler.codec.mqtt.MqttMessage subscribe = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+
+    return this.write(subscribe).map(variableHeader.messageId());
+  }
+
   /**
    * See {@link MqttClient#unsubscribeCompletionHandler(Handler)} for more details
    */
@@ -560,6 +912,12 @@ public class MqttClientImpl implements MqttClient {
   public MqttClient unsubscribeCompletionHandler(Handler<Integer> unsubscribeCompletionHandler) {
 
     this.unsubscribeCompletionHandler = unsubscribeCompletionHandler;
+    return this;
+  }
+
+  @Override
+  public MqttClient unsubscribeCompletionMessageHandler(Handler<io.vertx.mqtt.messages.MqttUnsubAckMessage> unsubscribeCompletionMessageHandler) {
+    this.unsubscribeCompletionMessageHandler = unsubscribeCompletionMessageHandler;
     return this;
   }
 
@@ -579,11 +937,20 @@ public class MqttClientImpl implements MqttClient {
     return this.unsubscribeCompletionHandler;
   }
 
+  private synchronized Handler<io.vertx.mqtt.messages.MqttUnsubAckMessage> unsubscribeCompletionMessageHandler() {
+    return this.unsubscribeCompletionMessageHandler;
+  }
+
   /**
    * See {@link MqttClient#unsubscribe(List<String>)} )} for more details
    */
   @Override
   public Future<Integer> unsubscribe(List<String> topics) {
+    return unsubscribe(topics, MqttProperties.NO_PROPERTIES);
+  }
+
+  @Override
+  public Future<Integer> unsubscribe(List<String> topics, MqttProperties properties) {
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
       MqttMessageType.UNSUBSCRIBE,
@@ -592,7 +959,12 @@ public class MqttClientImpl implements MqttClient {
       false,
       0);
 
-    MqttMessageIdVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), MqttProperties.NO_PROPERTIES);
+    MqttMessageIdVariableHeader variableHeader;
+    if (options.getVersion() == 5) {
+      variableHeader = new MqttMessageIdAndPropertiesVariableHeader(nextMessageId(), properties == null ? MqttProperties.NO_PROPERTIES : properties);
+    } else {
+      variableHeader = MqttMessageIdVariableHeader.from(nextMessageId());
+    }
 
     MqttUnsubscribePayload payload = new MqttUnsubscribePayload(topics);
 
@@ -601,24 +973,6 @@ public class MqttClientImpl implements MqttClient {
     this.write(unsubscribe);
 
     return ctx.succeededFuture(variableHeader.messageId());
-  }
-
-  private synchronized Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler() {
-    return this.authenticationExchangeHandler;
-  }
-
-  @Override
-  public MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler) {
-    this.authenticationExchangeHandler = authenticationExchangeHandler;
-    return this;
-  }
-
-  @Override
-  public Future<Void> authenticationExchange(MqttAuthenticationExchangeMessage message) {
-    io.netty.handler.codec.mqtt.MqttMessage auth = MqttMessageBuilders.auth()
-      .reasonCode(message.reasonCode().value()).properties(message.properties()).build();
-    this.write(auth);
-    return ctx.succeededFuture();
   }
 
   /**
@@ -658,6 +1012,29 @@ public class MqttClientImpl implements MqttClient {
 
   private synchronized Handler<Void> closeHandler() {
     return this.closeHandler;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public synchronized MqttClient disconnectMessageHandler(Handler<MqttDisconnectMessage> handler) {
+    this.disconnectMessageHandler = handler;
+    return this;
+  }
+
+  private synchronized Handler<MqttDisconnectMessage> disconnectMessageHandler() {
+    return this.disconnectMessageHandler;
+  }
+
+  @Override
+  public synchronized MqttClient authenticationExchangeHandler(Handler<MqttAuthenticationExchangeMessage> handler) {
+    this.authenticationExchangeHandler = handler;
+    return this;
+  }
+
+  private synchronized Handler<MqttAuthenticationExchangeMessage> authenticationExchangeHandler() {
+    return this.authenticationExchangeHandler;
   }
 
   private class Ping {
@@ -796,6 +1173,112 @@ public class MqttClientImpl implements MqttClient {
     return write;
   }
 
+  @Override
+  public Future<Void> publishAcknowledge(int publishMessageId, MqttPubAckReasonCode reasonCode, MqttProperties properties) {
+    Promise<Void> promise = vertx.getOrCreateContext().promise();
+    if (this.status != Status.CONNECTED) {
+      promise.fail(new IllegalStateException("Client not connected"));
+      return promise.future();
+    }
+    MqttFixedHeader fixedHeader =
+        new MqttFixedHeader(MqttMessageType.PUBACK, false, AT_MOST_ONCE, false, 0);
+
+    io.netty.handler.codec.mqtt.MqttMessage puback;
+    if (options.getVersion() == 5) {
+      MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(
+          publishMessageId,
+          reasonCode == null ? MqttPubAckReasonCode.SUCCESS.value() : reasonCode.value(),
+          properties == null ? MqttProperties.NO_PROPERTIES : properties);
+      puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    } else {
+      MqttMessageIdVariableHeader variableHeader =
+          MqttMessageIdVariableHeader.from(publishMessageId);
+      puback = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    }
+
+    this.write(puback).onComplete(promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> publishReceived(int publishMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties) {
+    Promise<Void> promise = vertx.getOrCreateContext().promise();
+    if (this.status != Status.CONNECTED) {
+      promise.fail(new IllegalStateException("Client not connected"));
+      return promise.future();
+    }
+    MqttFixedHeader fixedHeader =
+        new MqttFixedHeader(MqttMessageType.PUBREC, false, AT_MOST_ONCE, false, 0);
+
+    io.netty.handler.codec.mqtt.MqttMessage pubrec;
+    if (options.getVersion() == 5) {
+      MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(
+          publishMessageId,
+          reasonCode == null ? MqttPubRecReasonCode.SUCCESS.value() : reasonCode.value(),
+          properties == null ? MqttProperties.NO_PROPERTIES : properties);
+      pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    } else {
+      MqttMessageIdVariableHeader variableHeader =
+          MqttMessageIdVariableHeader.from(publishMessageId);
+      pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    }
+    this.write(pubrec).onComplete(promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> publishComplete(int publishMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties) {
+    Promise<Void> promise = vertx.getOrCreateContext().promise();
+    if (this.status != Status.CONNECTED) {
+      promise.fail(new IllegalStateException("Client not connected"));
+      return promise.future();
+    }
+    MqttFixedHeader fixedHeader =
+        new MqttFixedHeader(MqttMessageType.PUBCOMP, false, AT_MOST_ONCE, false, 0);
+
+    io.netty.handler.codec.mqtt.MqttMessage pubcomp;
+    if (options.getVersion() == 5) {
+      MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(
+          publishMessageId,
+          reasonCode == null ? MqttPubCompReasonCode.SUCCESS.value() : reasonCode.value(),
+          properties == null ? MqttProperties.NO_PROPERTIES : properties);
+      pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    } else {
+      MqttMessageIdVariableHeader variableHeader =
+          MqttMessageIdVariableHeader.from(publishMessageId);
+      pubcomp = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    }
+    this.write(pubcomp).onComplete(promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> publishRelease(int publishMessageId, MqttPubRelReasonCode reasonCode, MqttProperties properties) {
+    Promise<Void> promise = vertx.getOrCreateContext().promise();
+    if (this.status != Status.CONNECTED) {
+      promise.fail(new IllegalStateException("Client not connected"));
+      return promise.future();
+    }
+    MqttFixedHeader fixedHeader =
+        new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+
+    io.netty.handler.codec.mqtt.MqttMessage pubrel;
+    if (options.getVersion() == 5) {
+      MqttPubReplyMessageVariableHeader variableHeader = new MqttPubReplyMessageVariableHeader(
+          publishMessageId,
+          reasonCode == null ? MqttPubRelReasonCode.SUCCESS.value() : reasonCode.value(),
+          properties == null ? MqttProperties.NO_PROPERTIES : properties);
+      pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    } else {
+      MqttMessageIdVariableHeader variableHeader =
+          MqttMessageIdVariableHeader.from(publishMessageId);
+      pubrel = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
+    }
+
+    this.write(pubrel).onComplete(promise);
+    return promise.future();
+  }
+
   private void initChannel(NetSocketInternal sock) {
 
     ChannelPipeline pipeline = sock.channelHandlerContext().pipeline();
@@ -821,7 +1304,7 @@ public class MqttClientImpl implements MqttClient {
           @Override
           protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
             if (evt.state() == IdleState.WRITER_IDLE) {
-              // verify that server is still connected (e.g. when using QoS-0)
+              // verify that server is still connected (e.g. when only publishing QoS-0 messages)
               ping();
             }
           }
@@ -846,9 +1329,9 @@ public class MqttClientImpl implements MqttClient {
   }
 
   private Future<Void> write(io.netty.handler.codec.mqtt.MqttMessage mqttMessage) {
-     if(log.isDebugEnabled()){
-        log.debug(String.format("Sending packet %s", mqttMessage));
-     }
+    if (log.isDebugEnabled()) {
+      log.debug(String.format("Sending packet %s", mqttMessage));
+    }
     return this.connection().writeMessage(mqttMessage);
   }
 
@@ -856,11 +1339,17 @@ public class MqttClientImpl implements MqttClient {
    * Used for calling the close handler when the remote MQTT server closes the connection
    */
   private void handleClosed() {
+    String pendingRedirect;
+    MqttDisconnectMessage pendingDisconnectMessage;
     Promise<MqttConnAckMessage> connectPromise;
     Promise<Void> disconnectPromise;
     NetClient client;
     Deque<Ping> pings;
     synchronized (this) {
+      pendingRedirect = this.pendingRedirect;
+      this.pendingRedirect = null;
+      pendingDisconnectMessage = this.pendingDisconnectMessage;
+      this.pendingDisconnectMessage = null;
       client = this.client;
       connectPromise = this.connectPromise;
       disconnectPromise = this.disconnectPromise;
@@ -878,6 +1367,26 @@ public class MqttClientImpl implements MqttClient {
       ping.cancel();
     });
 
+    // MQTT 5.0 server redirect: reconnect transparently to the referenced server
+    if (pendingRedirect != null) {
+      String[] target = pickServer(pendingRedirect);
+      if (target != null) {
+        int redirectPort = Integer.parseInt(target[1]);
+        String redirectHost = target[0];
+        log.info("DISCONNECT SERVER_REFERENCE redirect to " + redirectHost + ":" + redirectPort);
+        disconnectPromise.complete();
+        client.close();
+        this.connect(redirectPort, redirectHost);
+        return; // do NOT fire the user's closeHandler
+      }
+    }
+
+    if (pendingDisconnectMessage != null) {
+      Handler<MqttDisconnectMessage> disconnectHandler = disconnectMessageHandler();
+      if (disconnectHandler != null) {
+        disconnectHandler.handle(pendingDisconnectMessage);
+      }
+    }
     Handler<Void> handler = closeHandler();
     if (handler != null) {
       handler.handle(null);
@@ -907,13 +1416,16 @@ public class MqttClientImpl implements MqttClient {
         chctx.pipeline().fireExceptionCaught(result.cause());
         return;
       }
+
       if (!result.isFinished()) {
         chctx.pipeline().fireExceptionCaught(new Exception("Unfinished message"));
         return;
       }
-      if(log.isDebugEnabled()){
-         log.debug(String.format("Incoming packet %s", msg));
+
+      if (log.isDebugEnabled()) {
+        log.debug(String.format("Incoming packet %s", msg));
       }
+
       switch (mqttMessage.fixedHeader().messageType()) {
 
         case CONNACK:
@@ -922,7 +1434,8 @@ public class MqttClientImpl implements MqttClient {
 
           MqttConnAckMessage mqttConnAckMessage = MqttConnAckMessage.create(
             connack.variableHeader().connectReturnCode(),
-            connack.variableHeader().isSessionPresent());
+            connack.variableHeader().isSessionPresent(),
+            connack.variableHeader().properties());
           handleConnack(mqttConnAckMessage);
           break;
 
@@ -931,44 +1444,98 @@ public class MqttClientImpl implements MqttClient {
           io.netty.handler.codec.mqtt.MqttPublishMessage publish = (io.netty.handler.codec.mqtt.MqttPublishMessage) mqttMessage;
           Buffer newBuf = BufferInternal.safeBuffer(publish.payload());
 
+          // MQTT 5.0 §3.3.2.3.4 – resolve incoming topic alias (server→client direction)
+          String resolvedTopic = publish.variableHeader().topicName();
+          MqttProperties.MqttProperty<?> incomingAliasProp =
+            publish.variableHeader().properties().getProperty(MqttProperties.TOPIC_ALIAS);
+          if (incomingAliasProp != null) {
+            int alias = (Integer) incomingAliasProp.value();
+            int clientMax = options.getTopicAliasMaximum() != null ? options.getTopicAliasMaximum() : 0;
+            if (alias < 1 || alias > clientMax) {
+              // Alias out of range – protocol error
+              disconnect(MqttDisconnectReasonCode.TOPIC_ALIAS_INVALID, MqttProperties.NO_PROPERTIES);
+              return;
+            }
+            if (!resolvedTopic.isEmpty()) {
+              // New mapping or overwrite
+              synchronized (this) { serverTopicAlias.put(alias, resolvedTopic); }
+            } else {
+              // Alias-only: look up stored mapping
+              synchronized (this) { resolvedTopic = serverTopicAlias.get(alias); }
+              if (resolvedTopic == null) {
+                // Alias used before being defined – protocol error
+                disconnect(MqttDisconnectReasonCode.TOPIC_ALIAS_INVALID, MqttProperties.NO_PROPERTIES);
+                return;
+              }
+            }
+          }
+
           MqttPublishMessage mqttPublishMessage = MqttPublishMessage.create(
             publish.variableHeader().packetId(),
             publish.fixedHeader().qosLevel(),
             publish.fixedHeader().isDup(),
             publish.fixedHeader().isRetain(),
-            publish.variableHeader().topicName(),
-            newBuf);
+            resolvedTopic,
+            newBuf,
+            publish.variableHeader().properties());
           handlePublish(mqttPublishMessage);
           break;
 
-        case PUBACK:
-          handlePuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+        case PUBACK: {
+          MqttMessageIdVariableHeader pubackVh = (MqttMessageIdVariableHeader) mqttMessage.variableHeader();
+          if (options.getVersion() == 5 && pubackVh instanceof MqttPubReplyMessageVariableHeader) {
+            MqttPubReplyMessageVariableHeader rich = (MqttPubReplyMessageVariableHeader) pubackVh;
+            handlePuback(rich.messageId(), MqttPubAckReasonCode.valueOf((byte) rich.reasonCode()), rich.properties());
+          } else {
+            handlePuback(pubackVh.messageId(), MqttPubAckReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+          }
           break;
+        }
 
-        case PUBREC:
-          handlePubrec(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+        case PUBREC: {
+          MqttMessageIdVariableHeader pubrecVh = (MqttMessageIdVariableHeader) mqttMessage.variableHeader();
+          if (options.getVersion() == 5 && pubrecVh instanceof MqttPubReplyMessageVariableHeader) {
+            MqttPubReplyMessageVariableHeader rich = (MqttPubReplyMessageVariableHeader) pubrecVh;
+            handlePubrec(rich.messageId(), MqttPubRecReasonCode.valueOf((byte) rich.reasonCode()), rich.properties());
+          } else {
+            handlePubrec(pubrecVh.messageId(), MqttPubRecReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+          }
           break;
+        }
 
         case PUBREL:
           handlePubrel(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
           break;
 
-        case PUBCOMP:
-          handlePubcomp(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+        case PUBCOMP: {
+          MqttMessageIdVariableHeader pubcompVh = (MqttMessageIdVariableHeader) mqttMessage.variableHeader();
+          if (options.getVersion() == 5 && pubcompVh instanceof MqttPubReplyMessageVariableHeader) {
+            MqttPubReplyMessageVariableHeader rich = (MqttPubReplyMessageVariableHeader) pubcompVh;
+            handlePubcomp(rich.messageId(), MqttPubCompReasonCode.valueOf((byte) rich.reasonCode()), rich.properties());
+          } else {
+            handlePubcomp(pubcompVh.messageId(), MqttPubCompReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
+          }
           break;
+        }
 
         case SUBACK:
 
-          io.netty.handler.codec.mqtt.MqttSubAckMessage unsuback = (io.netty.handler.codec.mqtt.MqttSubAckMessage) mqttMessage;
+          io.netty.handler.codec.mqtt.MqttSubAckMessage suback = (io.netty.handler.codec.mqtt.MqttSubAckMessage) mqttMessage;
+
+          io.netty.handler.codec.mqtt.MqttProperties subackProps = io.netty.handler.codec.mqtt.MqttProperties.NO_PROPERTIES;
+          if (suback.variableHeader() instanceof io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader) {
+              subackProps = ((io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader) suback.variableHeader()).properties();
+          }
 
           MqttSubAckMessage mqttSubAckMessage = MqttSubAckMessage.create(
-            unsuback.variableHeader().messageId(),
-            unsuback.payload().grantedQoSLevels());
+            suback.variableHeader().messageId(),
+            suback.payload().grantedQoSLevels(),
+            subackProps);
           handleSuback(mqttSubAckMessage);
           break;
 
         case UNSUBACK:
-          handleUnsuback(((MqttMessageIdVariableHeader) mqttMessage.variableHeader()).messageId());
+          handleUnsuback(mqttMessage);
           break;
 
         case AUTH:
@@ -982,6 +1549,29 @@ public class MqttClientImpl implements MqttClient {
           handlePingresp();
           break;
 
+        case DISCONNECT:
+          // MQTT 5.0: server-initiated DISCONNECT – capture reason code and check for SERVER_REFERENCE redirect
+          if (options.getVersion() == 5
+              && mqttMessage.variableHeader() instanceof MqttReasonCodeAndPropertiesVariableHeader) {
+            MqttReasonCodeAndPropertiesVariableHeader disconnVarHeader =
+              (MqttReasonCodeAndPropertiesVariableHeader) mqttMessage.variableHeader();
+            MqttDisconnectReasonCode disconnectReasonCode =
+              MqttDisconnectReasonCode.valueOf((byte) disconnVarHeader.reasonCode());
+            MqttDisconnectMessage disconnectMsg =
+              MqttDisconnectMessage.create(disconnectReasonCode, disconnVarHeader.properties());
+            synchronized (this) {
+              this.pendingDisconnectMessage = disconnectMsg;
+              if (options.isAutoServerRedirect()) {
+                MqttProperties.MqttProperty<?> serverRefProp =
+                  disconnVarHeader.properties().getProperty(MqttProperties.SERVER_REFERENCE);
+                if (serverRefProp != null) {
+                  this.pendingRedirect = (String) serverRefProp.value();
+                }
+              }
+            }
+          }
+          break;
+
         default:
 
           chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type " + msg.getClass().getName()));
@@ -989,9 +1579,9 @@ public class MqttClientImpl implements MqttClient {
       }
 
     } else {
-
       chctx.pipeline().fireExceptionCaught(new Exception("Wrong message type"));
     }
+
   }
 
   /**
@@ -1013,13 +1603,37 @@ public class MqttClientImpl implements MqttClient {
   /**
    * Used for calling the unsuback handler when the server acks an unsubscribe
    *
-   * @param unsubackMessageId identifier of the subscribe acknowledged by the server
+   * @param msg message acknowledged by the server
    */
-  private void handleUnsuback(int unsubackMessageId) {
+  private void handleUnsuback(io.netty.handler.codec.mqtt.MqttMessage msg) {
 
-    Handler<Integer> handler = unsubscribeCompletionHandler();
-    if (handler != null) {
-      handler.handle(unsubackMessageId);
+    int unsubackMessageId;
+    MqttProperties properties = MqttProperties.NO_PROPERTIES;
+
+    if (msg.variableHeader() instanceof io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader) {
+      io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader variableHeader =
+        (io.netty.handler.codec.mqtt.MqttMessageIdAndPropertiesVariableHeader) msg.variableHeader();
+      unsubackMessageId = variableHeader.messageId();
+      properties = variableHeader.properties();
+    } else {
+      unsubackMessageId = ((io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
+    }
+
+    java.util.List<Short> reasonCodes = java.util.Collections.emptyList();
+    if (msg.payload() instanceof io.netty.handler.codec.mqtt.MqttUnsubAckPayload) {
+      reasonCodes = ((io.netty.handler.codec.mqtt.MqttUnsubAckPayload) msg.payload()).unsubscribeReasonCodes();
+    }
+
+    synchronized (this) {
+      Handler<MqttUnsubAckMessage> messageHandler = unsubscribeCompletionMessageHandler();
+      if (messageHandler != null) {
+        messageHandler.handle(MqttUnsubAckMessage.create(unsubackMessageId, reasonCodes, properties));
+      }
+
+      Handler<Integer> handler = unsubscribeCompletionHandler();
+      if (handler != null) {
+        handler.handle(unsubackMessageId);
+      }
     }
   }
 
@@ -1027,8 +1641,10 @@ public class MqttClientImpl implements MqttClient {
    * Used for calling the puback handler when the server acknowledge a QoS 1 message with puback
    *
    * @param pubackMessageId identifier of the message acknowledged by the server
+   * @param reasonCode MQTT5 reason code (SUCCESS for MQTT3)
+   * @param properties MQTT5 properties (NO_PROPERTIES for MQTT3)
    */
-  private void handlePuback(int pubackMessageId) {
+  private void handlePuback(int pubackMessageId, MqttPubAckReasonCode reasonCode, MqttProperties properties) {
 
     synchronized (this) {
 
@@ -1046,6 +1662,10 @@ public class MqttClientImpl implements MqttClient {
       removedPacket.cancelTimer();
       countInflightQueue--;
     }
+    Handler<MqttPubAckMessage> ackHandler = publishAckMessageHandler();
+    if (ackHandler != null) {
+      ackHandler.handle(MqttPubAckMessage.create(pubackMessageId, reasonCode, properties));
+    }
     Handler<Integer> handler = publishCompletionHandler();
     if (handler != null) {
       handler.handle(pubackMessageId);
@@ -1061,9 +1681,9 @@ public class MqttClientImpl implements MqttClient {
         // the message has already been ACKed
         log.debug("PUBLISH expiration timer fired but QoS 1 message has already been PUBACKed by server");
         return;
-     }
+      }
+      countInflightQueue--;
     }
-    countInflightQueue--;
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
       handler.handle(expiredMessage.packetId);
@@ -1074,8 +1694,10 @@ public class MqttClientImpl implements MqttClient {
    * Used for calling the pubcomp handler when the server client acknowledge a QoS 2 message with pubcomp
    *
    * @param pubcompMessageId identifier of the message acknowledged by the server
+   * @param reasonCode MQTT5 reason code (SUCCESS for MQTT3)
+   * @param properties MQTT5 properties (NO_PROPERTIES for MQTT3)
    */
-  private void handlePubcomp(int pubcompMessageId) {
+  private void handlePubcomp(int pubcompMessageId, MqttPubCompReasonCode reasonCode, MqttProperties properties) {
 
     synchronized (this) {
       ExpiringPacket removedPacket = qos2outbound.remove(pubcompMessageId);
@@ -1090,6 +1712,10 @@ public class MqttClientImpl implements MqttClient {
       }
       removedPacket.cancelTimer();
       countInflightQueue--;
+    }
+    Handler<MqttPubCompMessage> compHandler = publishCompMessageHandler();
+    if (compHandler != null) {
+      compHandler.handle(MqttPubCompMessage.create(pubcompMessageId, reasonCode, properties));
     }
     Handler<Integer> handler = publishCompletionHandler();
     if (handler != null) {
@@ -1106,8 +1732,8 @@ public class MqttClientImpl implements MqttClient {
         log.debug("PUBCOMP expiration timer fired but QoS 2 message has already been PUBCOMPed by server");
         return;
       }
+      countInflightQueue--;
     }
-    countInflightQueue--;
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
       handler.handle(expiredMessage.packetId);
@@ -1118,8 +1744,10 @@ public class MqttClientImpl implements MqttClient {
    * Used for sending the pubrel when a pubrec is received from the server
    *
    * @param pubrecMessageId identifier of the message acknowledged by server
+   * @param reasonCode MQTT5 reason code (SUCCESS for MQTT3)
+   * @param properties MQTT5 properties (NO_PROPERTIES for MQTT3)
    */
-  private void handlePubrec(int pubrecMessageId) {
+  private void handlePubrec(int pubrecMessageId, MqttPubRecReasonCode reasonCode, MqttProperties properties) {
 
     synchronized (this) {
       ExpiringPacket removedPacket = qos2outbound.remove(pubrecMessageId);
@@ -1134,6 +1762,10 @@ public class MqttClientImpl implements MqttClient {
       }
       removedPacket.cancelTimer();
     }
+    Handler<MqttPubRecMessage> recHandler = publishRecMessageHandler();
+    if (recHandler != null) {
+      recHandler.handle(MqttPubRecMessage.create(pubrecMessageId, reasonCode, properties));
+    }
     this.publishRelease(pubrecMessageId);
   }
 
@@ -1146,8 +1778,8 @@ public class MqttClientImpl implements MqttClient {
         log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
         return;
       }
+      countInflightQueue--;
     }
-    countInflightQueue--;
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
       handler.handle(expiredMessage.packetId);
@@ -1200,7 +1832,7 @@ public class MqttClientImpl implements MqttClient {
         // we will handle the PUBCOMP when a PUBREL comes
         break;
 
-	}
+    }
 
   }
 
@@ -1252,10 +1884,11 @@ public class MqttClientImpl implements MqttClient {
    */
   private void handleConnack(MqttConnAckMessage msg) {
 
-    Status status = msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED ? Status.CONNECTED : Status.CLOSING;
-
-
     if (msg.code() == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+      // Apply MQTT 5.0 server-assigned properties before completing the promise
+      if (options.getVersion() == 5) {
+        applyConnAckProperties(msg);
+      }
       NetSocketInternal connection;
       Promise<MqttConnAckMessage> connectPromise;
       synchronized (this) {
@@ -1267,6 +1900,12 @@ public class MqttClientImpl implements MqttClient {
       connection.closeHandler(v -> handleClosed());
       connectPromise.complete(msg);
     } else {
+      // Check for MQTT 5.0 server redirect before resetting state
+      String serverRef = null;
+      if (options.getVersion() == 5 && options.isAutoServerRedirect()) {
+        serverRef = msg.serverReference();
+      }
+
       Promise<MqttConnAckMessage> connectPromise;
       Promise<Void> disconnectPromise;
       NetSocketInternal connection;
@@ -1283,11 +1922,135 @@ public class MqttClientImpl implements MqttClient {
         this.client = null;
       }
       connection.closeHandler(null);
+
+      if (serverRef != null) {
+        String[] target = pickServer(serverRef);
+        if (target != null) {
+          int redirectPort = Integer.parseInt(target[1]);
+          String redirectHost = target[0];
+          log.info("CONNACK SERVER_REFERENCE redirect to " + redirectHost + ":" + redirectPort);
+          disconnectPromise.complete();
+          client.close();
+          this.connect(redirectPort, redirectHost)
+            .onComplete(ar -> {
+              if (ar.succeeded()) connectPromise.complete(ar.result());
+              else connectPromise.fail(ar.cause());
+            });
+          return;
+        }
+      }
+
       MqttConnectionException exception = new MqttConnectionException(msg.code());
       log.error(String.format("Connection refused by the server - code: %s", msg.code()));
       connectPromise.fail(exception);
       disconnectPromise.complete();
       client.close();
+    }
+  }
+
+  /**
+   * Applies MQTT 5.0 CONNACK properties sent by the server to the local client state.
+   * <p>
+   * Per the MQTT 5.0 specification, certain server-provided values MUST override
+   * what the client requested in the CONNECT packet:
+   * <ul>
+   *   <li>Assigned Client Identifier: stored in options so {@link #clientId()} reflects it</li>
+   *   <li>Server Keep Alive: replaces the keep-alive interval the client requested</li>
+   * </ul>
+   * Other properties (Receive Maximum, Max Packet Size, Max QoS, Retain Available,
+   * Topic Alias Maximum, Reason String, User Properties, Response Information,
+   * Server Reference, Auth Method/Data) are available to the caller via the
+   * {@link MqttConnAckMessage} returned from the connect Future.
+   */
+  private void applyConnAckProperties(MqttConnAckMessage msg) {
+    // Receive Maximum: max concurrent QoS1/2 in-flight messages the server can handle
+    Integer receiveMaximum = msg.receiveMaximum();
+    synchronized (this) {
+      serverReceiveMaximum = (receiveMaximum != null && receiveMaximum > 0) ? receiveMaximum : Integer.MAX_VALUE;
+    }
+    log.debug("CONNACK serverReceiveMaximum=" + serverReceiveMaximum);
+
+    // Maximum QoS: highest QoS level the server accepts
+    Integer maximumQos = msg.maximumQos();
+    Long maximumPacketSize = msg.maximumPacketSize();
+    synchronized (this) {
+      serverMaxQos = (maximumQos != null) ? maximumQos : 2;
+      serverMaximumPacketSize = (maximumPacketSize != null) ? maximumPacketSize : Long.MAX_VALUE;
+    }
+    log.debug("CONNACK serverMaxQos=" + serverMaxQos);
+    log.debug("CONNACK serverMaximumPacketSize=" + serverMaximumPacketSize);
+
+    // Assigned Client Identifier: server assigned us an ID (we sent empty ClientID)
+    String assignedClientId = msg.assignedClientIdentifier();
+    if (assignedClientId != null) {
+      options.setClientId(assignedClientId);
+      log.debug("Server assigned client identifier: " + assignedClientId);
+    }
+
+    // Server Keep Alive: MUST use this value instead of what we sent
+    Integer serverKeepAlive = msg.serverKeepAlive();
+    if (serverKeepAlive != null && options.getKeepAliveInterval() != serverKeepAlive) {
+      options.setKeepAliveInterval(serverKeepAlive);
+      log.debug("Server assigned keep alive: " + serverKeepAlive + "s");
+
+      // Update the IdleStateHandler in the pipeline with the new keep-alive interval
+      ChannelPipeline pipeline = connection.channelHandlerContext().pipeline();
+      if (pipeline.get("idle") != null) {
+        pipeline.remove("idle");
+        pipeline.addBefore("handler", "idle",
+            new IdleStateHandler(0, serverKeepAlive, 0) {
+              @Override
+              protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
+                if (evt.state() == IdleState.WRITER_IDLE) {
+                  // verify that server is still connected (e.g. when only publishing QoS-0 messages)
+                  ping();
+                }
+              }
+            });
+      }
+    }
+
+    // Topic Alias Maximum: store how many topic aliases the server accepts
+    Integer topicAliasMaximum = msg.topicAliasMaximum();
+    // Subscription Identifier Available: absent or 1 means available; 0 means NOT available
+    Boolean subIdAvailable = msg.subscriptionIdentifierAvailable();
+    // Wildcard Subscription Available: absent or 1 means available; 0 means NOT available
+    Boolean wildcardAvailable = msg.wildcardSubscriptionAvailable();
+    // Shared Subscription Available: absent or 1 means available; 0 means NOT available
+    Boolean sharedAvailable = msg.sharedSubscriptionAvailable();
+    synchronized (this) {
+      serverTopicAliasMaximum = (topicAliasMaximum != null) ? topicAliasMaximum : 0;
+      topicAlias.clear();
+      serverTopicAlias.clear();
+      serverSubscriptionIdentifierAvailable = subIdAvailable == null || subIdAvailable;
+      serverWildcardSubscriptionAvailable = wildcardAvailable == null || wildcardAvailable;
+      serverSharedSubscriptionAvailable = sharedAvailable == null || sharedAvailable;
+    }
+    log.debug("CONNACK topicAliasMaximum=" + serverTopicAliasMaximum);
+    log.debug("CONNACK subscriptionIdentifierAvailable=" + serverSubscriptionIdentifierAvailable);
+    log.debug("CONNACK wildcardSubscriptionAvailable=" + serverWildcardSubscriptionAvailable);
+    log.debug("CONNACK sharedSubscriptionAvailable=" + serverSharedSubscriptionAvailable);
+
+    // Log informational properties for debug purposes
+    if (log.isDebugEnabled()) {
+      if (msg.sessionExpiryInterval() != null)
+        log.debug("CONNACK sessionExpiryInterval=" + msg.sessionExpiryInterval());
+      if (msg.receiveMaximum() != null)
+        log.debug("CONNACK receiveMaximum=" + msg.receiveMaximum());
+      if (msg.maximumQos() != null)
+        log.debug("CONNACK maximumQos=" + msg.maximumQos());
+      if (msg.retainAvailable() != null)
+        log.debug("CONNACK retainAvailable=" + msg.retainAvailable());
+      if (msg.maximumPacketSize() != null)
+        log.debug("CONNACK maximumPacketSize=" + msg.maximumPacketSize());
+      if (msg.reasonString() != null)
+        log.debug("CONNACK reasonString=" + msg.reasonString());
+      if (msg.responseInformation() != null)
+        log.debug("CONNACK responseInformation=" + msg.responseInformation());
+      if (msg.serverReference() != null)
+        log.debug("CONNACK serverReference=" + msg.serverReference());
+      if (msg.authenticationMethod() != null)
+        log.debug("CONNACK authenticationMethod=" + msg.authenticationMethod());
     }
   }
 
@@ -1309,6 +2072,67 @@ public class MqttClientImpl implements MqttClient {
    */
   private String generateRandomClientId() {
     return UUID.randomUUID().toString();
+  }
+
+  /**
+   * Parses a SERVER_REFERENCE string (comma-separated "host:port" or "host" entries)
+   * and returns {host, port} for a randomly chosen entry.
+   * IPv6 addresses enclosed in brackets are supported (e.g. "[::1]:1883").
+   *
+   * @return String array {host, portString}, or {@code null} if the string is blank/unparseable
+   */
+  private String[] pickServer(String serverReference) {
+    if (serverReference == null || serverReference.isBlank()) return null;
+    String[] entries = serverReference.split(",");
+    String entry = entries[ThreadLocalRandom.current().nextInt(entries.length)].trim();
+    if (entry.isEmpty()) return null;
+    // IPv6 bracket notation: "[::1]:1883" or just "[::1]"
+    if (entry.startsWith("[")) {
+      int bracketEnd = entry.indexOf(']');
+      if (bracketEnd < 0) return new String[]{entry, String.valueOf(MqttClientOptions.DEFAULT_PORT)};
+      String host = entry.substring(1, bracketEnd);
+      String rest = entry.substring(bracketEnd + 1);
+      int port = rest.startsWith(":") ? Integer.parseInt(rest.substring(1)) : MqttClientOptions.DEFAULT_PORT;
+      return new String[]{host, String.valueOf(port)};
+    }
+    // Regular "host:port" or "host"
+    int colonIdx = entry.lastIndexOf(':');
+    if (colonIdx > 0) {
+      return new String[]{entry.substring(0, colonIdx), entry.substring(colonIdx + 1)};
+    }
+    return new String[]{entry, String.valueOf(MqttClientOptions.DEFAULT_PORT)};
+  }
+
+  /**
+   * Estimates the encoded size of MQTT properties for a packet size check.
+   * Intentionally over-estimates to be conservative.
+   *
+   * @param properties the properties to estimate (may be null)
+   * @return estimated encoded byte count including the properties length field
+   */
+  private int estimatePropertiesEncodedSize(MqttProperties properties) {
+    if (properties == null || properties == MqttProperties.NO_PROPERTIES) {
+      return 1; // 1 byte for zero-length Variable Byte Integer
+    }
+    int size = 4; // max Variable Byte Integer for the properties length field
+    for (MqttProperties.MqttProperty<?> p : properties.listAll()) {
+      size += 1; // property type ID byte
+      if (p instanceof MqttProperties.IntegerProperty) {
+        size += 4;
+      } else if (p instanceof MqttProperties.StringProperty) {
+        size += 2 + ((String) p.value()).getBytes(StandardCharsets.UTF_8).length;
+      } else if (p instanceof MqttProperties.BinaryProperty) {
+        size += 2 + ((byte[]) p.value()).length;
+      } else if (p instanceof MqttProperties.UserProperties) {
+        for (MqttProperties.StringPair pair : ((MqttProperties.UserProperties) p).value()) {
+          size += 1 + 2 + pair.key.getBytes(StandardCharsets.UTF_8).length
+                      + 2 + pair.value.getBytes(StandardCharsets.UTF_8).length;
+        }
+      } else {
+        size += 8; // generous fallback
+      }
+    }
+    return size;
   }
 
   /**
