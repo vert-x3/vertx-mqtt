@@ -23,7 +23,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
-import io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage;
 import io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode;
 
 public class VertxMqttClientExamples {
@@ -160,7 +159,7 @@ public class VertxMqttClientExamples {
    * @param client
    */
   public void example10(MqttClient client) {
-    client.authenticationExchange(MqttAuthenticationExchangeMessage.create(MqttAuthenticateReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES));
+    client.authenticationExchange(MqttAuthenticateReasonCode.SUCCESS, MqttProperties.NO_PROPERTIES);
     client.authenticationExchangeHandler(auth -> {
       //The handler will be called time to time by default
       System.out.println("We have just received AUTH packet: " + auth.reasonCode());
