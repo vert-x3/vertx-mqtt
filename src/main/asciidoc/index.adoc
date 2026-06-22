@@ -423,6 +423,8 @@ compile "io.netty:netty-codec-haproxy:${maven.version}"
 
 == MQTT 5.0 client features
 
+WARNING: this section is new and currently in tech preview, in other words the API is subject to be change until it reaches maturity
+
 The client targets MQTT 3.1.1 by default. To switch the wire protocol to MQTT 5.0, set the protocol version on
 {@link io.vertx.mqtt.MqttClientOptions} before creating the client:
 
