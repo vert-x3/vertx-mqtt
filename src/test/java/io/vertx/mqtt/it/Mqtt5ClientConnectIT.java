@@ -21,7 +21,6 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
-import io.vertx.mqtt.messages.MqttConnAckMessage;
 import org.junit.After;
 import org.junit.Test;
 
