@@ -20,6 +20,7 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.mqtt.messages.impl.MqttSubAckMessageImpl;
+import io.netty.handler.codec.mqtt.MqttProperties;
 
 import java.util.List;
 
@@ -38,7 +39,20 @@ public interface MqttSubAckMessage extends MqttMessage {
    */
   @GenIgnore
   static MqttSubAckMessage create(int messageId, List<Integer> grantedQosLevels) {
-    return new MqttSubAckMessageImpl(messageId, grantedQosLevels);
+    return new MqttSubAckMessageImpl(messageId, grantedQosLevels, MqttProperties.NO_PROPERTIES);
+  }
+
+  /**
+   * Create a concrete instance of a Vert.x suback message
+   *
+   * @param messageId message identifier
+   * @param grantedQosLevels  list of granted QoS levels
+   * @param properties MQTT properties
+   * @return
+   */
+  @GenIgnore
+  static MqttSubAckMessage create(int messageId, List<Integer> grantedQosLevels, MqttProperties properties) {
+    return new MqttSubAckMessageImpl(messageId, grantedQosLevels, properties);
   }
 
   /**
@@ -46,4 +60,11 @@ public interface MqttSubAckMessage extends MqttMessage {
    */
   @CacheReturn
   List<Integer> grantedQoSLevels();
+
+  /**
+   * @return MQTT properties
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @CacheReturn
+  MqttProperties properties();
 }

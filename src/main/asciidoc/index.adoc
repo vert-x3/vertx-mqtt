@@ -253,8 +253,10 @@ them in a round-robin fashion to any of the connect handlers executed on differe
 
 = Vert.x MQTT client
 
-This component provides an link:http://mqtt.org/[MQTT] client which is compliant with the 3.1.1 spec. Its API provides a bunch of methods
+This component provides an link:http://mqtt.org/[MQTT] client which is compliant with the 3.1.1 and 5.0 specs. Its API provides a bunch of methods
 for connecting/disconnecting to a broker, publishing messages (with all three different levels of QoS) and subscribing to topics.
+MQTT 5.0 features such as user properties, reason codes, subscription options, subscription identifiers, topic aliases and
+automatic server redirect are supported in addition to the 3.1.1 baseline.
 
 WARNING: this module has the tech preview status, this means the API can change between versions.
 
@@ -390,3 +392,466 @@ IMPORTANT: to enable this feature, you need to add dependency `netty-codec-hapro
 ----
 compile io.netty:netty-codec-haproxy:${maven.version}
 ----
+
+== MQTT 5.0 client features
+
+The client targets MQTT 3.1.1 by default. To switch the wire protocol to MQTT 5.0, set the protocol version on
+{@link io.vertx.mqtt.MqttClientOptions} before creating the client:
+
+[source,java]
+----
+MqttClientOptions options = new MqttClientOptions();
+options.setVersion(io.netty.handler.codec.mqtt.MqttVersion.MQTT_5.protocolLevel()); // 5
+MqttClient client = MqttClient.create(vertx, options);
+----
+
+Only the values `4` (MQTT 3.1.1) and `5` (MQTT 5.0) are accepted by
+{@link io.vertx.mqtt.MqttClientOptions#setVersion(int)}.
+
+=== CONNECT properties
+
+When using MQTT 5.0, the following CONNECT properties can be configured on {@link io.vertx.mqtt.MqttClientOptions}:
+
+* {@link io.vertx.mqtt.MqttClientOptions#setSessionExpireInterval(java.lang.Long)} — Session Expiry Interval (seconds)
+* {@link io.vertx.mqtt.MqttClientOptions#setReceiveMaximum(java.lang.Integer)} — maximum number of in-flight QoS 1/2 PUBLISH packets the client is willing to receive
+* {@link io.vertx.mqtt.MqttClientOptions#setMaximumPacketSize(java.lang.Long)} — maximum packet size the client will accept from the server
+* {@link io.vertx.mqtt.MqttClientOptions#setTopicAliasMaximum(java.lang.Integer)} — highest topic alias value the client will accept from the server
+* {@link io.vertx.mqtt.MqttClientOptions#setRequestResponseInformation(java.lang.Boolean)} / {@link io.vertx.mqtt.MqttClientOptions#setRequestProblemInformation(java.lang.Boolean)}
+* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationMethod(java.lang.String)} / {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationData(io.vertx.core.buffer.Buffer)}
+
+User properties can be attached to the CONNECT packet by using the
+{@link io.vertx.mqtt.MqttClient#connect(int, java.lang.String, java.lang.String, java.util.Map)} overload that takes a `Map<String, String>` of user properties.
+
+The result of the CONNECT is delivered as a {@link io.vertx.mqtt.messages.MqttConnAckMessage} which, on MQTT 5.0, exposes
+the full set of server-advertised properties (Receive Maximum, Maximum QoS, Retain Available, Maximum Packet Size,
+Assigned Client Identifier, Topic Alias Maximum, Reason String, Wildcard / Shared Subscription Available, Subscription
+Identifiers Available, Server Keep Alive, Response Information, Server Reference, Authentication Method/Data and
+user properties).
+
+==== Session Expiry Interval
+
+The MQTT 5.0 Session Expiry Interval (in seconds) replaces the 3.1.1 _clean session_ flag and tells the broker how long
+session state (subscriptions, queued QoS 1/2 messages) must survive after the network connection is closed. It is set on
+{@link io.vertx.mqtt.MqttClientOptions} before connecting:
+
+[source,java]
+----
+MqttClientOptions options = new MqttClientOptions();
+options.setVersion(io.netty.handler.codec.mqtt.MqttVersion.MQTT_5.protocolLevel());
+options.setCleanSession(false);                  // required to keep a persistent session
+options.setSessionExpireInterval(3600L);         // keep the session for one hour after disconnect
+MqttClient client = MqttClient.create(vertx, options);
+----
+
+Semantics follow MQTT 5.0 §3.1.2.11:
+
+* `null` (the default) or `0L` — the session ends as soon as the network connection ends (equivalent to a clean session).
+* a positive value — the session persists for that many seconds after the connection is closed.
+* `0xFFFFFFFFL` (`4_294_967_295L`) — the session never expires.
+
+Valid values are in the range `0L..0xFFFFFFFFL`; values outside this range cause
+{@link io.vertx.mqtt.MqttClientOptions#setSessionExpireInterval(java.lang.Long)} to throw `IllegalArgumentException`.
+The property is only put on the wire when the protocol version is `5`; on MQTT 3.1.1 the value is silently ignored and
+session persistence is driven exclusively by {@link io.vertx.mqtt.MqttClientOptions#setCleanSession(boolean)}.
+
+The broker may override the requested value: when present, the Session Expiry Interval returned in the CONNACK is the
+authoritative one for the lifetime of the session and can be inspected via
+{@link io.vertx.mqtt.messages.MqttConnAckMessage#sessionExpiryInterval()}.
+
+==== Receive Maximum
+
+Receive Maximum (MQTT 5.0 §3.1.2.11.3) is the per-direction flow-control window for QoS 1 and QoS 2 PUBLISH packets:
+it is the maximum number of in-flight messages (sent but not yet fully acknowledged) the peer is willing to accept.
+Each side advertises its own limit and must honour the limit advertised by the other.
+
+*Client side* — set on {@link io.vertx.mqtt.MqttClientOptions} before connecting:
+
+[source,java]
+----
+MqttClientOptions options = new MqttClientOptions();
+options.setVersion(io.netty.handler.codec.mqtt.MqttVersion.MQTT_5.protocolLevel());
+options.setReceiveMaximum(20); // accept at most 20 concurrent in-flight QoS 1/2 PUBLISHes from the server
+MqttClient client = MqttClient.create(vertx, options);
+----
+
+* The value is a positive 16-bit integer; valid range is `1..65535`. Values outside `0..0xFFFF` are rejected by
+  {@link io.vertx.mqtt.MqttClientOptions#setReceiveMaximum(java.lang.Integer)} with `IllegalArgumentException`.
+* `null` (the default) omits the property from the CONNECT, which per spec means "no limit" (`65535`).
+* The property is only put on the wire when the protocol version is `5`; on MQTT 3.1.1 the value is ignored.
+
+*Server side* — the value the broker advertises in its CONNACK is enforced automatically when calling
+{@link io.vertx.mqtt.MqttClient#publish(java.lang.String, io.vertx.core.buffer.Buffer, io.netty.handler.codec.mqtt.MqttQoS, boolean, boolean)}
+for QoS 1 or 2:
+
+* if the number of in-flight messages already equals the server's Receive Maximum, the returned `Future` fails with
+  an {@link io.vertx.mqtt.MqttException} whose code is `MQTT_INFLIGHT_QUEUE_FULL`;
+* QoS 0 PUBLISH packets are never gated by this limit (they have no acknowledgement);
+* if the CONNACK omits the property, the client treats it as unlimited (`Integer.MAX_VALUE` internally);
+* the negotiated value can be inspected via {@link io.vertx.mqtt.messages.MqttConnAckMessage#receiveMaximum()}.
+
+NOTE: this is independent from (and applied in addition to) the existing client-local cap configured via
+{@link io.vertx.mqtt.MqttClientOptions#setMaxInflightQueue(int)}; whichever limit is hit first triggers the
+`MQTT_INFLIGHT_QUEUE_FULL` failure.
+
+=== Last Will and Testament (LWT)
+
+Will message configuration has been moved to a dedicated {@link io.vertx.mqtt.MqttClientWillOptions} object that supports
+both 3.1.1 fields (topic, payload, QoS, retain) and the MQTT 5.0 will properties: Will Delay Interval,
+Payload Format Indicator, Content Type, Response Topic, Correlation Data and user properties. The will options can be
+set via {@link io.vertx.mqtt.MqttClientOptions#setWillOptions(io.vertx.mqtt.MqttClientWillOptions)}; the legacy
+`setWillTopic` / `setWillMessage` / `setWillQoS` / `setWillRetain` setters are still available for 3.1.1 compatibility.
+
+IMPORTANT: The standalone `willFlag` setter has been removed on the client side — the presence of a will is now derived
+from `willTopic` and `willPayload`. In JSON, the will is serialized as a nested `willOptions` object.
+
+=== Publishing with properties
+
+When using MQTT 5.0, outgoing PUBLISH packets can carry additional properties (Payload Format Indicator, Message Expiry
+Interval, Content Type, Response Topic, Correlation Data, user properties, Topic Alias). Use
+{@link io.vertx.mqtt.MqttClient#publish(java.lang.String, io.vertx.core.buffer.Buffer, io.netty.handler.codec.mqtt.MqttQoS, boolean, boolean, io.netty.handler.codec.mqtt.MqttProperties)}
+to pass an `MqttProperties` instance alongside the payload. The Subscription Identifier property is _not_ valid on a
+client-originated PUBLISH — see the dedicated section below.
+
+The acknowledgement flow now exposes the full typed messages including reason code and properties:
+
+* {@link io.vertx.mqtt.MqttClient#publishAckMessageHandler(io.vertx.core.Handler)} — PUBACK (QoS 1)
+* {@link io.vertx.mqtt.MqttClient#publishRecMessageHandler(io.vertx.core.Handler)} — PUBREC (QoS 2)
+* {@link io.vertx.mqtt.MqttClient#publishCompMessageHandler(io.vertx.core.Handler)} — PUBCOMP (QoS 2)
+
+These fire alongside the existing
+{@link io.vertx.mqtt.MqttClient#publishCompletionHandler(io.vertx.core.Handler)} so that 3.1.1 code keeps working.
+On the inbound side, the client can also acknowledge an incoming PUBLISH with reason code and properties via
+{@link io.vertx.mqtt.MqttClient#publishAcknowledge(int, io.vertx.mqtt.messages.codes.MqttPubAckReasonCode, io.netty.handler.codec.mqtt.MqttProperties)},
+{@link io.vertx.mqtt.MqttClient#publishReceived(int, io.vertx.mqtt.messages.codes.MqttPubRecReasonCode, io.netty.handler.codec.mqtt.MqttProperties)},
+{@link io.vertx.mqtt.MqttClient#publishRelease(int, io.vertx.mqtt.messages.codes.MqttPubRelReasonCode, io.netty.handler.codec.mqtt.MqttProperties)} and
+{@link io.vertx.mqtt.MqttClient#publishComplete(int, io.vertx.mqtt.messages.codes.MqttPubCompReasonCode, io.netty.handler.codec.mqtt.MqttProperties)}.
+
+=== Subscriptions
+
+Two MQTT 5.0 specific overloads of `subscribe` are available:
+
+* {@link io.vertx.mqtt.MqttClient#subscribe(java.util.Map, io.netty.handler.codec.mqtt.MqttProperties)} — same QoS map as the 3.1.1 API plus a properties object (for example a Subscription Identifier).
+* {@link io.vertx.mqtt.MqttClient#subscribe(java.util.List, io.netty.handler.codec.mqtt.MqttProperties)} — for fine-grained subscription options. Each `MqttTopicSubscription` carries an `MqttSubscriptionOption` that encodes QoS plus the v5 flags (`No Local`, `Retain As Published`, `Retain Handling`).
+
+`unsubscribe` has a matching {@link io.vertx.mqtt.MqttClient#unsubscribe(java.util.List, io.netty.handler.codec.mqtt.MqttProperties)} overload
+that accepts properties. The SUBACK and UNSUBACK responses expose per-topic reason codes and properties via
+{@link io.vertx.mqtt.messages.MqttSubAckMessage} and {@link io.vertx.mqtt.messages.MqttUnsubAckMessage}; for UNSUBACK
+the dedicated {@link io.vertx.mqtt.MqttClient#unsubscribeCompletionMessageHandler(io.vertx.core.Handler)} delivers the
+full typed message.
+
+=== Subscription Identifier
+
+The Subscription Identifier (MQTT 5.0 §3.8.2.1.2) is a positive integer that the client attaches to a SUBSCRIBE request;
+the broker then echoes it back on every PUBLISH that matches that subscription (§3.3.2.3.8), so the client can route
+incoming messages to the correct handler without re-parsing the topic.
+
+It is set as a property on the SUBSCRIBE packet, not on the PUBLISH:
+
+[source,java]
+----
+MqttProperties subProps = new MqttProperties();
+subProps.add(new MqttProperties.IntegerProperty(
+    MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value(),
+    42));
+
+client.subscribe(java.util.Collections.singletonMap("sensors/+/temperature", 1), subProps);
+----
+
+The same `subProps` can be passed to the list-based overload
+{@link io.vertx.mqtt.MqttClient#subscribe(java.util.List, io.netty.handler.codec.mqtt.MqttProperties)} when you need to
+combine the identifier with per-topic v5 subscription options (No Local, Retain As Published, Retain Handling).
+
+On the receiving side, read the identifier from the incoming PUBLISH:
+
+[source,java]
+----
+client.publishHandler(msg -> {
+  MqttProperties.MqttProperty<?> p = msg.properties()
+      .getProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value());
+  if (p != null) {
+    int id = (Integer) p.value(); // 42
+    // route based on id
+  }
+});
+----
+
+If the broker matches the PUBLISH against more than one subscription, the property is repeated — use
+`properties().getProperties(SUBSCRIPTION_IDENTIFIER.value())` to obtain the full list.
+
+Preconditions enforced by the client (an attempt to subscribe with a Subscription Identifier that violates them fails
+the returned `Future` with {@link io.vertx.mqtt.MqttException}):
+
+* the protocol version must be `5` (`MqttClientOptions.setVersion(5)`) — otherwise `MQTT_SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED`;
+* the broker must not have advertised `SUBSCRIPTION_IDENTIFIER_AVAILABLE=0` in the CONNACK; the negotiated value is
+  exposed by {@link io.vertx.mqtt.messages.MqttConnAckMessage#subscriptionIdentifierAvailable()} and, when missing,
+  defaults to "available" per spec.
+
+=== Topic alias
+
+Topic aliases (MQTT 5.0 §3.3.2.3.4) are managed automatically in both directions.
+
+*Server → client:* when an incoming PUBLISH carries a Topic Alias property, the alias-to-topic mapping is cached and
+subsequent packets that reuse the same alias with an empty topic name are transparently re-expanded before being delivered
+to the {@link io.vertx.mqtt.MqttClient#publishHandler(io.vertx.core.Handler)}. The maximum number of aliases the broker
+may use is controlled by {@link io.vertx.mqtt.MqttClientOptions#setTopicAliasMaximum(java.lang.Integer)}; an alias value
+of 0 or one above the negotiated maximum results in a DISCONNECT with reason code `TOPIC_ALIAS_INVALID`.
+
+*Client → server:* when the broker advertises a non-zero `Topic Alias Maximum` in its CONNACK, the client transparently
+assigns aliases to outgoing PUBLISH packets. The first PUBLISH for a given topic carries the full topic name plus a newly
+allocated Topic Alias property; subsequent PUBLISH packets on the same topic are sent with an empty topic name and just
+the alias. If the alias pool advertised by the broker is exhausted, further topics are published with their full name
+and no alias. This is fully internal — applications keep calling
+{@link io.vertx.mqtt.MqttClient#publish(java.lang.String, io.vertx.core.buffer.Buffer, io.netty.handler.codec.mqtt.MqttQoS, boolean, boolean)}
+with the real topic name and pay no attention to aliases.
+
+=== Request / Response interaction
+
+MQTT 5.0 §4.10 standardises a request/response pattern on top of regular PUBLISH packets, using three new properties:
+*Response Topic*, *Correlation Data* and the optional *Response Information* hint the broker may advertise to help
+the client pick a topic prefix. The pattern is fully supported in this client.
+
+==== Step 1 — (optional) ask the broker for Response Information
+
+If you want the broker to suggest a topic prefix to use as the Response Topic (typically a unique per-client path that
+is already covered by the broker's ACL for that client), set `Request Response Information = true` on the CONNECT:
+
+[source,java]
+----
+MqttClientOptions options = new MqttClientOptions();
+options.setVersion(io.netty.handler.codec.mqtt.MqttVersion.MQTT_5.protocolLevel());
+options.setRequestResponseInformation(true);
+MqttClient client = MqttClient.create(vertx, options);
+
+client.connect(1883, "broker.example.com")
+  .onSuccess(connack -> {
+    String prefix = connack.responseInformation(); // null if the broker didn't return any
+    // e.g. "$share/responses/{clientId}/"
+  });
+----
+
+See {@link io.vertx.mqtt.MqttClientOptions#setRequestResponseInformation(java.lang.Boolean)} and
+{@link io.vertx.mqtt.messages.MqttConnAckMessage#responseInformation()}. The broker is free to ignore the request —
+treat `null` as "no hint, pick your own response topic".
+
+==== Step 2 — requester: PUBLISH with Response Topic + Correlation Data
+
+The requester subscribes to whatever topic it will use to receive replies, then publishes the request with the two
+properties set:
+
+[source,java]
+----
+// 1. subscribe to the reply channel
+String replyTopic = "clients/" + client.clientId() + "/replies";
+client.subscribe(replyTopic, 1);
+
+// 2. publish the request
+byte[] correlationId = java.util.UUID.randomUUID().toString().getBytes();
+
+MqttProperties reqProps = new MqttProperties();
+reqProps.add(new MqttProperties.StringProperty(
+    MqttProperties.MqttPropertyType.RESPONSE_TOPIC.value(), replyTopic));
+reqProps.add(new MqttProperties.BinaryProperty(
+    MqttProperties.MqttPropertyType.CORRELATION_DATA.value(), correlationId));
+
+client.publish("requests/temperature",
+    Buffer.buffer("{\"room\":\"kitchen\"}"),
+    MqttQoS.AT_LEAST_ONCE, false, false, reqProps);
+----
+
+Correlation Data is opaque to MQTT — its only purpose is to let the requester pair a reply back to the originating
+request when several requests are outstanding at the same time.
+
+==== Step 3 — responder: read Response Topic + Correlation Data, publish back
+
+On the responder side the two properties arrive on the incoming PUBLISH:
+
+[source,java]
+----
+client.publishHandler(msg -> {
+  if (!"requests/temperature".equals(msg.topicName())) return;
+
+  String respTopic = ((MqttProperties.StringProperty) msg.properties()
+      .getProperty(MqttProperties.MqttPropertyType.RESPONSE_TOPIC.value())).value();
+  byte[] corr = ((MqttProperties.BinaryProperty) msg.properties()
+      .getProperty(MqttProperties.MqttPropertyType.CORRELATION_DATA.value())).value();
+
+  MqttProperties respProps = new MqttProperties();
+  respProps.add(new MqttProperties.BinaryProperty(
+      MqttProperties.MqttPropertyType.CORRELATION_DATA.value(), corr));
+
+  client.publish(respTopic,
+      Buffer.buffer("{\"temp\":21.5}"),
+      MqttQoS.AT_LEAST_ONCE, false, false, respProps);
+});
+----
+
+A responder that cannot or will not honour the request (missing Response Topic, unsupported payload, etc.) simply
+does not publish a reply — there is no protocol-level negative ack defined for this pattern.
+
+==== Step 4 — requester: correlate the reply
+
+Back on the requester, the same `publishHandler` callback receives the reply on `replyTopic`. Match the Correlation
+Data against the value used in the request to route the response to the right caller (e.g. complete a
+`Promise<Buffer>` kept in a `Map<ByteBuffer, Promise<Buffer>>`).
+
+==== Last Will and request/response
+
+A will message can also act as a "I'm gone" reply: {@link io.vertx.mqtt.MqttClientWillOptions} exposes
+`setResponseTopic(...)` and `setCorrelationData(...)` so the broker, on abnormal disconnect, will publish a will
+that any pending requester can correlate.
+
+=== Server-initiated DISCONNECT
+
+A handler can be registered to be notified when the server sends a DISCONNECT packet (rather than the client closing the
+connection itself):
+
+[source,java]
+----
+client.disconnectMessageHandler(msg -> {
+  System.out.println("server disconnected, reason=" + msg.code() + " props=" + msg.properties());
+});
+----
+
+See {@link io.vertx.mqtt.MqttClient#disconnectMessageHandler(io.vertx.core.Handler)}. The handler fires before
+{@link io.vertx.mqtt.MqttClient#closeHandler(io.vertx.core.Handler)} and only for server-initiated disconnects.
+The client can also actively send a DISCONNECT with reason code and properties via
+{@link io.vertx.mqtt.MqttClient#disconnect(io.vertx.mqtt.messages.codes.MqttDisconnectReasonCode, io.netty.handler.codec.mqtt.MqttProperties)}.
+
+=== Enhanced Authentication (AUTH)
+
+MQTT 5.0 §4.12 introduces an _Enhanced Authentication_ flow built on a new AUTH control packet, designed to support
+multi-round challenge/response schemes (e.g. SCRAM, Kerberos, mutual proofs) that cannot fit in the single CONNECT
+exchange used by 3.1.1. The client side fully supports this flow, both during the initial connection (§4.12.1) and
+for re-authentication on an already established connection (§4.12.2).
+
+==== Configuring the CONNECT
+
+The first chunk of authentication data, plus the name of the mechanism, are placed on the CONNECT packet via
+{@link io.vertx.mqtt.MqttClientOptions}:
+
+* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationMethod(java.lang.String)} — UTF-8 name of the mechanism
+  (MQTT 5.0 §3.1.2.11.9). When set, the broker is expected to drive the rest of the exchange with AUTH packets and
+  must fail the connection with `Bad authentication method` if it does not support it.
+* {@link io.vertx.mqtt.MqttClientOptions#setAuthenticationData(io.vertx.core.buffer.Buffer)} — opaque binary
+  payload required by the chosen mechanism (MQTT 5.0 §3.1.2.11.10).
+
+The values the broker returns in the CONNACK can be inspected on the resulting
+{@link io.vertx.mqtt.messages.MqttConnAckMessage} via `authenticationMethod()` and `authenticationData()` — for
+mechanisms such as SCRAM, the final server signature (`v=...`) is typically delivered there.
+
+==== Handling AUTH packets from the broker
+
+Register a handler to be notified when the broker sends an AUTH packet — both during the initial handshake (before
+CONNACK, while the client is still in `CONNECTING` state) and during re-authentication on a live connection:
+
+[source,java]
+----
+client.authenticationExchangeHandler(msg -> {
+  // msg.reasonCode()           — CONTINUE_AUTHENTICATION / SUCCESS / RE_AUTHENTICATE
+  // msg.authenticationMethod() — echoed by the broker, must match the negotiated method
+  // msg.authenticationData()   — opaque payload for the mechanism (e.g. SCRAM server-first-message)
+});
+----
+
+See {@link io.vertx.mqtt.MqttClient#authenticationExchangeHandler(io.vertx.core.Handler)} and
+{@link io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage}.
+
+==== Sending AUTH packets
+
+The client replies to (or initiates) an AUTH exchange through
+{@link io.vertx.mqtt.MqttClient#authenticationExchange(io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode, io.netty.handler.codec.mqtt.MqttProperties)}.
+It is valid in two phases:
+
+* *Initial enhanced authentication* (MQTT 5.0 §4.12.1) — call it from inside the
+  `authenticationExchangeHandler` while `client.connect(...)` is still in flight. Reply with
+  `CONTINUE_AUTHENTICATION` (0x18) until the broker terminates the exchange with a CONNACK. The returned `Future`
+  succeeds as soon as the AUTH frame is on the wire; the overall outcome is the one delivered by `client.connect(...)`.
+* *Re-authentication* (MQTT 5.0 §4.12.2) — once the connection is established, call it with `RE_AUTHENTICATE` (0x19)
+  to restart the authentication exchange without tearing down the underlying TCP connection.
+
+The reason code is supplied via {@link io.vertx.mqtt.messages.codes.MqttAuthenticateReasonCode} (`SUCCESS`,
+`CONTINUE_AUTHENTICATION`, `RE_AUTHENTICATE`); the `MqttProperties` parameter must include the
+`AUTHENTICATION_METHOD` (echoed unchanged for the whole exchange) and, when required by the mechanism, the
+`AUTHENTICATION_DATA` payload.
+
+==== Example: SCRAM-SHA-256
+
+The following snippet shows how to drive a full SCRAM-SHA-256 handshake (RFC 5802) against an MQTT 5.0 broker that
+advertises `SCRAM-SHA-256` (for example EMQX with the `scram` authenticator). The crypto primitives come from the
+JDK — no extra dependency is required.
+
+Step 1 — generate the client nonce, build `client-first-message` and place it on the CONNECT:
+
+[source,java]
+----
+String clientNonce = randomBase64(24);                       // securely random, RFC 5802 §5.1
+String clientFirstMessageBare = "n=" + username + ",r=" + clientNonce;
+String clientFirstMessage = "n,," + clientFirstMessageBare;  // "n,," is the GS2 header
+
+MqttClientOptions options = new MqttClientOptions();
+options.setVersion(io.netty.handler.codec.mqtt.MqttVersion.MQTT_5.protocolLevel());
+options.setAuthenticationMethod("SCRAM-SHA-256");
+options.setAuthenticationData(Buffer.buffer(clientFirstMessage.getBytes(StandardCharsets.UTF_8)));
+MqttClient client = MqttClient.create(vertx, options);
+----
+
+Step 2 — when the broker replies with `server-first-message`, compute the client proof and send
+`client-final-message` back through an AUTH packet:
+
+[source,java]
+----
+client.authenticationExchangeHandler(msg -> {
+  // server-first-message: r=<server-nonce>,s=<base64-salt>,i=<iterations>
+  String serverFirst = new String(msg.authenticationData().getBytes(), StandardCharsets.UTF_8);
+  Map<String,String> f = parseScram(serverFirst);
+  String serverNonce = f.get("r");
+  byte[] salt        = Base64.getDecoder().decode(f.get("s"));
+  int iterations     = Integer.parseInt(f.get("i"));
+
+  // RFC 5802 §5.1: server MUST extend the client nonce — fail closed otherwise.
+  if (!serverNonce.startsWith(clientNonce)) throw new SecurityException("bad nonce");
+
+  String clientFinalNoProof = "c=biws,r=" + serverNonce;     // biws = base64("n,,")
+  String authMessage = clientFirstMessageBare + "," + serverFirst + "," + clientFinalNoProof;
+
+  byte[] saltedPwd    = pbkdf2(password, salt, iterations);          // PBKDF2-HMAC-SHA-256
+  byte[] clientKey    = hmacSha256(saltedPwd, "Client Key".getBytes());
+  byte[] storedKey    = sha256(clientKey);
+  byte[] clientSig    = hmacSha256(storedKey, authMessage.getBytes());
+  byte[] clientProof  = xor(clientKey, clientSig);
+
+  String clientFinal = clientFinalNoProof
+      + ",p=" + Base64.getEncoder().encodeToString(clientProof);
+
+  MqttProperties props = new MqttProperties();
+  props.add(new MqttProperties.StringProperty(
+      MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD.value(), "SCRAM-SHA-256"));
+  props.add(new MqttProperties.BinaryProperty(
+      MqttProperties.MqttPropertyType.AUTHENTICATION_DATA.value(),
+      clientFinal.getBytes(StandardCharsets.UTF_8)));
+
+  client.authenticationExchange(MqttAuthenticateReasonCode.CONTINUE_AUTHENTICATION, props);
+});
+
+client.connect(1883, "broker.example.com").onSuccess(connack -> {
+  // authenticated; connack.authenticationData() may carry the SCRAM server-final-message (v=...)
+});
+----
+
+A complete, runnable version including the SCRAM helper methods (`pbkdf2`, `hmacSha256`, `sha256`, `xor`, nonce
+generation and SASL-name escaping) is available in {@link examples.VertxMqttClientAUTHExamples}.
+
+==== Server-side AUTH
+
+On the server side AUTH packets are accepted at the wire level (so a broker can be probed without dropping the TCP
+connection) but {@link io.vertx.mqtt.impl.MqttEndpointImpl} does not currently surface them to user code:
+{@code handleAuth} is a stub. Implementing an enhanced-authentication endpoint therefore requires extending the
+endpoint API; the client-side types are already in place so a future server port will not change this section's API
+surface.
+
+=== Automatic server redirect
+
+When the broker returns a CONNACK or DISCONNECT with a `Server Reference` property (MQTT 5.0 §3.2.2.3.18 / §3.14.2.3.4),
+the client can transparently reconnect to one of the servers listed there. This behavior is enabled by default and can be
+toggled with {@link io.vertx.mqtt.MqttClientOptions#setAutoServerRedirect(boolean)}. When several references are present
+in the comma-separated list, one is picked at random.
