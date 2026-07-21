@@ -4,7 +4,11 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import io.vertx.mqtt.*;
+import io.vertx.mqtt.MqttClient;
+import io.vertx.mqtt.MqttClientOptions;
+import io.vertx.mqtt.MqttException;
+import io.vertx.mqtt.MqttServer;
+import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 import org.junit.After;
 import org.junit.Assert;
@@ -21,7 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 @RunWith(VertxUnitRunner.class)
 public class MqttClientQoSTest {
@@ -203,6 +209,36 @@ public class MqttClientQoSTest {
     assertWaitUntil(() -> releaseCount.get() == 2);
     assertWaitUntil(() -> completionIds.size() == 1);
     assertTrue(() -> expiredIds.size() == 1 && publishCount.get() == 1, Duration.ofSeconds(1));
+  }
+
+  @Test
+  public void testInboundQos2LimitMqtt311ClosesConnection() throws Exception {
+    AtomicInteger deliveredToApp = new AtomicInteger();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept();
+      endpoint.subscribeHandler(sub -> {
+        for (int i = 1; i <= 3; i++) {
+          endpoint.publish("/test/qos2limit", Buffer.buffer("msg" + i), MqttQoS.EXACTLY_ONCE, false, false);
+        }
+      });
+    });
+
+    startServer();
+
+    client = MqttClient.create(vertx, new MqttClientOptions().setMaxInflightQueue(2));
+    client.publishHandler(msg -> deliveredToApp.incrementAndGet());
+
+    List<Throwable> exceptions = Collections.synchronizedList(new ArrayList<>());
+    client.exceptionHandler(exceptions::add);
+
+    client.connect(MqttServerOptions.DEFAULT_PORT, MqttServerOptions.DEFAULT_HOST).await();
+    client.subscribe("/test/qos2limit", MqttQoS.EXACTLY_ONCE.value()).await();
+
+    assertWaitUntil(() -> !exceptions.isEmpty());
+    MqttException ex = (MqttException) exceptions.get(0);
+    assertEquals(MqttException.MQTT_INFLIGHT_QUEUE_FULL, ex.code());
+    assertTrue(() -> deliveredToApp.get() <= 2, Duration.ofSeconds(1));
   }
 
   private void startServer() throws Exception {
