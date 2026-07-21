@@ -30,6 +30,7 @@ import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttException;
 import io.vertx.mqtt.MqttServer;
 import io.vertx.mqtt.messages.codes.MqttPubAckReasonCode;
+import io.vertx.mqtt.messages.codes.MqttPubRecReasonCode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Tests for MQTT 5.0 flow control enforcement:
@@ -209,6 +211,83 @@ public class Mqtt5ClientFlowControlTest {
     });
 
     bothSent.awaitSuccess(5000);
+  }
+
+  // -----------------------------------------------------------------------
+  // Inbound QoS 2 queue limit (security: unbounded queue DoS)
+  // -----------------------------------------------------------------------
+
+  @Test
+  public void inboundQos2LimitMqtt5SendsPubrecQuotaExceeded(TestContext ctx) {
+    Async quotaExceededSent = ctx.async();
+    AtomicInteger successPubrecs = new AtomicInteger();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.subscribeHandler(sub -> {
+        for (int i = 1; i <= 3; i++) {
+          endpoint.publish(TOPIC, Buffer.buffer("msg" + i), MqttQoS.EXACTLY_ONCE, false, false);
+        }
+      });
+      endpoint.publishReceivedMessageHandler(pubrecMsg -> {
+        if (pubrecMsg.code() == MqttPubRecReasonCode.SUCCESS) {
+          successPubrecs.incrementAndGet();
+        } else if (pubrecMsg.code() == MqttPubRecReasonCode.QUOTA_EXCEEDED) {
+          ctx.assertEquals(2, successPubrecs.get());
+          quotaExceededSent.complete();
+        }
+      });
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions opts = v5Options();
+      opts.setMaxInflightQueue(2);
+      MqttClient client = MqttClient.create(vertx, opts);
+
+      client.connect(server.actualPort(), "localhost").onComplete(ctx.asyncAssertSuccess(ack -> {
+        client.subscribe(TOPIC, MqttQoS.EXACTLY_ONCE.value());
+      }));
+    });
+
+    quotaExceededSent.awaitSuccess(5000);
+  }
+
+  @Test
+  public void inboundQos2SlotFreedAfterPubrel(TestContext ctx) {
+    Async secondDelivered = ctx.async();
+    AtomicInteger deliveredToApp = new AtomicInteger();
+
+    server.endpointHandler(endpoint -> {
+      endpoint.accept(false);
+      endpoint.subscribeHandler(sub -> {
+        endpoint.publish(TOPIC, Buffer.buffer("msg1"), MqttQoS.EXACTLY_ONCE, false, false);
+        endpoint.publish(TOPIC, Buffer.buffer("msg2"), MqttQoS.EXACTLY_ONCE, false, false);
+      });
+      endpoint.publishReceivedMessageHandler(pubrecMsg -> {
+        if (pubrecMsg.code() == MqttPubRecReasonCode.SUCCESS) {
+          endpoint.publishRelease(pubrecMsg.messageId());
+        } else if (pubrecMsg.code() == MqttPubRecReasonCode.QUOTA_EXCEEDED) {
+          endpoint.publish(TOPIC, Buffer.buffer("msg2-retry"), MqttQoS.EXACTLY_ONCE, false, false);
+        }
+      });
+    });
+
+    startServer(ctx, () -> {
+      MqttClientOptions opts = v5Options();
+      opts.setMaxInflightQueue(1);
+      MqttClient client = MqttClient.create(vertx, opts);
+      client.publishHandler(msg -> {
+        if (deliveredToApp.incrementAndGet() == 2) {
+          secondDelivered.complete();
+        }
+      });
+
+      client.connect(server.actualPort(), "localhost").onComplete(ctx.asyncAssertSuccess(ack -> {
+        client.subscribe(TOPIC, MqttQoS.EXACTLY_ONCE.value());
+      }));
+    });
+
+    secondDelivered.awaitSuccess(8000);
   }
 
   // -----------------------------------------------------------------------
