@@ -415,14 +415,18 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   /**
-   * @return max count of unacknowledged messages
+   * @return max count of unacknowledged messages (applies to both outbound QoS 1/2 publishes
+   * and inbound QoS 2 publishes awaiting PUBREL)
    */
   public int getMaxInflightQueue() {
     return maxInflightQueue;
   }
 
   /**
-   * Set max count of unacknowledged messages
+   * Set max count of unacknowledged messages. This limit applies to both outbound QoS 1/2
+   * publishes and inbound QoS 2 publishes awaiting PUBREL from the broker. When the inbound
+   * limit is reached, the client sends PUBREC(Quota Exceeded) for MQTT 5 or closes the
+   * connection for MQTT 3.1.1.
    *
    * @param maxInflightQueue max count of unacknowledged messages
    * @return current options instance
