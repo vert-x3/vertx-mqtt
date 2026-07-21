@@ -379,14 +379,15 @@ public class MqttClientOptions extends NetClientOptions {
   }
 
   /**
-   * @return max count of unacknowledged messages
+   * @return max count of unacknowledged messages; applies to outbound QoS 1/2 and inbound QoS 2
    */
   public int getMaxInflightQueue() {
     return maxInflightQueue;
   }
 
   /**
-   * Set max count of unacknowledged messages
+   * Set max count of unacknowledged messages. The limit applies to outbound QoS 1 and QoS 2
+   * messages and to inbound QoS 2 messages received from the broker.
    * @param maxInflightQueue max count of unacknowledged messages
    * @return current options instance
    */
