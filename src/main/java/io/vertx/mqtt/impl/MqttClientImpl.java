@@ -777,6 +777,23 @@ public class MqttClientImpl implements MqttClient {
    * @param publishMessage a PUBLISH message to acknowledge
    */
   private void publishReceived(MqttPublishMessage publishMessage) {
+    boolean queueFull;
+    synchronized (this) {
+      if (qos2inbound.size() >= options.getMaxInflightQueue()) {
+        queueFull = true;
+      } else {
+        qos2inbound.put(publishMessage.messageId(), publishMessage);
+        queueFull = false;
+      }
+    }
+
+    if (queueFull) {
+      String msg = String.format("Inbound QoS 2 inflight queue full (%d), closing connection", options.getMaxInflightQueue());
+      log.error(msg);
+      handleException(new MqttException(MqttException.MQTT_INFLIGHT_QUEUE_FULL, msg));
+      connection().close();
+      return;
+    }
 
     MqttFixedHeader fixedHeader =
       new MqttFixedHeader(MqttMessageType.PUBREC, false, AT_MOST_ONCE, false, 0);
@@ -786,9 +803,6 @@ public class MqttClientImpl implements MqttClient {
 
     io.netty.handler.codec.mqtt.MqttMessage pubrec = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
 
-    synchronized (this) {
-      qos2inbound.put(publishMessage.messageId(), publishMessage);
-    }
     this.write(pubrec);
   }
 
