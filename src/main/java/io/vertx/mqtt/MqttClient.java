@@ -169,6 +169,21 @@ public interface MqttClient {
   Future<Void> publishRelease(int publishMessageId);
 
   /**
+   * Sends the PUBLISH message to the remote MQTT server with a specific message ID
+   *
+   * @param id       the message ID
+   * @param topic    topic on which the message is published
+   * @param payload  message payload
+   * @param qosLevel QoS level
+   * @param isDup    if the message is a duplicate
+   * @param isRetain if the message needs to be retained
+   * @param properties MQTT 5.0 properties (e.g. message expiry, content type, response topic, user properties)
+   * @return a {@code Future} completed after PUBLISH packet sent with packetid (not when QoS 0)
+   */
+  @GenIgnore
+  Future<Integer> publish(int id, String topic, Buffer payload, MqttQoS qosLevel, boolean isDup, boolean isRetain, MqttProperties properties);
+
+  /**
    * Sets a handler which will be called each time the publishing of a message has been completed.
    * <p>
    * For a message that has been published using
