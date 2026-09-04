@@ -60,10 +60,7 @@ public class Mqtt5ServerRedirectTest {
 
   @After
   public void after(TestContext ctx) {
-    server1.close()
-      .compose(v -> server2.close())
-      .compose(v -> vertx.close())
-      .onComplete(ctx.asyncAssertSuccess());
+    vertx.close().onComplete(ctx.asyncAssertSuccess());
   }
 
   // -------------------------------------------------------------------------
@@ -198,7 +195,6 @@ public class Mqtt5ServerRedirectTest {
       }));
 
     done.awaitSuccess(5000);
-    server3.close();
   }
 
   // -------------------------------------------------------------------------
