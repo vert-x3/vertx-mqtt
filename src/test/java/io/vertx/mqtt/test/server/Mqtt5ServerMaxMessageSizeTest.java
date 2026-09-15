@@ -46,7 +46,9 @@ public class Mqtt5ServerMaxMessageSizeTest extends MqttServerBaseTest {
   private static final String MQTT_TOPIC = "/my_topic";
   private static final int MQTT_MESSAGE_SIZE = 64;
   private static final int MQTT_MAX_MESSAGE_SIZE =
-    + 2 // Topic length
+    + 1 // Fixed header byte
+      + 1 // Remaining length byte
+      + 2 // Topic length
       + MQTT_TOPIC.length() // Topic
       + 1 // Properties
       + MQTT_MESSAGE_SIZE // Message
