@@ -1,12 +1,12 @@
 # Maven stuff
 **/target/*
+**/generated/*
 
 # Eclipse stuff
 **/.project
 **/.settings/*
 **/.prefs
 **/.classpath
-/target/
 
 # IntelliJ IDEA specific
 .idea/
