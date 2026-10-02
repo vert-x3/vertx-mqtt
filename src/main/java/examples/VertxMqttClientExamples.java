@@ -178,4 +178,18 @@ public class VertxMqttClientExamples {
       client.disconnect();
     });
   }
+
+  public void webSocket(Vertx vertx) {
+    MqttClientOptions options = new MqttClientOptions()
+      .setUseWebSocket(true)
+      // defaults to "/mqtt", can include a query string
+      .setWebSocketPath("/mqtt")
+      // e.g. a token required by a reverse proxy in front of the broker
+      .addWebSocketHeader("Authorization", "Bearer <token>")
+      .setTryUsePerMessageWebSocketCompression(true);
+    MqttClient client = MqttClient.create(vertx, options);
+    client.connect(80, "broker.example.com").onComplete(s -> {
+      client.disconnect();
+    });
+  }
 }

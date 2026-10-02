@@ -27,6 +27,11 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.mqtt.messages.MqttPublishMessage;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Represents options used by the MQTT client.
  */
@@ -67,6 +72,15 @@ public class MqttClientOptions extends NetClientOptions {
   public static final int DEFAULT_VERSION = 4;
   public static final Integer DEFAULT_TOPIC_ALIAS_MAXIMUM = 255;
   public static final boolean DEFAULT_AUTO_SERVER_REDIRECT = true;
+  public static final boolean DEFAULT_USE_WEB_SOCKET = false;
+  public static final String DEFAULT_WEB_SOCKET_PATH = "/mqtt";
+  public static final int DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = 65536;
+  public static final long DEFAULT_WEB_SOCKET_HANDSHAKE_TIMEOUT = 10000L;
+  public static final boolean DEFAULT_TRY_USE_PER_FRAME_WEB_SOCKET_COMPRESSION = false;
+  public static final boolean DEFAULT_TRY_USE_PER_MESSAGE_WEB_SOCKET_COMPRESSION = false;
+  public static final int DEFAULT_WEB_SOCKET_COMPRESSION_LEVEL = 6;
+  public static final boolean DEFAULT_WEB_SOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT = false;
+  public static final boolean DEFAULT_WEB_SOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT = false;
 
   private String clientId;
   private String username;
@@ -91,6 +105,17 @@ public class MqttClientOptions extends NetClientOptions {
   private String authenticationMethod = null;
   private Buffer authenticationData = null;
   private boolean autoServerRedirect = DEFAULT_AUTO_SERVER_REDIRECT;
+  private boolean useWebSocket = DEFAULT_USE_WEB_SOCKET;
+  private String webSocketPath = DEFAULT_WEB_SOCKET_PATH;
+  private List<String> webSocketSubProtocols = null;
+  private Map<String, String> webSocketHeaders = null;
+  private int webSocketMaxFrameSize = DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE;
+  private long webSocketHandshakeTimeout = DEFAULT_WEB_SOCKET_HANDSHAKE_TIMEOUT;
+  private boolean tryUsePerFrameWebSocketCompression = DEFAULT_TRY_USE_PER_FRAME_WEB_SOCKET_COMPRESSION;
+  private boolean tryUsePerMessageWebSocketCompression = DEFAULT_TRY_USE_PER_MESSAGE_WEB_SOCKET_COMPRESSION;
+  private int webSocketCompressionLevel = DEFAULT_WEB_SOCKET_COMPRESSION_LEVEL;
+  private boolean webSocketCompressionAllowClientNoContext = DEFAULT_WEB_SOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT;
+  private boolean webSocketCompressionRequestServerNoContext = DEFAULT_WEB_SOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT;
 
   /**
    * Default constructor
@@ -113,6 +138,15 @@ public class MqttClientOptions extends NetClientOptions {
     this.recvByteBufAllocatorSize = DEFAULT_RECV_BYTE_BUF_ALLOCATOR_SIZE;
     this.version = DEFAULT_VERSION;
     this.topicAliasMaximum = DEFAULT_TOPIC_ALIAS_MAXIMUM;
+    this.useWebSocket = DEFAULT_USE_WEB_SOCKET;
+    this.webSocketPath = DEFAULT_WEB_SOCKET_PATH;
+    this.webSocketMaxFrameSize = DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE;
+    this.webSocketHandshakeTimeout = DEFAULT_WEB_SOCKET_HANDSHAKE_TIMEOUT;
+    this.tryUsePerFrameWebSocketCompression = DEFAULT_TRY_USE_PER_FRAME_WEB_SOCKET_COMPRESSION;
+    this.tryUsePerMessageWebSocketCompression = DEFAULT_TRY_USE_PER_MESSAGE_WEB_SOCKET_COMPRESSION;
+    this.webSocketCompressionLevel = DEFAULT_WEB_SOCKET_COMPRESSION_LEVEL;
+    this.webSocketCompressionAllowClientNoContext = DEFAULT_WEB_SOCKET_COMPRESSION_ALLOW_CLIENT_NO_CONTEXT;
+    this.webSocketCompressionRequestServerNoContext = DEFAULT_WEB_SOCKET_COMPRESSION_REQUEST_SERVER_NO_CONTEXT;
   }
 
   /**
@@ -160,6 +194,17 @@ public class MqttClientOptions extends NetClientOptions {
     this.authenticationMethod = other.authenticationMethod;
     this.authenticationData = other.authenticationData;
     this.autoServerRedirect = other.autoServerRedirect;
+    this.useWebSocket = other.useWebSocket;
+    this.webSocketPath = other.webSocketPath;
+    this.webSocketSubProtocols = other.webSocketSubProtocols != null ? new ArrayList<>(other.webSocketSubProtocols) : null;
+    this.webSocketHeaders = other.webSocketHeaders != null ? new LinkedHashMap<>(other.webSocketHeaders) : null;
+    this.webSocketMaxFrameSize = other.webSocketMaxFrameSize;
+    this.webSocketHandshakeTimeout = other.webSocketHandshakeTimeout;
+    this.tryUsePerFrameWebSocketCompression = other.tryUsePerFrameWebSocketCompression;
+    this.tryUsePerMessageWebSocketCompression = other.tryUsePerMessageWebSocketCompression;
+    this.webSocketCompressionLevel = other.webSocketCompressionLevel;
+    this.webSocketCompressionAllowClientNoContext = other.webSocketCompressionAllowClientNoContext;
+    this.webSocketCompressionRequestServerNoContext = other.webSocketCompressionRequestServerNoContext;
   }
 
   /**
@@ -658,6 +703,254 @@ public class MqttClientOptions extends NetClientOptions {
     return this;
   }
 
+  /**
+   * @return whether the client connects using MQTT over WebSocket
+   */
+  public boolean isUseWebSocket() {
+    return useWebSocket;
+  }
+
+  /**
+   * Set whether the client connects using MQTT over WebSocket instead of plain TCP. When SSL is enabled
+   * the connection uses {@code wss}, otherwise {@code ws}.
+   *
+   * @param useWebSocket {@code true} to use MQTT over WebSocket
+   * @return current options instance
+   */
+  public MqttClientOptions setUseWebSocket(boolean useWebSocket) {
+    this.useWebSocket = useWebSocket;
+    return this;
+  }
+
+  /**
+   * @return the request URI used for the WebSocket handshake
+   */
+  public String getWebSocketPath() {
+    return webSocketPath;
+  }
+
+  /**
+   * Set the request URI used for the WebSocket handshake, defaults to {@code /mqtt}. The URI can include
+   * a query string, for example {@code /mqtt?token=abc}.
+   *
+   * @param webSocketPath the request URI, must start with {@code /}
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketPath(String webSocketPath) {
+    if (webSocketPath == null || !webSocketPath.startsWith("/")) {
+      throw new IllegalArgumentException("WebSocket path must start with '/'");
+    }
+    this.webSocketPath = webSocketPath;
+    return this;
+  }
+
+  /**
+   * @return the WebSocket sub-protocols offered during the handshake, or {@code null} when the
+   *         sub-protocol is derived from the MQTT version
+   */
+  public List<String> getWebSocketSubProtocols() {
+    return webSocketSubProtocols;
+  }
+
+  /**
+   * Set the WebSocket sub-protocols offered during the handshake. When not set, the client offers
+   * {@code mqttv3.1} for MQTT 3.1 and {@code mqtt} for MQTT 3.1.1 and 5.0, as the specifications require.
+   *
+   * @param webSocketSubProtocols the sub-protocols
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketSubProtocols(List<String> webSocketSubProtocols) {
+    this.webSocketSubProtocols = webSocketSubProtocols;
+    return this;
+  }
+
+  /**
+   * Add a WebSocket sub-protocol offered during the handshake.
+   *
+   * @param subProtocol the sub-protocol
+   * @return current options instance
+   */
+  public MqttClientOptions addWebSocketSubProtocol(String subProtocol) {
+    if (webSocketSubProtocols == null) {
+      webSocketSubProtocols = new ArrayList<>();
+    }
+    webSocketSubProtocols.add(subProtocol);
+    return this;
+  }
+
+  /**
+   * @return the additional HTTP headers sent with the WebSocket handshake request
+   */
+  public Map<String, String> getWebSocketHeaders() {
+    return webSocketHeaders;
+  }
+
+  /**
+   * Set additional HTTP headers sent with the WebSocket handshake request, for example an
+   * {@code Authorization} header required by a reverse proxy.
+   *
+   * @param webSocketHeaders the headers
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketHeaders(Map<String, String> webSocketHeaders) {
+    this.webSocketHeaders = webSocketHeaders;
+    return this;
+  }
+
+  /**
+   * Add an HTTP header sent with the WebSocket handshake request.
+   *
+   * @param name the header name
+   * @param value the header value
+   * @return current options instance
+   */
+  public MqttClientOptions addWebSocketHeader(String name, String value) {
+    if (webSocketHeaders == null) {
+      webSocketHeaders = new LinkedHashMap<>();
+    }
+    webSocketHeaders.put(name, value);
+    return this;
+  }
+
+  /**
+   * @return the WebSocket max frame size
+   */
+  public int getWebSocketMaxFrameSize() {
+    return webSocketMaxFrameSize;
+  }
+
+  /**
+   * Set the WebSocket max frame size.
+   *
+   * <p> This should be used when WebSocket transport is used and {@link #getMaxMessageSize()} is larger than the WebSocket frame size
+   *
+   * @param webSocketMaxFrameSize the new frame size
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketMaxFrameSize(int webSocketMaxFrameSize) {
+    if (webSocketMaxFrameSize <= 0) {
+      throw new IllegalArgumentException("WebSocket max frame size must be > 0");
+    }
+    this.webSocketMaxFrameSize = webSocketMaxFrameSize;
+    return this;
+  }
+
+  /**
+   * @return the WebSocket handshake timeout in milliseconds
+   */
+  public long getWebSocketHandshakeTimeout() {
+    return webSocketHandshakeTimeout;
+  }
+
+  /**
+   * Set the time in milliseconds the client waits for the WebSocket handshake to complete before failing the connect,
+   * {@code 0} disables the timeout.
+   *
+   * @param webSocketHandshakeTimeout the timeout in milliseconds
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketHandshakeTimeout(long webSocketHandshakeTimeout) {
+    if (webSocketHandshakeTimeout < 0) {
+      throw new IllegalArgumentException("WebSocket handshake timeout must be >= 0");
+    }
+    this.webSocketHandshakeTimeout = webSocketHandshakeTimeout;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the client offers the WebSocket per-frame deflate compression extension
+   */
+  public boolean isTryUsePerFrameWebSocketCompression() {
+    return tryUsePerFrameWebSocketCompression;
+  }
+
+  /**
+   * Set whether the client offers the WebSocket per-frame deflate compression extension.
+   *
+   * @param tryUsePerFrameWebSocketCompression {@code true} to offer the extension
+   * @return current options instance
+   */
+  public MqttClientOptions setTryUsePerFrameWebSocketCompression(boolean tryUsePerFrameWebSocketCompression) {
+    this.tryUsePerFrameWebSocketCompression = tryUsePerFrameWebSocketCompression;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the client offers the WebSocket per-message deflate compression extension
+   */
+  public boolean isTryUsePerMessageWebSocketCompression() {
+    return tryUsePerMessageWebSocketCompression;
+  }
+
+  /**
+   * Set whether the client offers the WebSocket per-message deflate compression extension.
+   *
+   * @param tryUsePerMessageWebSocketCompression {@code true} to offer the extension
+   * @return current options instance
+   */
+  public MqttClientOptions setTryUsePerMessageWebSocketCompression(boolean tryUsePerMessageWebSocketCompression) {
+    this.tryUsePerMessageWebSocketCompression = tryUsePerMessageWebSocketCompression;
+    return this;
+  }
+
+  /**
+   * @return the WebSocket deflate compression level
+   */
+  public int getWebSocketCompressionLevel() {
+    return webSocketCompressionLevel;
+  }
+
+  /**
+   * Set the WebSocket deflate compression level.
+   *
+   * @param webSocketCompressionLevel the compression level
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketCompressionLevel(int webSocketCompressionLevel) {
+    this.webSocketCompressionLevel = webSocketCompressionLevel;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the client accepts the {@code client_no_context_takeover} parameter of the
+   *         per-message deflate compression extension
+   */
+  public boolean isWebSocketCompressionAllowClientNoContext() {
+    return webSocketCompressionAllowClientNoContext;
+  }
+
+  /**
+   * Set whether the client accepts the {@code client_no_context_takeover} parameter of the per-message
+   * deflate compression extension offered by the server.
+   *
+   * @param webSocketCompressionAllowClientNoContext {@code true} to accept the parameter
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketCompressionAllowClientNoContext(boolean webSocketCompressionAllowClientNoContext) {
+    this.webSocketCompressionAllowClientNoContext = webSocketCompressionAllowClientNoContext;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the client requests the {@code server_no_context_takeover} parameter of the
+   *         per-message deflate compression extension
+   */
+  public boolean isWebSocketCompressionRequestServerNoContext() {
+    return webSocketCompressionRequestServerNoContext;
+  }
+
+  /**
+   * Set whether the client requests the {@code server_no_context_takeover} parameter of the per-message
+   * deflate compression extension.
+   *
+   * @param webSocketCompressionRequestServerNoContext {@code true} to request the parameter
+   * @return current options instance
+   */
+  public MqttClientOptions setWebSocketCompressionRequestServerNoContext(boolean webSocketCompressionRequestServerNoContext) {
+    this.webSocketCompressionRequestServerNoContext = webSocketCompressionRequestServerNoContext;
+    return this;
+  }
+
   @Override
   public MqttClientOptions setSsl(boolean ssl) {
     super.setSsl(ssl);
@@ -740,6 +1033,7 @@ public class MqttClientOptions extends NetClientOptions {
       ", authenticationMethod=" + authenticationMethod +
       ", authenticationData=" + (authenticationData != null ? "[" + authenticationData.length() + " bytes]" : "null") +
       ", autoServerRedirect=" + autoServerRedirect +
+      ", useWebSocket=" + useWebSocket +
       '}';
   }
 }
