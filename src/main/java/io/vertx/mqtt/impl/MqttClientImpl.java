@@ -19,9 +19,26 @@ package io.vertx.mqtt.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakeException;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
+import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
@@ -47,6 +64,7 @@ import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
@@ -80,8 +98,10 @@ import io.vertx.mqtt.messages.MqttUnsubAckMessage;
 import io.vertx.mqtt.messages.impl.MqttPublishMessageImpl;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -90,6 +110,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -235,6 +256,12 @@ public class MqttClientImpl implements MqttClient {
     }
 
     ContextInternal ctx = vertx.getOrCreateContext();
+    WebSocketClientHandshaker handshaker;
+    try {
+      handshaker = options.isUseWebSocket() ? newWebSocketHandshaker(port, host) : null;
+    } catch (IllegalArgumentException e) {
+      return ctx.failedFuture(e);
+    }
     NetClient client = vertx.createNetClient(options);
     PromiseInternal<MqttConnAckMessage> connectPromise = ctx.promise();
     PromiseInternal<Void> disconnectPromise = ctx.promise();
@@ -296,7 +323,7 @@ public class MqttClientImpl implements MqttClient {
             options.setClientId(generateRandomClientId());
           }
 
-          initChannel(soi);
+          initChannel(soi, handshaker);
           synchronized (MqttClientImpl.this) {
             this.connection = soi;
             if (options.getRecvByteBufAllocatorSize() != -1) {
@@ -305,6 +332,7 @@ public class MqttClientImpl implements MqttClient {
           }
 
           soi.messageHandler(msg -> this.handleMessage(soi.channelHandlerContext(), msg));
+          AtomicReference<Throwable> handshakeFailure = new AtomicReference<>();
           soi.closeHandler(v2 -> {
             client.close();
             synchronized (MqttClientImpl.this) {
@@ -313,101 +341,172 @@ public class MqttClientImpl implements MqttClient {
               this.connectPromise = null;
               this.disconnectPromise = null;
             }
-            connectPromise.fail("Closed");
+            Throwable cause = handshakeFailure.get();
+            if (cause != null) {
+              connectPromise.tryFail(cause);
+            } else {
+              connectPromise.tryFail("Closed");
+            }
             disconnectPromise.complete();
           });
 
-          // an exception at connection level
-          soi.exceptionHandler(this::handleException);
-
-          MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
-            false,
-            AT_MOST_ONCE,
-            false,
-            0);
-
-          MqttProperties props = MqttProperties.NO_PROPERTIES;
-
-          if (options.getVersion() == 5) {
-            props = new MqttProperties();
-            if (options.getSessionExpireInterval() != null)
-              props.add(new IntegerProperty(MqttProperties.SESSION_EXPIRY_INTERVAL, (int) options.getSessionExpireInterval().longValue()));
-            if (options.getReceiveMaximum() != null)
-              props.add(new IntegerProperty(MqttProperties.RECEIVE_MAXIMUM, options.getReceiveMaximum()));
-            if (options.getMaximumPacketSize() != null)
-              props.add(new IntegerProperty(MqttProperties.MAXIMUM_PACKET_SIZE, (int) options.getMaximumPacketSize().longValue()));
-            if (options.getTopicAliasMaximum() != null)
-              props.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS_MAXIMUM, options.getTopicAliasMaximum()));
-            if (options.getRequestResponseInformation() != null)
-              props.add(new IntegerProperty(MqttProperties.REQUEST_RESPONSE_INFORMATION, options.getRequestResponseInformation() ? 1 : 0 ));
-            if (options.getRequestProblemInformation() != null)
-              props.add(new IntegerProperty(MqttProperties.REQUEST_PROBLEM_INFORMATION, options.getRequestProblemInformation() ? 1 : 0 ));
-            if (options.getAuthenticationMethod() != null)
-              props.add(new MqttProperties.StringProperty(MqttProperties.AUTHENTICATION_METHOD, options.getAuthenticationMethod()));
-            if (options.getAuthenticationData() != null)
-              props.add(new BinaryProperty(MqttProperties.AUTHENTICATION_DATA, options.getAuthenticationData().getBytes()));
-            if (userProperties != null && !userProperties.isEmpty()) {
-              Collection<StringPair> values = userProperties.entrySet().stream().map(e -> new StringPair(e.getKey(), e.getValue())).collect(Collectors.toList());
-              props.add(new UserProperties(values));
-            }
+          if (handshaker == null) {
+            // an exception at connection level
+            soi.exceptionHandler(this::handleException);
+            sendConnect(userProperties);
+          } else {
+            awaitWebSocketHandshake(soi, handshaker, connectPromise, handshakeFailure, userProperties);
           }
-
-          io.vertx.mqtt.MqttClientWillOptions willOpts = options.getWillOptions();
-
-          boolean willFlag = willOpts.getTopic() != null && willOpts.getMessageBytes() != null;
-
-          MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
-            PROTOCOL_NAME,
-            options.getVersion(),
-            options.hasUsername(),
-            options.hasPassword(),
-            willOpts.isRetain(),
-            willOpts.getQos(),
-            willFlag,
-            options.isCleanSession(),
-            options.getKeepAliveInterval(),
-            props);
-
-          MqttProperties willProperties = MqttProperties.NO_PROPERTIES;
-          if (options.getVersion() == 5 && willFlag) {
-            willProperties = new MqttProperties();
-            if (willOpts.getWillDelayInterval() != null)
-              willProperties.add(new IntegerProperty(MqttProperties.WILL_DELAY_INTERVAL, (int) willOpts.getWillDelayInterval().longValue()));
-            if (willOpts.getPayloadFormatIndicator() != null)
-              willProperties.add(new IntegerProperty(MqttProperties.PAYLOAD_FORMAT_INDICATOR, willOpts.getPayloadFormatIndicator()));
-            if (willOpts.getContentType() != null)
-              willProperties.add(new MqttProperties.StringProperty(MqttProperties.CONTENT_TYPE, willOpts.getContentType()));
-            if (willOpts.getResponseTopic() != null)
-              willProperties.add(new MqttProperties.StringProperty(MqttProperties.RESPONSE_TOPIC, willOpts.getResponseTopic()));
-            if (willOpts.getCorrelationData() != null)
-              willProperties.add(new BinaryProperty(MqttProperties.CORRELATION_DATA, willOpts.getCorrelationData().getBytes()));
-            if (willOpts.getUserProperties() != null && !willOpts.getUserProperties().isEmpty()) {
-              Collection<StringPair> pairs = willOpts.getUserProperties().entrySet().stream()
-                  .map(e -> new StringPair(e.getKey(), e.getValue()))
-                  .collect(Collectors.toList());
-              willProperties.add(new UserProperties(pairs));
-            }
-          }
-
-          MqttConnectPayload payload = new MqttConnectPayload(
-            options.getClientId() == null ? "" : options.getClientId(),
-            willProperties,
-            willOpts.getTopic(),
-            willOpts.getMessageBytes() != null ? willOpts.getMessageBytes().getBytes() : null,
-            options.hasUsername() ? options.getUsername() : null,
-            options.hasPassword() ? options.getPassword().getBytes() : null
-          );
-
-          io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
-
-          this.write(connect);
-
         }
-
       });
     });
 
     return connectPromise.future();
+  }
+
+  private WebSocketClientHandshaker newWebSocketHandshaker(int port, String host) {
+    String authority = host.indexOf(':') >= 0 && !host.startsWith("[") ? "[" + host + "]" : host;
+    URI uri = URI.create((options.isSsl() ? "wss" : "ws") + "://" + authority + ":" + port + options.getWebSocketPath());
+    List<String> subProtocols = options.getWebSocketSubProtocols();
+    // MQTT 3.1.1 [MQTT-6.0.0-3] and 5.0 [MQTT-6.0.0-4] use the "mqtt" sub-protocol
+    String subProtocol = subProtocols == null || subProtocols.isEmpty() ? "mqtt" : String.join(",", subProtocols);
+    HttpHeaders headers = new DefaultHttpHeaders();
+    if (options.getWebSocketHeaders() != null) {
+      options.getWebSocketHeaders().forEach(headers::add);
+    }
+    boolean allowExtensions = options.isTryUsePerFrameWebSocketCompression() || options.isTryUsePerMessageWebSocketCompression();
+    return WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, subProtocol, allowExtensions,
+      headers, options.getWebSocketMaxFrameSize());
+  }
+
+  /**
+   * Wait for the WebSocket opening handshake started by {@link WebSocketHandshakeTrigger} and send the CONNECT packet
+   * once it completes.
+   */
+  private void awaitWebSocketHandshake(NetSocketInternal soi, WebSocketClientHandshaker handshaker, Promise<MqttConnAckMessage> connectPromise,
+                                       AtomicReference<Throwable> handshakeFailure, Map<String, String> userProperties) {
+    long timeout = options.getWebSocketHandshakeTimeout();
+    long timerId = timeout > 0 ? vertx.setTimer(timeout, id ->
+      failWebSocketHandshake(soi, connectPromise, handshakeFailure, webSocketHandshakeTimeout())) : -1L;
+
+    soi.eventHandler(evt -> {
+      if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT) {
+        vertx.cancelTimer(timerId);
+        failWebSocketHandshake(soi, connectPromise, handshakeFailure, webSocketHandshakeTimeout());
+      } else if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
+        vertx.cancelTimer(timerId);
+        if (!connectPromise.future().isComplete()) {
+          log.debug("WebSocket handshake with " + handshaker.uri() + " completed");
+          soi.exceptionHandler(this::handleException);
+          sendConnect(userProperties);
+        }
+      }
+      ReferenceCountUtil.release(evt);
+    });
+    // an exception before the handshake completes, e.g. an HTTP error response of the server
+    soi.exceptionHandler(err -> {
+      vertx.cancelTimer(timerId);
+      failWebSocketHandshake(soi, connectPromise, handshakeFailure, err);
+    });
+  }
+
+  private WebSocketClientHandshakeException webSocketHandshakeTimeout() {
+    return new WebSocketClientHandshakeException("WebSocket handshake timed out after " + options.getWebSocketHandshakeTimeout() + " ms");
+  }
+
+  /**
+   * Close the socket, its close handler resets the client state and then fails the connect with the given cause.
+   */
+  private void failWebSocketHandshake(NetSocketInternal soi, Promise<MqttConnAckMessage> connectPromise,
+                                      AtomicReference<Throwable> handshakeFailure, Throwable cause) {
+    if (!connectPromise.future().isComplete() && handshakeFailure.compareAndSet(null, cause)) {
+      log.error("WebSocket handshake failed", cause);
+      soi.close();
+    }
+  }
+
+  private void sendConnect(Map<String, String> userProperties) {
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
+      false,
+      AT_MOST_ONCE,
+      false,
+      0);
+
+    MqttProperties props = MqttProperties.NO_PROPERTIES;
+
+    if (options.getVersion() == 5) {
+      props = new MqttProperties();
+      if (options.getSessionExpireInterval() != null)
+        props.add(new IntegerProperty(MqttProperties.SESSION_EXPIRY_INTERVAL, (int) options.getSessionExpireInterval().longValue()));
+      if (options.getReceiveMaximum() != null)
+        props.add(new IntegerProperty(MqttProperties.RECEIVE_MAXIMUM, options.getReceiveMaximum()));
+      if (options.getMaximumPacketSize() != null)
+        props.add(new IntegerProperty(MqttProperties.MAXIMUM_PACKET_SIZE, (int) options.getMaximumPacketSize().longValue()));
+      if (options.getTopicAliasMaximum() != null)
+        props.add(new IntegerProperty(MqttProperties.TOPIC_ALIAS_MAXIMUM, options.getTopicAliasMaximum()));
+      if (options.getRequestResponseInformation() != null)
+        props.add(new IntegerProperty(MqttProperties.REQUEST_RESPONSE_INFORMATION, options.getRequestResponseInformation() ? 1 : 0 ));
+      if (options.getRequestProblemInformation() != null)
+        props.add(new IntegerProperty(MqttProperties.REQUEST_PROBLEM_INFORMATION, options.getRequestProblemInformation() ? 1 : 0 ));
+      if (options.getAuthenticationMethod() != null)
+        props.add(new MqttProperties.StringProperty(MqttProperties.AUTHENTICATION_METHOD, options.getAuthenticationMethod()));
+      if (options.getAuthenticationData() != null)
+        props.add(new BinaryProperty(MqttProperties.AUTHENTICATION_DATA, options.getAuthenticationData().getBytes()));
+      if (userProperties != null && !userProperties.isEmpty()) {
+        Collection<StringPair> values = userProperties.entrySet().stream().map(e -> new StringPair(e.getKey(), e.getValue())).collect(Collectors.toList());
+        props.add(new UserProperties(values));
+      }
+    }
+
+    io.vertx.mqtt.MqttClientWillOptions willOpts = options.getWillOptions();
+
+    boolean willFlag = willOpts.getTopic() != null && willOpts.getMessageBytes() != null;
+
+    MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
+      PROTOCOL_NAME,
+      options.getVersion(),
+      options.hasUsername(),
+      options.hasPassword(),
+      willOpts.isRetain(),
+      willOpts.getQos(),
+      willFlag,
+      options.isCleanSession(),
+      options.getKeepAliveInterval(),
+      props);
+
+    MqttProperties willProperties = MqttProperties.NO_PROPERTIES;
+    if (options.getVersion() == 5 && willFlag) {
+      willProperties = new MqttProperties();
+      if (willOpts.getWillDelayInterval() != null)
+        willProperties.add(new IntegerProperty(MqttProperties.WILL_DELAY_INTERVAL, (int) willOpts.getWillDelayInterval().longValue()));
+      if (willOpts.getPayloadFormatIndicator() != null)
+        willProperties.add(new IntegerProperty(MqttProperties.PAYLOAD_FORMAT_INDICATOR, willOpts.getPayloadFormatIndicator()));
+      if (willOpts.getContentType() != null)
+        willProperties.add(new MqttProperties.StringProperty(MqttProperties.CONTENT_TYPE, willOpts.getContentType()));
+      if (willOpts.getResponseTopic() != null)
+        willProperties.add(new MqttProperties.StringProperty(MqttProperties.RESPONSE_TOPIC, willOpts.getResponseTopic()));
+      if (willOpts.getCorrelationData() != null)
+        willProperties.add(new BinaryProperty(MqttProperties.CORRELATION_DATA, willOpts.getCorrelationData().getBytes()));
+      if (willOpts.getUserProperties() != null && !willOpts.getUserProperties().isEmpty()) {
+        Collection<StringPair> pairs = willOpts.getUserProperties().entrySet().stream()
+            .map(e -> new StringPair(e.getKey(), e.getValue()))
+            .collect(Collectors.toList());
+        willProperties.add(new UserProperties(pairs));
+      }
+    }
+
+    MqttConnectPayload payload = new MqttConnectPayload(
+      options.getClientId() == null ? "" : options.getClientId(),
+      willProperties,
+      willOpts.getTopic(),
+      willOpts.getMessageBytes() != null ? willOpts.getMessageBytes().getBytes() : null,
+      options.hasUsername() ? options.getUsername() : null,
+      options.hasPassword() ? options.getPassword().getBytes() : null
+    );
+
+    io.netty.handler.codec.mqtt.MqttMessage connect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, payload);
+
+    this.write(connect);
   }
 
   /**
@@ -464,6 +563,9 @@ public class MqttClientImpl implements MqttClient {
         }
         io.netty.handler.codec.mqtt.MqttMessage  disconnect = MqttMessageFactory.newMessage(fixedHeader, variableHeader, null);
         connection.writeMessage(disconnect);
+        if (options.isUseWebSocket()) {
+          connection.writeMessage(new CloseWebSocketFrame());
+        }
       }
       connection.close();
     }
@@ -1280,7 +1382,7 @@ public class MqttClientImpl implements MqttClient {
     return promise.future();
   }
 
-  private void initChannel(NetSocketInternal sock) {
+  private void initChannel(NetSocketInternal sock, WebSocketClientHandshaker handshaker) {
 
     ChannelPipeline pipeline = sock.channelHandlerContext().pipeline();
 
@@ -1292,6 +1394,26 @@ public class MqttClientImpl implements MqttClient {
     } else {
       // max message size not set, so the default from Netty MQTT codec is used
       pipeline.addBefore("handler", "mqttDecoder", new MqttDecoder());
+    }
+
+    if (handshaker != null) {
+      pipeline.addBefore("mqttEncoder", "httpClientCodec", new HttpClientCodec());
+      pipeline.addAfter("httpClientCodec", "aggregator", new HttpObjectAggregator(options.getWebSocketMaxFrameSize()));
+
+      List<WebSocketClientExtensionHandshaker> extensionHandshakers = createExtensionHandshakers();
+      String webSocketHandlerBase = "aggregator";
+      if (!extensionHandshakers.isEmpty()) {
+        pipeline.addAfter(webSocketHandlerBase, "webSocketExtensionHandler", new WebSocketClientExtensionHandler(
+          extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[0])));
+        webSocketHandlerBase = "webSocketExtensionHandler";
+      }
+
+      pipeline.addAfter(webSocketHandlerBase, "webSocketHandshakeTrigger", new WebSocketHandshakeTrigger(handshaker));
+      // Netty applies its handshake timeout only to a handshake started on channelActive, awaitWebSocketHandshake applies it in any case
+      long handshakeTimeout = options.getWebSocketHandshakeTimeout() > 0 ? options.getWebSocketHandshakeTimeout() : Long.MAX_VALUE;
+      pipeline.addAfter("webSocketHandshakeTrigger", "webSocketHandler", new WebSocketClientProtocolHandler(handshaker, true, true, handshakeTimeout));
+      pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new MqttWebSocketCodecs.ByteBufToWebSocketFrameEncoder());
+      pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new MqttWebSocketCodecs.WebSocketFrameToByteBufDecoder());
     }
 
     if (this.options.isAutoKeepAlive() &&
@@ -1311,6 +1433,55 @@ public class MqttClientImpl implements MqttClient {
           }
         });
     }
+  }
+
+  /**
+   * Starts the WebSocket opening handshake unless Netty's protocol handler starts it on {@code channelActive}. The
+   * {@link NetClient} hands a plain TCP socket over before {@code channelActive} fires, a TLS or proxied socket only
+   * after it, so either may happen.
+   */
+  private static class WebSocketHandshakeTrigger extends ChannelInboundHandlerAdapter {
+
+    private final WebSocketClientHandshaker handshaker;
+    private boolean channelActiveSeen;
+
+    WebSocketHandshakeTrigger(WebSocketClientHandshaker handshaker) {
+      this.handshaker = handshaker;
+    }
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) {
+      // runs after a channelActive still pending in the current event loop task
+      ctx.executor().execute(() -> {
+        ctx.pipeline().remove(this);
+        if (!channelActiveSeen && ctx.channel().isActive()) {
+          handshaker.handshake(ctx.channel()).addListener(future -> {
+            if (!future.isSuccess()) {
+              ctx.channel().pipeline().fireExceptionCaught(future.cause());
+            }
+          });
+        }
+      });
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+      channelActiveSeen = true;
+      super.channelActive(ctx);
+    }
+  }
+
+  private List<WebSocketClientExtensionHandshaker> createExtensionHandshakers() {
+    List<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
+    if (options.isTryUsePerFrameWebSocketCompression()) {
+      extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebSocketCompressionLevel(), false));
+    }
+    if (options.isTryUsePerMessageWebSocketCompression()) {
+      extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
+        ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
+        options.isWebSocketCompressionAllowClientNoContext(), options.isWebSocketCompressionRequestServerNoContext()));
+    }
+    return extensionHandshakers;
   }
 
   /**
