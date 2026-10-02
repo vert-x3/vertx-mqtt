@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -37,7 +38,10 @@ public abstract class Mqtt5ClientBaseIT {
   public GenericContainer<?> mosquitto = new GenericContainer<>(DockerImageName.parse("eclipse-mosquitto:2.0.12"))
     .withExposedPorts(1883)
     .withClasspathResourceMapping("it/mosquitto.conf", "/mosquitto/config/mosquitto.conf", BindMode.READ_ONLY)
-    .waitingFor(Wait.forLogMessage(".*mosquitto .* running.*", 1));
+    // the log line alone does not mean the mapped ports already accept connections
+    .waitingFor(new WaitAllStrategy()
+      .withStrategy(Wait.forLogMessage(".*mosquitto .* running.*", 1))
+      .withStrategy(Wait.forListeningPort()));
 
   protected int port;
   protected String host;
