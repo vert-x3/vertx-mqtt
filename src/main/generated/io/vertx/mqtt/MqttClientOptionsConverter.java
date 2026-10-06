@@ -127,6 +127,69 @@ public class MqttClientOptionsConverter {
             obj.setAutoServerRedirect((Boolean)member.getValue());
           }
           break;
+        case "useWebSocket":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseWebSocket((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketPath":
+          if (member.getValue() instanceof String) {
+            obj.setWebSocketPath((String)member.getValue());
+          }
+          break;
+        case "webSocketSubProtocols":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setWebSocketSubProtocols(list);
+          }
+          break;
+        case "webSocketHeaders":
+          if (member.getValue() instanceof JsonObject) {
+            ((Iterable<java.util.Map.Entry<String, Object>>)member.getValue()).forEach(entry -> {
+              if (entry.getValue() instanceof String)
+                obj.addWebSocketHeader(entry.getKey(), (String)entry.getValue());
+            });
+          }
+          break;
+        case "webSocketMaxFrameSize":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketMaxFrameSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "webSocketHandshakeTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketHandshakeTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "tryUsePerFrameWebSocketCompression":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTryUsePerFrameWebSocketCompression((Boolean)member.getValue());
+          }
+          break;
+        case "tryUsePerMessageWebSocketCompression":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTryUsePerMessageWebSocketCompression((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketCompressionLevel":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketCompressionLevel(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "webSocketCompressionAllowClientNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketCompressionAllowClientNoContext((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketCompressionRequestServerNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketCompressionRequestServerNoContext((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -183,5 +246,26 @@ public class MqttClientOptionsConverter {
       json.put("authenticationData", obj.getAuthenticationData().toJson());
     }
     json.put("autoServerRedirect", obj.isAutoServerRedirect());
+    json.put("useWebSocket", obj.isUseWebSocket());
+    if (obj.getWebSocketPath() != null) {
+      json.put("webSocketPath", obj.getWebSocketPath());
+    }
+    if (obj.getWebSocketSubProtocols() != null) {
+      JsonArray array = new JsonArray();
+      obj.getWebSocketSubProtocols().forEach(item -> array.add(item));
+      json.put("webSocketSubProtocols", array);
+    }
+    if (obj.getWebSocketHeaders() != null) {
+      JsonObject map = new JsonObject();
+      obj.getWebSocketHeaders().forEach((key, value) -> map.put(key, value));
+      json.put("webSocketHeaders", map);
+    }
+    json.put("webSocketMaxFrameSize", obj.getWebSocketMaxFrameSize());
+    json.put("webSocketHandshakeTimeout", obj.getWebSocketHandshakeTimeout());
+    json.put("tryUsePerFrameWebSocketCompression", obj.isTryUsePerFrameWebSocketCompression());
+    json.put("tryUsePerMessageWebSocketCompression", obj.isTryUsePerMessageWebSocketCompression());
+    json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
+    json.put("webSocketCompressionAllowClientNoContext", obj.isWebSocketCompressionAllowClientNoContext());
+    json.put("webSocketCompressionRequestServerNoContext", obj.isWebSocketCompressionRequestServerNoContext());
   }
 }
