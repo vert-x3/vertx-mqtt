@@ -17,6 +17,7 @@
 package io.vertx.mqtt.it;
 
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.GenericContainer;
@@ -39,5 +40,11 @@ public abstract class MqttClientBaseIT {
     mosquitto.start();
     port = mosquitto.getMappedPort(1883);
     host = mosquitto.getHost();
+  }
+
+  @After
+  public void stopBroker() {
+    // runs after the tearDown of the subclass, a container left running would live until the end of the test JVM
+    mosquitto.stop();
   }
 }
