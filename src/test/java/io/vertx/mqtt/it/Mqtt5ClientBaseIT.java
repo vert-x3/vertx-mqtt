@@ -19,6 +19,7 @@ package io.vertx.mqtt.it;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.mqtt.MqttClientOptions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.BindMode;
@@ -51,6 +52,12 @@ public abstract class Mqtt5ClientBaseIT {
     mosquitto.start();
     port = mosquitto.getMappedPort(1883);
     host = mosquitto.getHost();
+  }
+
+  @After
+  public void stopBroker() {
+    // runs after the tearDown of the subclass, a container left running would live until the end of the test JVM
+    mosquitto.stop();
   }
 
   protected MqttClientOptions v5Options() {
