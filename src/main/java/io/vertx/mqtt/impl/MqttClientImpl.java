@@ -191,8 +191,8 @@ public class MqttClientImpl implements MqttClient {
   // counter for the message identifier
   private int messageIdCounter;
 
-  // Keep alive management
-  private final long keepAliveTimeout;
+  // Keep alive management: the interval of the current connection, the configured one unless the server assigned one
+  private int keepAliveInterval;
   private Deque<Ping> pings = new ArrayDeque<>();
 
   // total number of unacknowledged packets
@@ -213,7 +213,6 @@ public class MqttClientImpl implements MqttClient {
   public MqttClientImpl(Vertx vertx, MqttClientOptions options) {
     this.vertx = (VertxInternal) vertx;
     this.options = new MqttClientOptions(options);
-    this.keepAliveTimeout = ((options.getKeepAliveInterval() * 1000) * 3) / 2;
   }
 
   int getInFlightMessagesCount() {
@@ -301,6 +300,7 @@ public class MqttClientImpl implements MqttClient {
             options.setClientId(generateRandomClientId());
           }
 
+          keepAliveInterval = options.getKeepAliveInterval();
           initChannel(soi);
           synchronized (MqttClientImpl.this) {
             this.connection = soi;
@@ -1067,7 +1067,9 @@ public class MqttClientImpl implements MqttClient {
 
       io.netty.handler.codec.mqtt.MqttMessage pingreq = MqttMessageFactory.newMessage(fixedHeader, null, null);
 
-      long id = vertx.setTimer(keepAliveTimeout, _id -> {
+      // a server may switch keep alive off (Server Keep Alive 0), a manual ping still waits as configured
+      int interval = keepAliveInterval > 0 ? keepAliveInterval : options.getKeepAliveInterval();
+      long id = vertx.setTimer(interval * 1500L, _id -> {
         disconnect();
       });
 
@@ -1322,22 +1324,24 @@ public class MqttClientImpl implements MqttClient {
     }
 
     if (this.options.isAutoKeepAlive() &&
-      this.options.getKeepAliveInterval() != 0) {
-
-      int keepAliveInterval = this.options.getKeepAliveInterval();
-
-      // handler for sending PINGREQ (keepAlive) if reader- or writer-channel become idle
-      pipeline.addBefore("handler", "idle",
-        new IdleStateHandler(0, keepAliveInterval, 0) {
-          @Override
-          protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
-            if (evt.state() == IdleState.WRITER_IDLE) {
-              // verify that server is still connected (e.g. when only publishing QoS-0 messages)
-              ping();
-            }
-          }
-        });
+      keepAliveInterval != 0) {
+      pipeline.addBefore("handler", "idle", newKeepAliveHandler(keepAliveInterval));
     }
+  }
+
+  /**
+   * @return a handler sending a PINGREQ when nothing was written for the keep alive interval
+   */
+  private IdleStateHandler newKeepAliveHandler(int keepAliveInterval) {
+    return new IdleStateHandler(0, keepAliveInterval, 0) {
+      @Override
+      protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
+        if (evt.state() == IdleState.WRITER_IDLE) {
+          // verify that server is still connected (e.g. when only publishing QoS-0 messages)
+          ping();
+        }
+      }
+    };
   }
 
   /**
@@ -2017,24 +2021,18 @@ public class MqttClientImpl implements MqttClient {
 
     // Server Keep Alive: MUST use this value instead of what we sent
     Integer serverKeepAlive = msg.serverKeepAlive();
-    if (serverKeepAlive != null && options.getKeepAliveInterval() != serverKeepAlive) {
-      options.setKeepAliveInterval(serverKeepAlive);
+    // (for this connection only, the next CONNECT requests the configured value again)
+    if (serverKeepAlive != null && keepAliveInterval != serverKeepAlive) {
+      keepAliveInterval = serverKeepAlive;
       log.debug("Server assigned keep alive: " + serverKeepAlive + "s");
 
-      // Update the IdleStateHandler in the pipeline with the new keep-alive interval
+      // Update the IdleStateHandler in the pipeline with the new keep-alive interval, 0 switches keep alive off
       ChannelPipeline pipeline = connection.channelHandlerContext().pipeline();
       if (pipeline.get("idle") != null) {
         pipeline.remove("idle");
-        pipeline.addBefore("handler", "idle",
-            new IdleStateHandler(0, serverKeepAlive, 0) {
-              @Override
-              protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
-                if (evt.state() == IdleState.WRITER_IDLE) {
-                  // verify that server is still connected (e.g. when only publishing QoS-0 messages)
-                  ping();
-                }
-              }
-            });
+        if (serverKeepAlive > 0) {
+          pipeline.addBefore("handler", "idle", newKeepAliveHandler(serverKeepAlive));
+        }
       }
     }
 
