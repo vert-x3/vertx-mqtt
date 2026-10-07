@@ -16,14 +16,10 @@
 
 package io.vertx.mqtt.impl;
 
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.mqtt.*;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -332,29 +328,8 @@ public class MqttServerConnection {
     chctx.pipeline().remove("idle");
     chctx.pipeline().remove("timeoutOnConnect");
 
-    // keep alive == 0 means NO keep alive, no timeout to handle
-    if (msg.variableHeader().keepAliveTimeSeconds() != 0) {
-
-      // the server waits for one and a half times the keep alive time period (MQTT spec)
-      // round to upper value to account for small keep-alive value (for testing)
-      int keepAliveTimeout = (int)Math.ceil(msg.variableHeader().keepAliveTimeSeconds() * 1.5D);
-
-      // modifying the channel pipeline for adding the idle state handler with previous timeout
-      chctx.pipeline().addBefore("handler", "idle", new IdleStateHandler(keepAliveTimeout, 0, 0));
-      chctx.pipeline().addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
-
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-
-          if (evt instanceof IdleStateEvent) {
-            IdleStateEvent e = (IdleStateEvent) evt;
-            if (e.state() == IdleState.READER_IDLE) {
-              endpoint.close();
-            }
-          }
-        }
-      });
-    }
+    // the keep alive requested by the client, until the endpoint accepts with a Server Keep Alive
+    endpoint.watchKeepAlive(msg.variableHeader().keepAliveTimeSeconds());
 
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
