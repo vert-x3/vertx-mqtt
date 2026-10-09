@@ -227,8 +227,8 @@ public class MqttServerImpl implements MqttServer {
           .dropPongFrames(true)
           .build()));
 
-      pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new MqttWebSocketCodecs.ByteBufToWebSocketFrameEncoder());
-      pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new MqttWebSocketCodecs.WebSocketFrameToByteBufDecoder());
+      pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());
+      pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new WebSocketFrameToByteBufDecoder());
     }
   }
 

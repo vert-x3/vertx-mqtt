@@ -1412,8 +1412,8 @@ public class MqttClientImpl implements MqttClient {
       // Netty applies its handshake timeout only to a handshake started on channelActive, awaitWebSocketHandshake applies it in any case
       long handshakeTimeout = options.getWebSocketHandshakeTimeout() > 0 ? options.getWebSocketHandshakeTimeout() : Long.MAX_VALUE;
       pipeline.addAfter("webSocketHandshakeTrigger", "webSocketHandler", new WebSocketClientProtocolHandler(handshaker, true, true, handshakeTimeout));
-      pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new MqttWebSocketCodecs.ByteBufToWebSocketFrameEncoder());
-      pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new MqttWebSocketCodecs.WebSocketFrameToByteBufDecoder());
+      pipeline.addAfter("webSocketHandler", "bytebuf2wsEncoder", new ByteBufToWebSocketFrameEncoder());
+      pipeline.addAfter("bytebuf2wsEncoder", "ws2bytebufDecoder", new WebSocketFrameToByteBufDecoder());
     }
 
     if (this.options.isAutoKeepAlive() &&
