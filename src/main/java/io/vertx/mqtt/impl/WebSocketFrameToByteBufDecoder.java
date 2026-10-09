@@ -27,7 +27,6 @@ package io.vertx.mqtt.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -35,37 +34,20 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import java.util.List;
 
 /**
- * Codecs translating between MQTT byte streams and binary WebSocket frames, shared by client and server.
+ * Translates binary WebSocket frames into the MQTT byte stream, shared by client and server.
  */
-final class MqttWebSocketCodecs {
+class WebSocketFrameToByteBufDecoder extends MessageToMessageDecoder<WebSocketFrame> {
 
-  private MqttWebSocketCodecs() {
-  }
-
-  static class WebSocketFrameToByteBufDecoder extends MessageToMessageDecoder<WebSocketFrame> {
-
-    @Override
-    protected void decode(ChannelHandlerContext chc, WebSocketFrame frame, List<Object> out)
-      throws Exception {
-      if (frame instanceof BinaryWebSocketFrame || frame instanceof ContinuationWebSocketFrame) {
-        // convert the frame to a ByteBuf, a fragmented MQTT packet continues in continuation frames
-        ByteBuf bb = frame.content();
-        bb.retain();
-        out.add(bb);
-      } else {
-        out.add(frame.retain());
-      }
-    }
-  }
-
-  static class ByteBufToWebSocketFrameEncoder extends MessageToMessageEncoder<ByteBuf> {
-
-    @Override
-    protected void encode(ChannelHandlerContext chc, ByteBuf bb, List<Object> out) throws Exception {
-      // convert the ByteBuf to a WebSocketFrame
-      BinaryWebSocketFrame result = new BinaryWebSocketFrame();
-      result.content().writeBytes(bb);
-      out.add(result);
+  @Override
+  protected void decode(ChannelHandlerContext chc, WebSocketFrame frame, List<Object> out)
+    throws Exception {
+    if (frame instanceof BinaryWebSocketFrame || frame instanceof ContinuationWebSocketFrame) {
+      // convert the frame to a ByteBuf, a fragmented MQTT packet continues in continuation frames
+      ByteBuf bb = frame.content();
+      bb.retain();
+      out.add(bb);
+    } else {
+      out.add(frame.retain());
     }
   }
 }
