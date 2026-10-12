@@ -16,10 +16,15 @@
 
 package io.vertx.mqtt.impl;
 
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -329,7 +334,8 @@ public class MqttServerConnection {
     chctx.pipeline().remove("timeoutOnConnect");
 
     // the keep alive requested by the client, until the endpoint accepts with a Server Keep Alive
-    endpoint.watchKeepAlive(msg.variableHeader().keepAliveTimeSeconds());
+    this.watchKeepAlive(msg.variableHeader().keepAliveTimeSeconds());
+    endpoint.serverKeepAliveHandler(this::watchKeepAlive);
 
     // MQTT spec 3.1.1 : if client-id is "zero-bytes", clean session MUST be true
     if (isZeroBytes && !msg.variableHeader().isCleanSession()) {
@@ -513,5 +519,41 @@ public class MqttServerConnection {
         throw new IllegalArgumentException("Received an MQTT packet from a not connected client (CONNECT not sent yet)");
       }
     }
+  }
+
+  /**
+   * Closes the endpoint when the client sends nothing for one and a half times the keep alive (MQTT spec), replacing
+   * the watch of a previous keep alive. Called on CONNECT, after the idle handler of the CONNECT timeout was removed,
+   * as both use the handler name "idle", and again when the endpoint accepts with a Server Keep Alive.
+   *
+   * @param keepAliveSeconds keep alive in seconds, 0 means no keep alive
+   */
+  private void watchKeepAlive(int keepAliveSeconds) {
+    ChannelPipeline pipeline = this.chctx.pipeline();
+    if (pipeline.get("keepAliveHandler") != null) {
+      pipeline.remove("idle");
+      pipeline.remove("keepAliveHandler");
+    }
+    if (keepAliveSeconds == 0) {
+      return;
+    }
+
+    // round to upper value to account for small keep-alive value (for testing)
+    int keepAliveTimeout = (int) Math.ceil(keepAliveSeconds * 1.5D);
+
+    pipeline.addBefore("handler", "idle", new IdleStateHandler(keepAliveTimeout, 0, 0));
+    pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
+
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+
+        if (evt instanceof IdleStateEvent) {
+          IdleStateEvent e = (IdleStateEvent) evt;
+          if (e.state() == IdleState.READER_IDLE) {
+            endpoint.close();
+          }
+        }
+      }
+    });
   }
 }
