@@ -86,8 +86,6 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final MqttWill will;
   private final boolean isCleanSession;
   private final int protocolVersion;
-  // the connection watching the keep alive, told about a Server Keep Alive on accept
-  private IntConsumer serverKeepAliveHandler;
   private final String protocolName;
   private final int keepAliveTimeoutSeconds;
   private final MqttProperties connectProperties;
@@ -126,6 +124,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private Handler<Void> closeHandler;
   // handler to call when a problem at protocol level happens
   private Handler<Throwable> exceptionHandler;
+  // handler to call with the Server Keep Alive when the connection is accepted with one, set by the connection
+  private IntConsumer serverKeepAliveHandler;
 
   private boolean isConnected;
   private boolean isClosed;
