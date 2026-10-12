@@ -65,6 +65,7 @@ import javax.net.ssl.SSLSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -123,6 +124,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private Handler<Void> closeHandler;
   // handler to call when a problem at protocol level happens
   private Handler<Throwable> exceptionHandler;
+  // handler to call with the Server Keep Alive when the connection is accepted with one, set by the connection
+  private IntConsumer serverKeepAliveHandler;
 
   private boolean isConnected;
   private boolean isClosed;
@@ -410,9 +413,23 @@ public class MqttEndpointImpl implements MqttEndpoint {
       this.close();
     } else {
       this.isConnected = true;
+      // the client MUST use a Server Keep Alive instead of the keep alive it requested (MQTT 5.0 spec)
+      if (this.protocolVersion >= MqttVersion.MQTT_5.protocolLevel() && properties != null && this.serverKeepAliveHandler != null) {
+        MqttProperties.MqttProperty<?> serverKeepAlive = properties.getProperty(MqttProperties.MqttPropertyType.SERVER_KEEP_ALIVE.value());
+        if (serverKeepAlive != null) {
+          this.serverKeepAliveHandler.accept((Integer) serverKeepAlive.value());
+        }
+      }
     }
 
     return this;
+  }
+
+  /**
+   * @param handler called with the Server Keep Alive when the endpoint accepts the connection with one
+   */
+  void serverKeepAliveHandler(IntConsumer handler) {
+    this.serverKeepAliveHandler = handler;
   }
 
   @Override
