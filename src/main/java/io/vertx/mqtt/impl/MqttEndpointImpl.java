@@ -18,9 +18,6 @@ package io.vertx.mqtt.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -36,9 +33,6 @@ import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
 import io.netty.handler.codec.mqtt.MqttVersion;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -71,6 +65,7 @@ import javax.net.ssl.SSLSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -91,6 +86,8 @@ public class MqttEndpointImpl implements MqttEndpoint {
   private final MqttWill will;
   private final boolean isCleanSession;
   private final int protocolVersion;
+  // the connection watching the keep alive, told about a Server Keep Alive on accept
+  private IntConsumer serverKeepAliveHandler;
   private final String protocolName;
   private final int keepAliveTimeoutSeconds;
   private final MqttProperties connectProperties;
@@ -417,10 +414,11 @@ public class MqttEndpointImpl implements MqttEndpoint {
     } else {
       this.isConnected = true;
       // the client MUST use a Server Keep Alive instead of the keep alive it requested (MQTT 5.0 spec)
-      MqttProperties.MqttProperty<?> serverKeepAlive = properties == null ? null :
-        properties.getProperty(MqttProperties.MqttPropertyType.SERVER_KEEP_ALIVE.value());
-      if (serverKeepAlive != null && this.protocolVersion >= MqttVersion.MQTT_5.protocolLevel()) {
-        this.watchKeepAlive((Integer) serverKeepAlive.value());
+      if (this.protocolVersion >= MqttVersion.MQTT_5.protocolLevel() && properties != null && this.serverKeepAliveHandler != null) {
+        MqttProperties.MqttProperty<?> serverKeepAlive = properties.getProperty(MqttProperties.MqttPropertyType.SERVER_KEEP_ALIVE.value());
+        if (serverKeepAlive != null) {
+          this.serverKeepAliveHandler.accept((Integer) serverKeepAlive.value());
+        }
       }
     }
 
@@ -428,38 +426,10 @@ public class MqttEndpointImpl implements MqttEndpoint {
   }
 
   /**
-   * Closes the endpoint when the client sends nothing for one and a half times the keep alive (MQTT spec), replacing
-   * the watch of a previous keep alive.
-   *
-   * @param keepAliveSeconds keep alive in seconds, 0 means no keep alive
+   * @param handler called with the Server Keep Alive when the endpoint accepts the connection with one
    */
-  void watchKeepAlive(int keepAliveSeconds) {
-    ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
-    if (pipeline.get("keepAliveHandler") != null) {
-      pipeline.remove("idle");
-      pipeline.remove("keepAliveHandler");
-    }
-    if (keepAliveSeconds == 0) {
-      return;
-    }
-
-    // round to upper value to account for small keep-alive value (for testing)
-    int keepAliveTimeout = (int) Math.ceil(keepAliveSeconds * 1.5D);
-
-    pipeline.addBefore("handler", "idle", new IdleStateHandler(keepAliveTimeout, 0, 0));
-    pipeline.addBefore("handler", "keepAliveHandler", new ChannelDuplexHandler() {
-
-      @Override
-      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-
-        if (evt instanceof IdleStateEvent) {
-          IdleStateEvent e = (IdleStateEvent) evt;
-          if (e.state() == IdleState.READER_IDLE) {
-            MqttEndpointImpl.this.close();
-          }
-        }
-      }
-    });
+  void serverKeepAliveHandler(IntConsumer handler) {
+    this.serverKeepAliveHandler = handler;
   }
 
   @Override
