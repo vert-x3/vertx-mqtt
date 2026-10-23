@@ -422,6 +422,35 @@ IMPORTANT: To enable this feature, you need to add dependency `netty-codec-hapro
 compile "io.netty:netty-codec-haproxy:${maven.version}"
 ----
 
+== Connecting using WebSocket
+
+The client can connect to a broker using MQTT over WebSocket, for example when the broker is only reachable through
+an HTTP reverse proxy or ingress. Passing `true` to {@link io.vertx.mqtt.MqttClientOptions#setUseWebSocket(boolean)}
+performs a WebSocket handshake on the connection before the MQTT CONNECT packet is sent. Combined with the SSL flag,
+the client connects using `wss`.
+
+- {@link io.vertx.mqtt.MqttClientOptions#setWebSocketPath(java.lang.String)} sets the request URI, `/mqtt` by default.
+  It can include a query string, for example `/mqtt?token=abc`
+- {@link io.vertx.mqtt.MqttClientOptions#addWebSocketHeader(java.lang.String,java.lang.String)} adds an HTTP header to
+  the handshake request, for example an `Authorization` header
+- {@link io.vertx.mqtt.MqttClientOptions#setWebSocketSubProtocols(java.util.List)} replaces the offered sub-protocol,
+  `mqtt` by default as MQTT 3.1.1 and 5.0 require
+- {@link io.vertx.mqtt.MqttClientOptions#setWebSocketMaxFrameSize(int)} sets the max WebSocket frame size, 65536 bytes
+  by default. Raise it together with {@link io.vertx.mqtt.MqttClientOptions#setMaxMessageSize(int)} for larger messages
+- {@link io.vertx.mqtt.MqttClientOptions#setWebSocketHandshakeTimeout(long)} sets the time in milliseconds to wait for the
+  handshake, 10000 by default
+- {@link io.vertx.mqtt.MqttClientOptions#setTryUsePerMessageWebSocketCompression(boolean)} and
+  {@link io.vertx.mqtt.MqttClientOptions#setTryUsePerFrameWebSocketCompression(boolean)} offer the deflate compression
+  extensions to the server, both are disabled by default
+
+[source,$lang]
+----
+{@link examples.VertxMqttClientExamples#webSocket}
+----
+
+A failed handshake, for example an HTTP error status returned by the server, fails the connect with a
+`WebSocketClientHandshakeException` describing the response.
+
 == MQTT 5.0 client features
 
 WARNING: this section is new and currently in tech preview, in other words the API is subject to be change until it reaches maturity
