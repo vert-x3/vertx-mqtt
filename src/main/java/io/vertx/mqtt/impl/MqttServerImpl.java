@@ -16,14 +16,11 @@
 
 package io.vertx.mqtt.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.MessageToMessageDecoder;
-import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -32,7 +29,6 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
@@ -151,29 +147,6 @@ public class MqttServerImpl implements MqttServer {
   @Override
   public Future<Void> close() {
     return server.close();
-  }
-
-  static class WebSocketFrameToByteBufDecoder extends MessageToMessageDecoder<BinaryWebSocketFrame> {
-
-    @Override
-    protected void decode(ChannelHandlerContext chc, BinaryWebSocketFrame frame, List<Object> out)
-      throws Exception {
-      // convert the frame to a ByteBuf
-      ByteBuf bb = frame.content();
-      bb.retain();
-      out.add(bb);
-    }
-  }
-
-  static class ByteBufToWebSocketFrameEncoder extends MessageToMessageEncoder<ByteBuf> {
-
-    @Override
-    protected void encode(ChannelHandlerContext chc, ByteBuf bb, List<Object> out) throws Exception {
-      // convert the ByteBuf to a WebSocketFrame
-      BinaryWebSocketFrame result = new BinaryWebSocketFrame();
-      result.content().writeBytes(bb);
-      out.add(result);
-    }
   }
 
   private static class WebSocketPathHandler extends ChannelInboundHandlerAdapter {
