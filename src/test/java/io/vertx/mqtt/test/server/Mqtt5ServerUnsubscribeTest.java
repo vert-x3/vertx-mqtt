@@ -50,6 +50,8 @@ public class Mqtt5ServerUnsubscribeTest extends MqttServerBaseTest {
 
   private List<MqttUnsubAckReasonCode> expectedReasonCodes;
 
+  private boolean subscriptionAutoAck;
+
   private static final String MQTT_TOPIC = "/my_topic";
 
   private static final String MQTT_REASON_STRING = "because I've said so";
@@ -67,6 +69,29 @@ public class Mqtt5ServerUnsubscribeTest extends MqttServerBaseTest {
   public void after(TestContext context) {
 
     this.tearDown(context);
+  }
+
+  @Test
+  public void unsubscribeAutoAckMultipleTopics(TestContext context) throws MqttException {
+    subscriptionAutoAck = true;
+    MqttAsyncClient client = new MqttAsyncClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT),
+      "auto-ack", new MemoryPersistence());
+    try {
+      client.connect().waitForCompletion(5000);
+      String[] topics = {MQTT_TOPIC, "/another_topic"};
+      client.subscribe(topics, new int[topics.length]).waitForCompletion(5000);
+      IMqttToken token = client.unsubscribe(topics);
+      token.waitForCompletion(5000);
+      context.assertEquals(topics.length, token.getReasonCodes().length);
+      for (int reasonCode : token.getReasonCodes()) {
+        context.assertEquals((int) MqttUnsubAckReasonCode.SUCCESS.value(), reasonCode);
+      }
+    } finally {
+      if (client.isConnected()) {
+        client.disconnect().waitForCompletion(5000);
+      }
+      client.close();
+    }
   }
 
   @Test
@@ -123,6 +148,12 @@ public class Mqtt5ServerUnsubscribeTest extends MqttServerBaseTest {
 
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
+
+    if (subscriptionAutoAck) {
+      endpoint.subscriptionAutoAck(true);
+      endpoint.accept(false);
+      return;
+    }
 
     endpoint.subscribeHandler(subscribe -> {
 
