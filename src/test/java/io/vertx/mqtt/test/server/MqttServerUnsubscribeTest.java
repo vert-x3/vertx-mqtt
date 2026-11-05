@@ -45,6 +45,8 @@ public class MqttServerUnsubscribeTest extends MqttServerBaseTest {
   private Async subscribeAsync;
   private Async unsubscribeAsync;
 
+  private boolean subscriptionAutoAck;
+
   private static final String MQTT_TOPIC = "/my_topic";
 
   @Before
@@ -57,6 +59,26 @@ public class MqttServerUnsubscribeTest extends MqttServerBaseTest {
   public void after(TestContext context) {
 
     this.tearDown(context);
+  }
+
+  @Test
+  public void unsubscribeAutoAck(TestContext context) throws MqttException {
+    subscriptionAutoAck = true;
+    MqttClient client = new MqttClient(String.format("tcp://%s:%d", MQTT_SERVER_HOST, MQTT_SERVER_PORT),
+      "auto-ack", new MemoryPersistence());
+    client.setTimeToWait(5000);
+    try {
+      client.connect();
+      String[] topics = {MQTT_TOPIC, "/another_topic"};
+      client.subscribe(topics, new int[topics.length]);
+      client.unsubscribe(topics);
+      context.assertTrue(client.isConnected());
+    } finally {
+      if (client.isConnected()) {
+        client.disconnect();
+      }
+      client.close();
+    }
   }
 
   @Test
@@ -91,6 +113,12 @@ public class MqttServerUnsubscribeTest extends MqttServerBaseTest {
 
   @Override
   protected void endpointHandler(MqttEndpoint endpoint, TestContext context) {
+
+    if (subscriptionAutoAck) {
+      endpoint.subscriptionAutoAck(true);
+      endpoint.accept(false);
+      return;
+    }
 
     endpoint.subscribeHandler(subscribe -> {
 
