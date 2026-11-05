@@ -705,7 +705,12 @@ public class MqttEndpointImpl implements MqttEndpoint {
       }
 
       if (this.isSubscriptionAutoAck) {
-        this.unsubscribeAcknowledge(msg.messageId());
+        if (this.protocolVersion >= MqttVersion.MQTT_5.protocolLevel()) {
+          this.unsubscribeAcknowledge(msg.messageId(),
+            Collections.nCopies(msg.topics().size(), MqttUnsubAckReasonCode.SUCCESS), MqttProperties.NO_PROPERTIES);
+        } else {
+          this.unsubscribeAcknowledge(msg.messageId());
+        }
       }
     }
   }
