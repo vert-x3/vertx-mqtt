@@ -93,6 +93,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1330,14 +1331,19 @@ public class MqttClientImpl implements MqttClient {
   }
 
   /**
-   * @return a handler sending a PINGREQ when nothing was written for the keep alive interval
+   * @return a handler sending a PINGREQ when nothing was written for the keep alive interval, or nothing was received
+   * for one and a half times the keep alive interval
    */
   private IdleStateHandler newKeepAliveHandler(int keepAliveInterval) {
-    return new IdleStateHandler(0, keepAliveInterval, 0) {
+    long keepAliveMillis = keepAliveInterval * 1000L;
+    return new IdleStateHandler(keepAliveMillis * 3 / 2, keepAliveMillis, 0, TimeUnit.MILLISECONDS) {
       @Override
       protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
         if (evt.state() == IdleState.WRITER_IDLE) {
           // verify that server is still connected (e.g. when only publishing QoS-0 messages)
+          ping();
+        } else if (evt.state() == IdleState.READER_IDLE && pings.isEmpty()) {
+          // a client that keeps writing never gets idle, verify that the server still responds
           ping();
         }
       }
