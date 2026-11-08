@@ -1877,11 +1877,15 @@ public class MqttClientImpl implements MqttClient {
     MqttMessage message;
     synchronized (this) {
       message = qos2inbound.remove(pubrelMessageId);
+    }
 
-      if (message == null) {
-        log.warn("Received PUBREL packet without having related PUBREC packet in storage");
-        return;
-      }
+    if (message == null) {
+      // e.g. after a reconnect with a kept session, the server re-sends the PUBREL of a PUBREC sent on the previous
+      // connection: it still expects a PUBCOMP (MQTT 3.1.1 section 4.3.3), which MQTT 5 marks with reason code 0x92,
+      // not an error during recovery (MQTT 5.0 section 3.7.2.1)
+      log.debug("Received PUBREL packet without having related PUBREC packet in storage, completing it");
+      this.publishComplete(pubrelMessageId, MqttPubCompReasonCode.PACKET_IDENTIFIER_NOT_FOUND, MqttProperties.NO_PROPERTIES);
+      return;
     }
 
     if (options.isAutoAck()) {
