@@ -118,6 +118,9 @@ public class MqttClientImpl implements MqttClient {
   private static final int MAX_TOPIC_LEN = 65535;
   private static final int MIN_TOPIC_LEN = 1;
   private static final String PROTOCOL_NAME = "MQTT";
+  // The automatic keep alive also sends a PINGREQ when nothing was received for this multiple of the keep alive:
+  // the same grace period the server waits for the client before closing the connection [MQTT-3.1.2-22]
+  private static final double KEEP_ALIVE_READER_IDLE_FACTOR = 1.5;
 
   private final VertxInternal vertx;
   private final MqttClientOptions options;
@@ -1336,7 +1339,8 @@ public class MqttClientImpl implements MqttClient {
    */
   private IdleStateHandler newKeepAliveHandler(int keepAliveInterval) {
     long keepAliveMillis = keepAliveInterval * 1000L;
-    return new IdleStateHandler(keepAliveMillis * 3 / 2, keepAliveMillis, 0, TimeUnit.MILLISECONDS) {
+    return new IdleStateHandler((long) (keepAliveMillis * KEEP_ALIVE_READER_IDLE_FACTOR), keepAliveMillis, 0,
+      TimeUnit.MILLISECONDS) {
       @Override
       protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) {
         if (evt.state() == IdleState.WRITER_IDLE) {
