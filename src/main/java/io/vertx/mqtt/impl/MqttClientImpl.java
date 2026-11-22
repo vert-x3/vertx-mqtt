@@ -638,7 +638,8 @@ public class MqttClientImpl implements MqttClient {
       publish = MqttMessageFactory.newMessage(fixedHeader, variableHeader, buf);
       switch (qosLevel) {
         case AT_LEAST_ONCE:
-          qos1outbound.put(variableHeader.packetId(), new ExpiringPacket(this::handlePubackTimeout, variableHeader.packetId()));
+          qos1outbound.put(variableHeader.packetId(),
+            new ExpiringPacket(packet -> handlePubackTimeout(packet.packetId), variableHeader.packetId()));
           countInflightQueue++;
           break;
         case EXACTLY_ONCE:
@@ -1196,7 +1197,8 @@ public class MqttClientImpl implements MqttClient {
 
     synchronized (this) {
       // todo: should check duplicates
-      qos2outbound.put(publishMessageId, new ExpiringPacket(this::handlePubcompTimeout, publishMessageId));
+      qos2outbound.put(publishMessageId,
+        new ExpiringPacket(packet -> handlePubcompTimeout(packet.packetId), publishMessageId));
     }
     Future<Void> write = this.write(pubrel);
 
@@ -1801,12 +1803,9 @@ public class MqttClientImpl implements MqttClient {
     this.publishRelease(pubrecMessageId);
   }
 
-  private void handlePubrecTimeout(int packetId) {
-    ExpiringPacket expiredMessage;
+  private void handlePubrecTimeout(ExpiringPacket packet) {
     synchronized (this) {
-      expiredMessage = qos2outbound.remove(packetId);
-
-      if (expiredMessage == null) {
+      if (!qos2outbound.remove(packet.packetId, packet)) {
         log.debug("PUBREC expiration timer fired but QoS 2 message has already been PUBRECed by server");
         return;
       }
@@ -1814,7 +1813,7 @@ public class MqttClientImpl implements MqttClient {
     }
     Handler<Integer> handler = publishCompletionExpirationHandler();
     if (handler != null) {
-      handler.handle(expiredMessage.packetId);
+      handler.handle(packet.packetId);
     }
   }
 
@@ -2222,10 +2221,10 @@ public class MqttClientImpl implements MqttClient {
      * @param timeoutHandler The handler to invoke once the client stops waiting for the server's ACK.
      * @param packetId The packet ID.
      */
-    ExpiringPacket(Handler<Integer> timeoutHandler, final int packetId) {
+    ExpiringPacket(Handler<ExpiringPacket> timeoutHandler, final int packetId) {
       this.packetId = packetId;
       if (options.getAckTimeout() > -1) {
-        this.timerId = vertx.setTimer(options.getAckTimeout() * 1000L, tid -> timeoutHandler.handle(packetId));
+        this.timerId = vertx.setTimer(options.getAckTimeout() * 1000L, tid -> timeoutHandler.handle(this));
       } else {
         // default MQTT client behavior,
         // don't start a timer for expiring the publish
