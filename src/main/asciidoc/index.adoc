@@ -29,8 +29,6 @@ This component provides a server which is able to handle connections, communicat
 link:http://mqtt.org/[MQTT] clients. Its API provides a bunch of events related to raw protocol messages received by
 clients and exposes some features in order to send messages to them.
 
-At the moment of writing, it supports all MQTT version 5.0 features except AUTH message which is yet to be implemented.
-
 It's not a fully featured MQTT broker but can be used for building something like that or for protocol translation.
 
 WARNING: this module has the tech preview status, this means the API can change between versions.
@@ -232,6 +230,7 @@ reason code, the authentication method and data. The server could continue to se
 the {@link io.vertx.mqtt.MqttEndpoint#authenticationExchange(io.vertx.mqtt.messages.MqttAuthenticationExchangeMessage)}
 for authentication or just passed it.
 
+[[server-auth-exchange]]
 [source,$lang]
 ----
 {@link examples.VertxMqttServerExamples#example14}
@@ -874,11 +873,7 @@ generation and SASL-name escaping) is available in {@link examples.VertxMqttClie
 
 ==== Server-side AUTH
 
-On the server side AUTH packets are accepted at the wire level (so a broker can be probed without dropping the TCP
-connection) but {@link io.vertx.mqtt.impl.MqttEndpointImpl} does not currently surface them to user code:
-{@code handleAuth} is a stub. Implementing an enhanced-authentication endpoint therefore requires extending the
-endpoint API; the client-side types are already in place so a future server port will not change this section's API
-surface.
+The <<server-auth-exchange,server example>> shows how to send and receive AUTH packets.
 
 === Automatic server redirect
 
